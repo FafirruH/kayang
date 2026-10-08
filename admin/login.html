@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login Admin - Sumber Lancar</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <script src="js/include.js" defer></script>
+  <script src="js/login.js" defer></script>
+</head>
+<body class="page-dark page-login" data-page="login">
+
+  <main class="login-main">
+    <div class="login-card">
+
+      <div class="brand">
+        <span class="brand__icon">
+          <img src="assets/icons/wrench.svg" alt="" width="20" height="20" />
+        </span>
+        <span class="brand__text">
+          <span class="brand__name">Sumber Lancar</span>
+          <span class="brand__tagline">Panel Admin</span>
+        </span>
+      </div>
+
+      <h1 class="page-title login-card__title">Login Admin</h1>
+
+      <p class="form-status form-status--warn" id="login-notice" role="status" hidden>
+        Silakan login untuk mengakses halaman admin.
+      </p>
+
+      <form id="login-form" novalidate>
+        <div class="form-field form-field--first">
+          <label class="form-field__label" for="login-user">Username atau Email</label>
+          <input class="form-input" id="login-user" name="user" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required />
+          <p class="form-field__error" id="login-user-error" hidden></p>
+        </div>
+
+        <div class="form-field">
+          <label class="form-field__label" for="login-pass">Password</label>
+          <div class="input-wrap">
+            <input class="form-input" id="login-pass" name="pass" type="password" autocomplete="current-password" required />
+            <button class="input-toggle" type="button" id="login-toggle" aria-controls="login-pass" aria-pressed="false">Tampilkan</button>
+          </div>
+          <p class="form-field__error" id="login-pass-error" hidden></p>
+        </div>
+
+        <button class="btn btn--primary login-submit" type="submit">Login</button>
+      </form>
+
+    </div>
+  </main>
+
+  <div data-include="footer"></div>
+
+</body>
+</html>

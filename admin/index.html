@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beranda Admin - Sumber Lancar</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <script src="js/include.js" defer></script>
+</head>
+<body data-auth="required" data-page="beranda">
+
+  <div data-include="header"></div>
+
+  <main>
+
+    <!-- ===== Hero ===== -->
+    <section class="admin-hero">
+      <div class="container">
+        <p class="admin-hero__greeting">Selamat datang, Admin Utama</p>
+
+        <h1 class="admin-hero__title">
+          Panel Kendali Bengkel
+          <span class="admin-hero__title-accent">Toko Sumber Lancar</span>
+        </h1>
+
+        <p class="admin-hero__desc">
+          Pantau pesanan, kelola stok sparepart, atur role akun, dan konfigurasi WhatsApp dari satu tempat.
+        </p>
+
+        <div class="admin-hero__actions">
+          <a href="pesanan.html" class="btn btn--primary">
+            <img src="assets/icons/truck.svg" alt="" width="16" height="16" />
+            <span>Cek Pesanan Masuk</span>
+          </a>
+          <a href="stok.html" class="btn btn--ghost">
+            <img src="assets/icons/search.svg" alt="" width="16" height="16" />
+            <span>Kelola Sparepart</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Ringkasan + pesanan terbaru ===== -->
+    <section class="dashboard">
+      <div class="container">
+
+        <!-- Angka di bawah masih contoh (sama seperti Figma); nanti diisi dari backend -->
+        <div class="stat-grid">
+
+          <article class="stat-card">
+            <img class="stat-card__icon" src="assets/icons/wallet.svg" alt="" width="22" height="22" />
+            <p class="stat-card__value">Rp 90.000</p>
+            <p class="stat-card__label">Total Pendapatan</p>
+          </article>
+
+          <article class="stat-card">
+            <img class="stat-card__icon" src="assets/icons/cart.svg" alt="" width="22" height="22" />
+            <p class="stat-card__value">4</p>
+            <p class="stat-card__label">Pesanan Masuk</p>
+          </article>
+
+          <article class="stat-card">
+            <img class="stat-card__icon" src="assets/icons/package.svg" alt="" width="22" height="22" />
+            <p class="stat-card__value">131</p>
+            <p class="stat-card__label">Total Stok Barang</p>
+          </article>
+
+          <article class="stat-card">
+            <img class="stat-card__icon" src="assets/icons/user-cog.svg" alt="" width="22" height="22" />
+            <p class="stat-card__value">4</p>
+            <p class="stat-card__label">User Terdaftar</p>
+          </article>
+
+        </div>
+
+        <div class="dashboard__head">
+          <h2 class="page-title">Pesanan Terbaru</h2>
+          <p class="page-subtitle">Pesanan yang masuk dari client</p>
+        </div>
+
+        <!-- Di layar kecil tabel berubah jadi kartu per baris (data-label dipakai sebagai judul kolom) -->
+        <div class="table-card">
+          <table class="data-table data-table--stack">
+            <caption class="sr-only">Daftar pesanan terbaru</caption>
+            <thead>
+              <tr>
+                <th scope="col">Invoice</th>
+                <th scope="col">Client</th>
+                <th scope="col">Tanggal</th>
+                <th scope="col">Total</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-label="Invoice" class="data-table__id">INV-1024</td>
+                <td data-label="Client">Budi Santoso</td>
+                <td data-label="Tanggal">2026-10-01</td>
+                <td data-label="Total" class="data-table__soft">Rp 135.000</td>
+                <td data-label="Status"><span class="badge badge--pending">Pending</span></td>
+              </tr>
+              <tr>
+                <td data-label="Invoice" class="data-table__id">INV-1023</td>
+                <td data-label="Client">Budi Santoso</td>
+                <td data-label="Tanggal">2026-10-01</td>
+                <td data-label="Total" class="data-table__soft">Rp 210.000</td>
+                <td data-label="Status"><span class="badge badge--process">Diproses</span></td>
+              </tr>
+              <tr>
+                <td data-label="Invoice" class="data-table__id">INV-1022</td>
+                <td data-label="Client">Budi Santoso</td>
+                <td data-label="Tanggal">2026-10-01</td>
+                <td data-label="Total" class="data-table__soft">Rp 320.000</td>
+                <td data-label="Status"><span class="badge badge--shipped">Dikirim</span></td>
+              </tr>
+              <tr>
+                <td data-label="Invoice" class="data-table__id">INV-1021</td>
+                <td data-label="Client">Budi Santoso</td>
+                <td data-label="Tanggal">2026-10-01</td>
+                <td data-label="Total" class="data-table__soft">Rp 90.000</td>
+                <td data-label="Status"><span class="badge badge--done">Selesai</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <div data-include="footer"></div>
+
+</body>
+</html>

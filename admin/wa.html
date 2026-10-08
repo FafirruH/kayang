@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Config WA - Admin Sumber Lancar</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <script src="js/include.js" defer></script>
+  <script src="js/wa.js" defer></script>
+</head>
+<body data-auth="required" class="page-dark" data-page="wa">
+
+  <div data-include="header"></div>
+
+  <main>
+    <div class="container page-section">
+
+      <div class="page-head page-head--spaced">
+        <div>
+          <h1 class="page-title">Config Akun WA</h1>
+          <p class="page-subtitle">Nomor WhatsApp penerima pesanan &amp; invoice otomatis</p>
+        </div>
+      </div>
+
+      <div class="wa-layout">
+
+        <!-- Form konfigurasi -->
+        <form class="panel" id="wa-form" novalidate>
+          <div class="form-field form-field--first">
+            <label class="form-field__label" for="wa-nomor">Nomor WhatsApp Admin</label>
+            <input class="form-input" id="wa-nomor" name="nomor" type="tel" inputmode="tel" value="081234567890" placeholder="Contoh: 081234567890" autocomplete="off" required />
+            <p class="form-field__error" id="wa-nomor-error" hidden></p>
+          </div>
+
+          <div class="form-field">
+            <label class="form-field__label" for="wa-nama">Nama Penerima</label>
+            <input class="form-input" id="wa-nama" name="nama" type="text" value="Admin Sumber Lancar" maxlength="60" autocomplete="off" required />
+            <p class="form-field__error" id="wa-nama-error" hidden></p>
+          </div>
+
+          <div class="form-field">
+            <label class="form-field__label" for="wa-format">Format Invoice</label>
+            <textarea class="form-input form-input--textarea" id="wa-format" name="format" rows="5" aria-describedby="wa-format-hint" required>Halo Admin, saya ingin memesan:
+{items}
+Total: {total}
+No. Invoice: {invoice}</textarea>
+            <p class="form-field__hint" id="wa-format-hint">Placeholder yang dapat dipakai: <code>{items}</code> <code>{total}</code> <code>{invoice}</code></p>
+            <p class="form-field__error" id="wa-format-error" hidden></p>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Simpan Konfigurasi</button>
+          </div>
+
+          <p class="form-status" id="wa-status" role="status" hidden></p>
+        </form>
+
+        <!-- Pratinjau pesan (diperbarui otomatis oleh js/wa.js) -->
+        <section class="panel" aria-labelledby="wa-preview-title">
+          <h2 class="form-field__label" id="wa-preview-title">Pratinjau Pesan</h2>
+
+          <div class="wa-preview">
+            <p class="wa-preview__to" id="wa-preview-to"></p>
+            <div class="wa-bubble" id="wa-preview-body" aria-live="polite"></div>
+          </div>
+
+          <p class="wa-preview__note">Pratinjau memakai data contoh (INV-1024). Pesan asli diisi dari pesanan client.</p>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <div data-include="footer"></div>
+
+</body>
+</html>

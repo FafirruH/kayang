@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daftar Akun - Admin Sumber Lancar</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <script src="js/include.js" defer></script>
+  <script src="js/akun.js" defer></script>
+</head>
+<body data-auth="required" class="page-dark" data-page="akun">
+
+  <div data-include="header"></div>
+
+  <main>
+    <div class="container page-section">
+
+      <div class="page-head page-head--spaced">
+        <div>
+          <h1 class="page-title">Daftar Akun</h1>
+          <p class="page-subtitle">Admin utama dapat mengubah role client menjadi admin</p>
+        </div>
+
+        <div class="segmented" role="group" aria-label="Filter role akun">
+          <button type="button" class="segmented__btn is-active" data-filter="all" aria-pressed="true">Semua</button>
+          <button type="button" class="segmented__btn" data-filter="admin" aria-pressed="false">Admin</button>
+          <button type="button" class="segmented__btn" data-filter="client" aria-pressed="false">Client</button>
+        </div>
+      </div>
+
+      <!-- Data di bawah masih contoh; nanti diisi dari backend -->
+      <div class="table-card table-card--dark">
+        <table class="data-table data-table--stack" id="akun-table">
+          <caption class="sr-only">Daftar akun terdaftar</caption>
+          <thead>
+            <tr>
+              <th scope="col">Nama</th>
+              <th scope="col">Email</th>
+              <th scope="col">Role</th>
+              <th scope="col">Bergabung</th>
+              <th scope="col" class="data-table__actions">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-id="1" data-role="admin" data-protected>
+              <td data-label="Nama"><span class="user-name"><span class="user-name__text">Admin Utama</span><span class="badge-server"><img src="assets/icons/shield.svg" alt="" width="10" height="10" />Server</span></span></td>
+              <td data-label="Email" class="data-table__muted">admin@sumberlancar.id</td>
+              <td data-label="Role">
+                <select class="role-select is-admin" aria-label="Role Admin Utama" data-role-select disabled title="Akun server tidak dapat diubah">
+                  <option value="admin" selected>Admin</option>
+                  <option value="client">Client</option>
+                </select>
+              </td>
+              <td data-label="Bergabung" class="data-table__muted">2024-01-01</td>
+              <td data-label="Aksi">
+                <span class="row-actions">
+                  <button class="icon-btn" type="button" data-edit aria-label="Ubah role Admin Utama" disabled title="Akun server tidak dapat diubah"><img src="assets/icons/pencil.svg" alt="" /></button>
+                  <button class="icon-btn icon-btn--danger" type="button" data-delete aria-label="Hapus akun Admin Utama" disabled title="Akun server tidak dapat diubah"><img src="assets/icons/trash.svg" alt="" /></button>
+                </span>
+              </td>
+            </tr>
+            <tr data-id="2" data-role="client">
+              <td data-label="Nama"><span class="user-name"><span class="user-name__text">Budi Santoso</span></span></td>
+              <td data-label="Email" class="data-table__muted">budi@gmail.com</td>
+              <td data-label="Role">
+                <select class="role-select" aria-label="Role Budi Santoso" data-role-select>
+                  <option value="admin">Admin</option>
+                  <option value="client" selected>Client</option>
+                </select>
+              </td>
+              <td data-label="Bergabung" class="data-table__muted">2026-08-12</td>
+              <td data-label="Aksi">
+                <span class="row-actions">
+                  <button class="icon-btn" type="button" data-edit aria-label="Ubah role Budi Santoso"><img src="assets/icons/pencil.svg" alt="" /></button>
+                  <button class="icon-btn icon-btn--danger" type="button" data-delete aria-label="Hapus akun Budi Santoso"><img src="assets/icons/trash.svg" alt="" /></button>
+                </span>
+              </td>
+            </tr>
+            <tr data-id="3" data-role="client">
+              <td data-label="Nama"><span class="user-name"><span class="user-name__text">Siti Aminah</span></span></td>
+              <td data-label="Email" class="data-table__muted">siti@gmail.com</td>
+              <td data-label="Role">
+                <select class="role-select" aria-label="Role Siti Aminah" data-role-select>
+                  <option value="admin">Admin</option>
+                  <option value="client" selected>Client</option>
+                </select>
+              </td>
+              <td data-label="Bergabung" class="data-table__muted">2026-09-03</td>
+              <td data-label="Aksi">
+                <span class="row-actions">
+                  <button class="icon-btn" type="button" data-edit aria-label="Ubah role Siti Aminah"><img src="assets/icons/pencil.svg" alt="" /></button>
+                  <button class="icon-btn icon-btn--danger" type="button" data-delete aria-label="Hapus akun Siti Aminah"><img src="assets/icons/trash.svg" alt="" /></button>
+                </span>
+              </td>
+            </tr>
+            <tr data-id="4" data-role="admin">
+              <td data-label="Nama"><span class="user-name"><span class="user-name__text">Rudi Hartono</span></span></td>
+              <td data-label="Email" class="data-table__muted">rudi@gmail.com</td>
+              <td data-label="Role">
+                <select class="role-select is-admin" aria-label="Role Rudi Hartono" data-role-select>
+                  <option value="admin" selected>Admin</option>
+                  <option value="client">Client</option>
+                </select>
+              </td>
+              <td data-label="Bergabung" class="data-table__muted">2026-07-21</td>
+              <td data-label="Aksi">
+                <span class="row-actions">
+                  <button class="icon-btn" type="button" data-edit aria-label="Ubah role Rudi Hartono"><img src="assets/icons/pencil.svg" alt="" /></button>
+                  <button class="icon-btn icon-btn--danger" type="button" data-delete aria-label="Hapus akun Rudi Hartono"><img src="assets/icons/trash.svg" alt="" /></button>
+                </span>
+              </td>
+            </tr>
+            <tr class="data-table__empty" hidden>
+              <td colspan="5">Tidak ada akun dengan role ini.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pengumuman perubahan untuk pembaca layar -->
+      <p class="sr-only" id="akun-live" role="status" aria-live="polite"></p>
+
+    </div>
+  </main>
+
+  <div data-include="footer"></div>
+
+</body>
+</html>
