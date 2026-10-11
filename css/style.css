@@ -1631,3 +1631,87 @@ body.page-dark {
 .auth-back:hover {
   color: #171c20;
 }
+
+/* ==========================================================================
+   AUTH TERPADU - status akun di header, pesan form, pemberitahuan akses
+   ========================================================================== */
+
+/* Halaman terlindungi disembunyikan sampai js/include.js memastikan akses */
+body[data-auth]:not(.is-authed) {
+  visibility: hidden;
+}
+
+/* Status akun di header (Login / nama + Dashboard Admin + Logout) */
+.header-auth {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.header-user {
+  max-width: 160px;
+  overflow: hidden;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+}
+
+button.btn-login {
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Pesan di form login/register */
+.auth-msg {
+  margin: 0 0 var(--field-gap, 16px);
+  padding: 10px 12px;
+  font-size: var(--link-fs, 14px);
+  line-height: var(--link-lh, 20px);
+  border-radius: 6px;
+}
+
+.auth-msg--error {
+  color: #a1262a;
+  background: #fdecec;
+}
+
+.auth-msg--ok {
+  color: #1f6b3a;
+  background: #e6f4ea;
+}
+
+.auth-msg--info {
+  color: #5d4300;
+  background: #fff3d6;
+}
+
+.auth-field__error {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: #a1262a;
+}
+
+.auth-input input[aria-invalid="true"] {
+  border-color: #a1262a;
+}
+
+/* Pemberitahuan akses ditolak / fitur khusus client */
+.access-notice {
+  max-width: var(--container-width);
+  margin: 16px auto 0;
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 20px;
+  color: #5d4300;
+  background: #fff3d6;
+  border: 1px solid #f0d28a;
+  border-radius: var(--radius-sm);
+}

@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login - Sumber Lancar</title>
+  <title>Masuk - Sumber Lancar</title>
   <link rel="stylesheet" href="css/style.css" />
+  <script src="js/auth.js" defer></script>
+  <script src="js/auth-pages.js" defer></script>
 </head>
 <body class="page-login">
 
@@ -31,15 +33,16 @@
           <a href="register.html" class="auth-tabs__tab">Register</a>
         </nav>
 
-        <h1 class="auth-title">Login Client</h1>
+        <h1 class="auth-title">Masuk ke Sumber Lancar</h1>
 
-        <!-- Belum tersambung ke sistem login (menyusul) -->
-        <form action="#" onsubmit="return false">
+        <!-- Simulasi: diverifikasi js/auth-pages.js terhadap akun di localStorage -->
+        <form id="login-form" action="#" novalidate>
+          <p class="auth-msg" id="auth-msg" role="alert" hidden></p>
           <div class="auth-field">
-            <label class="auth-field__label" for="username">Username</label>
+            <label class="auth-field__label" for="username">Username atau Email</label>
             <div class="auth-input">
               <img src="assets/icons/user.svg" alt="" width="24" height="24" />
-              <input id="username" name="username" type="text" autocomplete="username" required />
+              <input id="username" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required />
             </div>
           </div>
 

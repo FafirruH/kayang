@@ -7,11 +7,12 @@
   <meta name="robots" content="noindex, nofollow" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/admin.css" />
-  <script src="js/include.js" defer></script>
+  <script src="../js/auth.js" defer></script>
+  <script src="../js/include.js" defer></script>
 </head>
 <!-- data-page : beranda | stok | akun | wa | pesanan
-     data-auth="required" : halaman hanya untuk admin yang sudah login -->
-<body data-auth="required" data-page="beranda">
+     data-auth="admin" : halaman hanya untuk admin yang sudah login -->
+<body data-auth="admin" data-page="beranda">
 
   <div data-include="header"></div>
 

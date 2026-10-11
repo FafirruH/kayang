@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Register - Sumber Lancar</title>
   <link rel="stylesheet" href="css/style.css" />
+  <script src="js/auth.js" defer></script>
+  <script src="js/auth-pages.js" defer></script>
 </head>
 <body class="page-register">
 
@@ -33,14 +35,16 @@
 
         <h1 class="auth-title">Daftar Akun</h1>
 
-        <!-- Belum tersambung ke sistem pendaftaran (menyusul) -->
-        <form action="#" onsubmit="return false">
+        <!-- Simulasi: akun disimpan js/auth.js di localStorage, role selalu client -->
+        <form id="register-form" action="#" novalidate>
+          <p class="auth-msg" id="auth-msg" role="alert" hidden></p>
           <div class="auth-field">
             <label class="auth-field__label" for="username">Username</label>
             <div class="auth-input">
               <img src="assets/icons/user.svg" alt="" width="16" height="16" />
               <input id="username" name="username" type="text" autocomplete="username" required />
             </div>
+            <p class="auth-field__error" id="username-error" hidden></p>
           </div>
 
           <div class="auth-field">
@@ -49,6 +53,7 @@
               <img src="assets/icons/lock.svg" alt="" width="16" height="16" />
               <input id="password" name="password" type="password" autocomplete="new-password" required />
             </div>
+            <p class="auth-field__error" id="password-error" hidden></p>
           </div>
 
           <div class="auth-field">
@@ -57,6 +62,7 @@
               <img src="assets/icons/lock.svg" alt="" width="16" height="16" />
               <input id="password2" name="password2" type="password" autocomplete="new-password" required />
             </div>
+            <p class="auth-field__error" id="password2-error" hidden></p>
           </div>
 
           <button class="auth-submit" type="submit">Register</button>

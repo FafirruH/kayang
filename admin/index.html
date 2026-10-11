@@ -7,9 +7,11 @@
   <meta name="robots" content="noindex, nofollow" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/admin.css" />
-  <script src="js/include.js" defer></script>
+  <script src="../js/auth.js" defer></script>
+  <script src="../js/include.js" defer></script>
+  <script src="js/index.js" defer></script>
 </head>
-<body data-auth="required" data-page="beranda">
+<body data-auth="admin" data-page="beranda">
 
   <div data-include="header"></div>
 
@@ -69,7 +71,7 @@
 
           <article class="stat-card">
             <img class="stat-card__icon" src="assets/icons/user-cog.svg" alt="" width="22" height="22" />
-            <p class="stat-card__value">4</p>
+            <p class="stat-card__value" data-stat="users">4</p>
             <p class="stat-card__label">User Terdaftar</p>
           </article>
 
