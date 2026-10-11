@@ -8,7 +8,61 @@
   <meta http-equiv="refresh" content="0; url=../login.html" />
   <script>window.location.replace("../login.html" + window.location.search);</script>
 </head>
+<<<<<<< HEAD
 <body>
   <p><a href="../login.html">Lanjut ke halaman login</a></p>
+=======
+<body class="page-login" data-page="login">
+
+  <main class="admin-auth">
+    <section class="admin-auth__brand" aria-label="Sumber Lancar">
+      <div class="admin-auth__brand-name">
+        <img src="assets/icons/wrench.svg" alt="" width="24" height="24" />
+        <span>Sumber Lancar</span>
+      </div>
+
+      <p class="admin-auth__headline">Kelola stok bengkel<br /><span>tanpa ribet.</span></p>
+      <div class="admin-auth__stripe" aria-hidden="true"></div>
+    </section>
+
+    <section class="admin-auth__panel">
+      <div class="admin-auth__form">
+        <h1 class="admin-auth__title">Login</h1>
+
+        <p class="form-status form-status--warn" id="login-notice" role="status" hidden>
+          Silakan login untuk mengakses halaman admin.
+        </p>
+
+        <form id="login-form" novalidate>
+          <div class="admin-auth__field">
+            <label class="admin-auth__label" for="login-user">Username atau Email</label>
+            <div class="admin-auth__input-wrap">
+              <img class="admin-auth__field-icon" src="assets/icons/user.svg" alt="" width="24" height="24" />
+              <input class="form-input" id="login-user" name="user" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required />
+            </div>
+            <p class="form-field__error" id="login-user-error" hidden></p>
+          </div>
+
+          <div class="admin-auth__field">
+            <label class="admin-auth__label" for="login-pass">Password</label>
+            <div class="admin-auth__input-wrap">
+              <img class="admin-auth__field-icon" src="assets/icons/lock.svg" alt="" width="24" height="24" />
+              <input class="form-input" id="login-pass" name="pass" type="password" autocomplete="current-password" required />
+              <button class="input-toggle" type="button" id="login-toggle" aria-controls="login-pass" aria-pressed="false">Tampilkan</button>
+            </div>
+            <p class="form-field__error" id="login-pass-error" hidden></p>
+          </div>
+
+          <button class="btn btn--primary admin-auth__submit" type="submit">Login</button>
+        </form>
+
+        <a href="../client/client/index.html" class="admin-auth__back">Kembali ke beranda</a>
+      </div>
+    </section>
+  </main>
+
+  <div data-include="footer"></div>
+
+>>>>>>> 006100d91ef004db71599903e448c02b2b7a0548
 </body>
 </html>
