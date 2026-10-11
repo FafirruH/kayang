@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Track Pesanan - Admin Sumber Lancar</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <script src="../js/auth.js" defer></script>
+  <script src="../js/include.js" defer></script>
+  <script src="js/pesanan.js" defer></script>
+</head>
+<body data-auth="admin" class="page-dark" data-page="pesanan">
+
+  <div data-include="header"></div>
+
+  <main>
+    <div class="container page-section">
+
+      <div class="page-head page-head--spaced">
+        <div>
+          <h1 class="page-title">Track Pesanan</h1>
+          <p class="page-subtitle">Detail pesanan client dan pembaruan status</p>
+        </div>
+      </div>
+
+      <!-- Data di bawah masih contoh; nanti diisi dari backend -->
+      <div class="order-grid" id="order-grid">
+          <article class="order-card" data-invoice="INV-1024" data-status="pending">
+            <div class="order-card__head">
+              <div>
+                <h2 class="order-card__invoice">INV-1024</h2>
+                <p class="order-card__meta">Budi Santoso · 2026-10-01</p>
+              </div>
+              <span class="badge badge--pending" data-badge>Pending</span>
+            </div>
+
+            <ul class="order-card__items">
+              <li class="order-card__item"><span>Oli Mesin Yamalube 1L <span class="order-card__qty">x2</span></span><span>Rp 110.000</span></li>
+              <li class="order-card__item"><span>Busi NGK CPR9EA <span class="order-card__qty">x1</span></span><span>Rp 25.000</span></li>
+            </ul>
+
+            <div class="order-card__foot">
+              <p class="order-card__total">Rp 135.000</p>
+              <div class="status-group" role="group" aria-label="Ubah status pesanan INV-1024">
+                <button type="button" class="status-btn is-active" data-status="pending" aria-pressed="true">Pending</button>
+                <button type="button" class="status-btn" data-status="process" aria-pressed="false">Diproses</button>
+                <button type="button" class="status-btn" data-status="shipped" aria-pressed="false">Dikirim</button>
+                <button type="button" class="status-btn" data-status="done" aria-pressed="false">Selesai</button>
+              </div>
+            </div>
+          </article>
+          <article class="order-card" data-invoice="INV-1023" data-status="process">
+            <div class="order-card__head">
+              <div>
+                <h2 class="order-card__invoice">INV-1023</h2>
+                <p class="order-card__meta">Budi Santoso · 2026-10-01</p>
+              </div>
+              <span class="badge badge--process" data-badge>Diproses</span>
+            </div>
+
+            <ul class="order-card__items">
+              <li class="order-card__item"><span>Ban Luar IRC 80/90-14 <span class="order-card__qty">x1</span></span><span>Rp 185.000</span></li>
+              <li class="order-card__item"><span>Busi NGK CPR9EA <span class="order-card__qty">x1</span></span><span>Rp 25.000</span></li>
+            </ul>
+
+            <div class="order-card__foot">
+              <p class="order-card__total">Rp 210.000</p>
+              <div class="status-group" role="group" aria-label="Ubah status pesanan INV-1023">
+                <button type="button" class="status-btn" data-status="pending" aria-pressed="false">Pending</button>
+                <button type="button" class="status-btn is-active" data-status="process" aria-pressed="true">Diproses</button>
+                <button type="button" class="status-btn" data-status="shipped" aria-pressed="false">Dikirim</button>
+                <button type="button" class="status-btn" data-status="done" aria-pressed="false">Selesai</button>
+              </div>
+            </div>
+          </article>
+          <article class="order-card" data-invoice="INV-1022" data-status="shipped">
+            <div class="order-card__head">
+              <div>
+                <h2 class="order-card__invoice">INV-1022</h2>
+                <p class="order-card__meta">Budi Santoso · 2026-10-01</p>
+              </div>
+              <span class="badge badge--shipped" data-badge>Dikirim</span>
+            </div>
+
+            <ul class="order-card__items">
+              <li class="order-card__item"><span>Ban Luar IRC 80/90-14 <span class="order-card__qty">x1</span></span><span>Rp 185.000</span></li>
+              <li class="order-card__item"><span>Oli Mesin Yamalube 1L <span class="order-card__qty">x2</span></span><span>Rp 110.000</span></li>
+              <li class="order-card__item"><span>Busi NGK CPR9EA <span class="order-card__qty">x1</span></span><span>Rp 25.000</span></li>
+            </ul>
+
+            <div class="order-card__foot">
+              <p class="order-card__total">Rp 320.000</p>
+              <div class="status-group" role="group" aria-label="Ubah status pesanan INV-1022">
+                <button type="button" class="status-btn" data-status="pending" aria-pressed="false">Pending</button>
+                <button type="button" class="status-btn" data-status="process" aria-pressed="false">Diproses</button>
+                <button type="button" class="status-btn is-active" data-status="shipped" aria-pressed="true">Dikirim</button>
+                <button type="button" class="status-btn" data-status="done" aria-pressed="false">Selesai</button>
+              </div>
+            </div>
+          </article>
+          <article class="order-card" data-invoice="INV-1021" data-status="done">
+            <div class="order-card__head">
+              <div>
+                <h2 class="order-card__invoice">INV-1021</h2>
+                <p class="order-card__meta">Budi Santoso · 2026-10-01</p>
+              </div>
+              <span class="badge badge--done" data-badge>Selesai</span>
+            </div>
+
+            <ul class="order-card__items">
+              <li class="order-card__item"><span>Oli Mesin Federal Matic 0.8L <span class="order-card__qty">x2</span></span><span>Rp 90.000</span></li>
+            </ul>
+
+            <div class="order-card__foot">
+              <p class="order-card__total">Rp 90.000</p>
+              <div class="status-group" role="group" aria-label="Ubah status pesanan INV-1021">
+                <button type="button" class="status-btn" data-status="pending" aria-pressed="false">Pending</button>
+                <button type="button" class="status-btn" data-status="process" aria-pressed="false">Diproses</button>
+                <button type="button" class="status-btn" data-status="shipped" aria-pressed="false">Dikirim</button>
+                <button type="button" class="status-btn is-active" data-status="done" aria-pressed="true">Selesai</button>
+              </div>
+            </div>
+          </article>
+      </div>
+
+      <!-- Pengumuman perubahan status untuk pembaca layar -->
+      <p class="sr-only" id="order-live" role="status" aria-live="polite"></p>
+
+    </div>
+  </main>
+
+  <div data-include="footer"></div>
+
+</body>
+</html>

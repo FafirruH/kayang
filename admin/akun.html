@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daftar Akun - Admin Sumber Lancar</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <script src="../js/auth.js" defer></script>
+  <script src="../js/include.js" defer></script>
+  <script src="js/akun.js" defer></script>
+</head>
+<body data-auth="admin" class="page-dark" data-page="akun">
+
+  <div data-include="header"></div>
+
+  <main>
+    <div class="container page-section">
+
+      <div class="page-head page-head--spaced">
+        <div>
+          <h1 class="page-title">Daftar Akun</h1>
+          <p class="page-subtitle">Admin utama dapat mengubah role client menjadi admin</p>
+        </div>
+
+        <div class="segmented" role="group" aria-label="Filter role akun">
+          <button type="button" class="segmented__btn is-active" data-filter="all" aria-pressed="true">Semua</button>
+          <button type="button" class="segmented__btn" data-filter="admin" aria-pressed="false">Admin</button>
+          <button type="button" class="segmented__btn" data-filter="client" aria-pressed="false">Client</button>
+        </div>
+      </div>
+
+      <!-- Baris tabel dibuat oleh js/akun.js dari data akun bersama (js/auth.js) -->
+      <div class="table-card table-card--dark">
+        <table class="data-table data-table--stack" id="akun-table">
+          <caption class="sr-only">Daftar akun terdaftar</caption>
+          <thead>
+            <tr>
+              <th scope="col">Nama</th>
+              <th scope="col">Email</th>
+              <th scope="col">Role</th>
+              <th scope="col">Bergabung</th>
+              <th scope="col" class="data-table__actions">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="data-table__empty" hidden>
+              <td colspan="5">Tidak ada akun dengan role ini.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pengumuman perubahan untuk pembaca layar -->
+      <p class="sr-only" id="akun-live" role="status" aria-live="polite"></p>
+
+    </div>
+  </main>
+
+  <div data-include="footer"></div>
+
+</body>
+</html>

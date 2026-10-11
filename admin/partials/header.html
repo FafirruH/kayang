@@ -1,0 +1,36 @@
+<!-- Header + Navbar Admin (Figma: komponen "Navbar Admin") -->
+<header class="site-header">
+  <div class="container site-header__inner">
+
+    <a href="index.html" class="brand" aria-label="Sumber Lancar - Beranda admin">
+      <span class="brand__icon">
+        <img src="assets/icons/wrench.svg" alt="" width="20" height="20" />
+      </span>
+      <span class="brand__text">
+        <span class="brand__name">Sumber Lancar</span>
+        <span class="brand__tagline">Sistem Bengkel Online</span>
+      </span>
+    </a>
+
+    <!-- Tombol menu: hanya tampil di layar kecil -->
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Buka menu">
+      <span class="nav-toggle__bar"></span>
+      <span class="nav-toggle__bar"></span>
+      <span class="nav-toggle__bar"></span>
+    </button>
+
+    <div class="site-nav" id="site-nav">
+      <nav class="nav-links" aria-label="Navigasi admin">
+        <a href="index.html"   class="nav-link" data-nav="beranda">Beranda</a>
+        <a href="stok.html"    class="nav-link" data-nav="stok">Stok Page</a>
+        <a href="akun.html"    class="nav-link" data-nav="akun">Daftar Akun</a>
+        <a href="wa.html"      class="nav-link" data-nav="wa">Config WA</a>
+        <a href="pesanan.html" class="nav-link" data-nav="pesanan">Track Pesanan</a>
+      </nav>
+
+      <!-- data-logout ditangani js/include.js (menghapus sesi bersama) -->
+      <a href="../login.html" class="btn-logout" data-logout>Log Out</a>
+    </div>
+
+  </div>
+</header>
