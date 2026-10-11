@@ -1459,36 +1459,149 @@ body[data-auth="required"]:not(.is-authed) {
   visibility: hidden;
 }
 
-.login-main {
+/* Login admin mengikuti layout dua panel halaman login client. */
+.admin-auth {
   flex: 1;
   display: grid;
-  place-items: center;
-  padding: 48px var(--container-padding);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: calc(100vh - var(--footer-height));
 }
 
-.login-card {
-  width: 100%;
-  max-width: 420px;
-  padding: 32px 28px 28px;
-  background: var(--color-surface-dark);
-  border: 1px solid var(--color-border-dark);
-  border-radius: var(--radius-md);
+.admin-auth__brand {
+  --stripe-left: 15px;
+  position: relative;
+  overflow: hidden;
+  background: #171c20;
 }
 
-.login-card__title {
-  margin: 28px 0 20px;
+.admin-auth__brand-name {
+  position: absolute;
+  top: 0;
+  left: 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.login-card .form-status {
-  margin: 0 0 16px;
+.admin-auth__brand-name img {
+  width: 24px;
+  height: 24px;
+  filter: brightness(0) invert(1);
 }
 
-.input-wrap {
+.admin-auth__brand-name span {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 40px;
+  line-height: 48px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #f1f2f4;
+}
+
+.admin-auth__headline {
+  position: absolute;
+  top: calc(50% - 145px);
+  left: 35px;
+  width: 832px;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 96px;
+  line-height: 96px;
+  text-transform: uppercase;
+  color: #f1f2f4;
+}
+
+.admin-auth__headline span {
+  color: #ff6600;
+}
+
+.admin-auth__stripe {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: calc(var(--stripe-left) + 640.9px);
+  height: 24px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='39.5' height='24' viewBox='0 0 39.5 24'%3E%3Cpolygon points='0,24 20,24 32,0 12,0' fill='%23ff6600'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-size: 39.5px 24px;
+  background-position: calc(var(--stripe-left) - 23.1px) 0;
+}
+
+.admin-auth__panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px 48px clamp(24px, 12.5vw, 180px);
+  background: var(--color-page);
+}
+
+.admin-auth__form {
+  width: min(480px, 100%);
+}
+
+.admin-auth__title {
+  margin: 0 0 48px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 40px;
+  text-transform: uppercase;
+  color: #171c20;
+}
+
+.admin-auth .form-status {
+  margin: -32px 0 24px;
+}
+
+.admin-auth__field + .admin-auth__field {
+  margin-top: 32px;
+}
+
+.admin-auth__label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 24px;
+  color: #171c20;
+}
+
+.admin-auth__input-wrap {
   position: relative;
 }
 
-.input-wrap .form-input {
-  padding-right: 104px;
+.admin-auth__field-icon {
+  position: absolute;
+  top: 50%;
+  left: 15px;
+  width: 24px;
+  height: 24px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.admin-auth .form-input {
+  height: 64px;
+  padding: 0 112px 0 51px;
+  font-size: 16px;
+  color: #171c20;
+  background: #fff;
+  border: 1px solid #d5dae0;
+  border-radius: 8px;
+}
+
+.admin-auth .form-input:focus {
+  border-color: #ff6600;
+  box-shadow: 0 0 0 2px rgba(255, 102, 0, 0.3);
+}
+
+.admin-auth .form-input[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+.admin-auth .form-field__error {
+  color: #c4282d;
 }
 
 .input-toggle {
@@ -1496,36 +1609,141 @@ body[data-auth="required"]:not(.is-authed) {
   top: 50%;
   right: 6px;
   transform: translateY(-50%);
-  height: 28px;
-  padding: 0 10px;
+  height: 36px;
+  padding: 0 8px;
   font-weight: 600;
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 13px;
+  line-height: 20px;
   text-transform: uppercase;
-  color: var(--color-text-muted);
+  color: #626c79;
   background: transparent;
   border: 0;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 .input-toggle:hover {
-  color: var(--color-text-light-strong);
+  color: #171c20;
 }
 
-.login-submit {
+.admin-auth__submit {
   width: 100%;
-  height: 44px;
-  margin-top: 20px;
+  height: 56px;
+  margin-top: 32px;
+  font-size: 20px;
+  line-height: 28px;
+  text-transform: uppercase;
+  background: #ff6600;
+  border-radius: 8px;
+  transition: filter 0.15s ease;
 }
 
-@media (max-width: 480px) {
-  .login-main {
-    padding-top: 32px;
-    align-items: start;
+.admin-auth__submit:hover {
+  filter: brightness(1.08);
+}
+
+.admin-auth__back {
+  display: block;
+  margin-top: 32px;
+  text-align: center;
+  font-size: 16px;
+  line-height: 24px;
+  color: #626c79;
+}
+
+.admin-auth__back:hover {
+  color: #171c20;
+}
+
+@media (max-width: 1400px) {
+  .admin-auth__headline {
+    width: auto;
+    font-size: 64px;
+    line-height: 64px;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-auth__headline {
+    left: 24px;
+    width: auto;
+    font-size: 48px;
+    line-height: 48px;
   }
 
-  .login-card {
-    padding: 24px 20px;
+  .admin-auth__brand-name span {
+    font-size: 32px;
+  }
+
+  .admin-auth__panel {
+    padding-left: 40px;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-auth {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .admin-auth__brand {
+    min-height: 220px;
+  }
+
+  .admin-auth__brand-name span {
+    font-size: 32px;
+  }
+
+  .admin-auth__headline {
+    top: 92px;
+    left: 24px;
+    width: auto;
+    font-size: 48px;
+    line-height: 48px;
+  }
+
+  .admin-auth__stripe {
+    width: 100%;
+  }
+
+  .admin-auth__panel {
+    padding: 48px 24px;
+  }
+
+  .admin-auth__title {
+    margin-bottom: 32px;
+  }
+}
+
+@media (max-width: 420px) {
+  .admin-auth__brand {
+    min-height: 190px;
+  }
+
+  .admin-auth__brand-name span {
+    font-size: 28px;
+  }
+
+  .admin-auth__headline {
+    top: 82px;
+    font-size: 40px;
+    line-height: 40px;
+  }
+
+  .admin-auth__panel {
+    padding: 40px 20px;
+  }
+
+  .admin-auth__field + .admin-auth__field {
+    margin-top: 24px;
+  }
+
+  .admin-auth .form-input {
+    height: 56px;
+    padding-right: 96px;
+  }
+
+  .admin-auth__submit {
+    height: 52px;
   }
 }
 

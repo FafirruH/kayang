@@ -10,47 +10,53 @@
   <script src="js/include.js" defer></script>
   <script src="js/login.js" defer></script>
 </head>
-<body class="page-dark page-login" data-page="login">
+<body class="page-login" data-page="login">
 
-  <main class="login-main">
-    <div class="login-card">
-
-      <div class="brand">
-        <span class="brand__icon">
-          <img src="assets/icons/wrench.svg" alt="" width="20" height="20" />
-        </span>
-        <span class="brand__text">
-          <span class="brand__name">Sumber Lancar</span>
-          <span class="brand__tagline">Panel Admin</span>
-        </span>
+  <main class="admin-auth">
+    <section class="admin-auth__brand" aria-label="Sumber Lancar">
+      <div class="admin-auth__brand-name">
+        <img src="assets/icons/wrench.svg" alt="" width="24" height="24" />
+        <span>Sumber Lancar</span>
       </div>
 
-      <h1 class="page-title login-card__title">Login Admin</h1>
+      <p class="admin-auth__headline">Kelola stok bengkel<br /><span>tanpa ribet.</span></p>
+      <div class="admin-auth__stripe" aria-hidden="true"></div>
+    </section>
 
-      <p class="form-status form-status--warn" id="login-notice" role="status" hidden>
-        Silakan login untuk mengakses halaman admin.
-      </p>
+    <section class="admin-auth__panel">
+      <div class="admin-auth__form">
+        <h1 class="admin-auth__title">Login</h1>
 
-      <form id="login-form" novalidate>
-        <div class="form-field form-field--first">
-          <label class="form-field__label" for="login-user">Username atau Email</label>
-          <input class="form-input" id="login-user" name="user" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required />
-          <p class="form-field__error" id="login-user-error" hidden></p>
-        </div>
+        <p class="form-status form-status--warn" id="login-notice" role="status" hidden>
+          Silakan login untuk mengakses halaman admin.
+        </p>
 
-        <div class="form-field">
-          <label class="form-field__label" for="login-pass">Password</label>
-          <div class="input-wrap">
-            <input class="form-input" id="login-pass" name="pass" type="password" autocomplete="current-password" required />
-            <button class="input-toggle" type="button" id="login-toggle" aria-controls="login-pass" aria-pressed="false">Tampilkan</button>
+        <form id="login-form" novalidate>
+          <div class="admin-auth__field">
+            <label class="admin-auth__label" for="login-user">Username atau Email</label>
+            <div class="admin-auth__input-wrap">
+              <img class="admin-auth__field-icon" src="assets/icons/user.svg" alt="" width="24" height="24" />
+              <input class="form-input" id="login-user" name="user" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required />
+            </div>
+            <p class="form-field__error" id="login-user-error" hidden></p>
           </div>
-          <p class="form-field__error" id="login-pass-error" hidden></p>
-        </div>
 
-        <button class="btn btn--primary login-submit" type="submit">Login</button>
-      </form>
+          <div class="admin-auth__field">
+            <label class="admin-auth__label" for="login-pass">Password</label>
+            <div class="admin-auth__input-wrap">
+              <img class="admin-auth__field-icon" src="assets/icons/lock.svg" alt="" width="24" height="24" />
+              <input class="form-input" id="login-pass" name="pass" type="password" autocomplete="current-password" required />
+              <button class="input-toggle" type="button" id="login-toggle" aria-controls="login-pass" aria-pressed="false">Tampilkan</button>
+            </div>
+            <p class="form-field__error" id="login-pass-error" hidden></p>
+          </div>
 
-    </div>
+          <button class="btn btn--primary admin-auth__submit" type="submit">Login</button>
+        </form>
+
+        <a href="../client/client/index.html" class="admin-auth__back">Kembali ke beranda</a>
+      </div>
+    </section>
   </main>
 
   <div data-include="footer"></div>
