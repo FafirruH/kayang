@@ -1513,3 +1513,44 @@ body:not(.page-dark) .page-subtitle,
 .page-dark .form-field__error {
   color: #ff6b70;
 }
+
+/* ==========================================================================
+   Tambahan: badge nonaktif produk
+   ========================================================================== */
+
+.badge--off {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 8px;
+  margin-left: 6px;
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 14px;
+  border-radius: var(--radius-pill);
+  color: #94999e;
+  background: rgba(148, 153, 158, 0.15);
+  vertical-align: middle;
+}
+
+/* ==========================================================================
+   Config WA — pratinjau ganda (pesanan + panggilan)
+   ========================================================================== */
+
+/* Kolom kanan: dua kartu pratinjau ditumpuk vertikal */
+.wa-previews {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Pastikan kolom kiri (form) tetap bisa scroll sendiri di layar pendek */
+.wa-layout {
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .wa-previews {
+    flex-direction: column;
+  }
+}

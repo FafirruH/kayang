@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <script src="js/auth.js" defer></script>
   <script src="js/include.js" defer></script>
+  <script src="js/panggilan.js" defer></script>
 </head>
 <body data-page="panggilan" class="page-dark">
 
@@ -16,36 +17,37 @@
 
     <section class="call">
 
-      <!-- Placeholder gambar kunci inggris (di Figma: foto 520x520, miring -12 derajat, opacity 90%, terpotong di tepi kanan).
-           Ganti div .call__wrench-ph dengan: <img src="assets/img/kunci-inggris.png" alt="" /> -->
       <div class="call__wrench" aria-hidden="true">
         <div class="call__wrench-tilt">
           <div class="call__wrench-ph">Gambar kunci inggris<br />520 × 520</div>
         </div>
       </div>
 
-      <!-- Form belum tersambung ke WhatsApp (logika kirim menyusul). -->
-      <form class="call-form" action="#" onsubmit="return false" aria-labelledby="call-title">
+      <form class="call-form" novalidate aria-labelledby="call-title">
         <h1 class="call-form__title" id="call-title">Form <span class="text-primary">Pemanggilan</span></h1>
 
         <div class="field">
           <label class="field__label" for="nama">Nama Lengkap</label>
           <input class="field__control" id="nama" name="nama" type="text" autocomplete="name" required />
+          <p class="field__error" id="nama-error" hidden></p>
         </div>
 
         <div class="field">
           <label class="field__label" for="alamat">Alamat / Lokasi Lengkap</label>
           <input class="field__control" id="alamat" name="alamat" type="text" autocomplete="street-address" required />
+          <p class="field__error" id="alamat-error" hidden></p>
         </div>
 
         <div class="field">
           <label class="field__label" for="motor">Jenis Motor</label>
           <input class="field__control" id="motor" name="motor" type="text" required />
+          <p class="field__error" id="motor-error" hidden></p>
         </div>
 
         <div class="field field--area">
           <label class="field__label" for="keluhan">Keluhan</label>
           <textarea class="field__control field__control--area" id="keluhan" name="keluhan" required></textarea>
+          <p class="field__error" id="keluhan-error" hidden></p>
         </div>
 
         <button class="btn-send" type="submit">

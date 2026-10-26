@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <script src="js/auth.js" defer></script>
   <script src="js/include.js" defer></script>
+  <script src="js/katalog.js" defer></script>
 </head>
 <body data-page="katalog">
 
@@ -14,17 +15,13 @@
 
   <main>
 
-    <!-- ===== Banner "CATALOG" ===== -->
     <section class="banner">
       <div class="banner__inner">
 
-        <!-- Tulisan besar CATALOG (di Figma berupa vektor). Lebar dikunci 1116px lewat textLength. -->
         <svg class="banner__title" viewBox="0 0 1116 265" width="1116" height="265" role="img" aria-label="Catalog">
           <text x="0" y="265" textLength="1116" lengthAdjust="spacingAndGlyphs" font-size="380">CATALOG</text>
         </svg>
 
-        <!-- Placeholder gambar motor (576 x 346).
-             Ganti dengan: <img class="banner__bike" src="assets/img/motor.png" alt="Motor" /> -->
         <div class="banner__bike" role="img" aria-label="Gambar motor (placeholder)">
           <span>Gambar motor<br />576 × 346</span>
         </div>
@@ -32,7 +29,6 @@
       </div>
     </section>
 
-    <!-- ===== Pencarian, filter, dan daftar produk ===== -->
     <section class="catalog">
       <div class="container">
 
@@ -49,166 +45,14 @@
           <button type="button" class="chip" data-filter="ban">Ban</button>
           <button type="button" class="chip" data-filter="aki">Aki</button>
           <button type="button" class="chip" data-filter="rantai">Rantai</button>
+          <button type="button" class="chip" data-filter="filter">Filter</button>
         </div>
 
-        <!-- Data produk di bawah masih contoh (9 kartu sama persis seperti di Figma) -->
-        <div class="product-grid">
-
-          <article class="product-card" data-category="oli">
-            <div class="product-card__media">
-              <span class="product-card__tag">Oli</span>
-              <img src="assets/icons/package-gray.svg" alt="" width="48" height="48" />
-            </div>
-            <div class="product-card__body">
-              <h3 class="product-card__name">Oli Mesin Federal Matic 0.8L</h3>
-              <p class="product-card__price">Rp 45.000</p>
-              <span class="stock stock--ready">Stok Tersedia</span>
-              <!-- Butuh login: diarahkan ke login.html oleh js/include.js. Hapus data-requires-login bila tidak perlu. -->
-              <a href="https://wa.me/6281234567890?text=Halo%20Admin%2C%20saya%20ingin%20tanya%2Fbeli%20Oli%20Mesin%20Federal%20Matic%200.8L"
-                 class="btn-wa" target="_blank" rel="noopener" data-requires-login>
-                <img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />
-                <span>Tanya / Beli via WA</span>
-              </a>
-            </div>
-          </article>
-
-          <article class="product-card" data-category="oli">
-            <div class="product-card__media">
-              <span class="product-card__tag">Oli</span>
-              <img src="assets/icons/package-gray.svg" alt="" width="48" height="48" />
-            </div>
-            <div class="product-card__body">
-              <h3 class="product-card__name">Oli Mesin Federal Matic 0.8L</h3>
-              <p class="product-card__price">Rp 45.000</p>
-              <span class="stock stock--ready">Stok Tersedia</span>
-              <a href="https://wa.me/6281234567890?text=Halo%20Admin%2C%20saya%20ingin%20tanya%2Fbeli%20Oli%20Mesin%20Federal%20Matic%200.8L"
-                 class="btn-wa" target="_blank" rel="noopener" data-requires-login>
-                <img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />
-                <span>Tanya / Beli via WA</span>
-              </a>
-            </div>
-          </article>
-
-          <article class="product-card" data-category="oli">
-            <div class="product-card__media">
-              <span class="product-card__tag">Oli</span>
-              <img src="assets/icons/package-gray.svg" alt="" width="48" height="48" />
-            </div>
-            <div class="product-card__body">
-              <h3 class="product-card__name">Oli Mesin Federal Matic 0.8L</h3>
-              <p class="product-card__price">Rp 45.000</p>
-              <span class="stock stock--ready">Stok Tersedia</span>
-              <a href="https://wa.me/6281234567890?text=Halo%20Admin%2C%20saya%20ingin%20tanya%2Fbeli%20Oli%20Mesin%20Federal%20Matic%200.8L"
-                 class="btn-wa" target="_blank" rel="noopener" data-requires-login>
-                <img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />
-                <span>Tanya / Beli via WA</span>
-              </a>
-            </div>
-          </article>
-
-          <article class="product-card" data-category="oli">
-            <div class="product-card__media">
-              <span class="product-card__tag">Oli</span>
-              <img src="assets/icons/package-gray.svg" alt="" width="48" height="48" />
-            </div>
-            <div class="product-card__body">
-              <h3 class="product-card__name">Oli Mesin Federal Matic 0.8L</h3>
-              <p class="product-card__price">Rp 45.000</p>
-              <span class="stock stock--ready">Stok Tersedia</span>
-              <a href="https://wa.me/6281234567890?text=Halo%20Admin%2C%20saya%20ingin%20tanya%2Fbeli%20Oli%20Mesin%20Federal%20Matic%200.8L"
-                 class="btn-wa" target="_blank" rel="noopener" data-requires-login>
-                <img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />
-                <span>Tanya / Beli via WA</span>
-              </a>
-            </div>
-          </article>
-
-          <article class="product-card" data-category="oli">
-            <div class="product-card__media">
-              <span class="product-card__tag">Oli</span>
-              <img src="assets/icons/package-gray.svg" alt="" width="48" height="48" />
-            </div>
-            <div class="product-card__body">
-              <h3 class="product-card__name">Oli Mesin Federal Matic 0.8L</h3>
-              <p class="product-card__price">Rp 45.000</p>
-              <span class="stock stock--ready">Stok Tersedia</span>
-              <a href="https://wa.me/6281234567890?text=Halo%20Admin%2C%20saya%20ingin%20tanya%2Fbeli%20Oli%20Mesin%20Federal%20Matic%200.8L"
-                 class="btn-wa" target="_blank" rel="noopener" data-requires-login>
-                <img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />
-                <span>Tanya / Beli via WA</span>
-              </a>
-            </div>
-          </article>
-
-          <article class="product-card" data-category="oli">
-            <div class="product-card__media">
-              <span class="product-card__tag">Oli</span>
-              <img src="assets/icons/package-gray.svg" alt="" width="48" height="48" />
-            </div>
-            <div class="product-card__body">
-              <h3 class="product-card__name">Oli Mesin Federal Matic 0.8L</h3>
-              <p class="product-card__price">Rp 45.000</p>
-              <span class="stock stock--ready">Stok Tersedia</span>
-              <a href="https://wa.me/6281234567890?text=Halo%20Admin%2C%20saya%20ingin%20tanya%2Fbeli%20Oli%20Mesin%20Federal%20Matic%200.8L"
-                 class="btn-wa" target="_blank" rel="noopener" data-requires-login>
-                <img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />
-                <span>Tanya / Beli via WA</span>
-              </a>
-            </div>
-          </article>
-
-          <article class="product-card" data-category="oli">
-            <div class="product-card__media">
-              <span class="product-card__tag">Oli</span>
-              <img src="assets/icons/package-gray.svg" alt="" width="48" height="48" />
-            </div>
-            <div class="product-card__body">
-              <h3 class="product-card__name">Oli Mesin Federal Matic 0.8L</h3>
-              <p class="product-card__price">Rp 45.000</p>
-              <span class="stock stock--ready">Stok Tersedia</span>
-              <a href="https://wa.me/6281234567890?text=Halo%20Admin%2C%20saya%20ingin%20tanya%2Fbeli%20Oli%20Mesin%20Federal%20Matic%200.8L"
-                 class="btn-wa" target="_blank" rel="noopener" data-requires-login>
-                <img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />
-                <span>Tanya / Beli via WA</span>
-              </a>
-            </div>
-          </article>
-
-          <article class="product-card" data-category="oli">
-            <div class="product-card__media">
-              <span class="product-card__tag">Oli</span>
-              <img src="assets/icons/package-gray.svg" alt="" width="48" height="48" />
-            </div>
-            <div class="product-card__body">
-              <h3 class="product-card__name">Oli Mesin Federal Matic 0.8L</h3>
-              <p class="product-card__price">Rp 45.000</p>
-              <span class="stock stock--ready">Stok Tersedia</span>
-              <a href="https://wa.me/6281234567890?text=Halo%20Admin%2C%20saya%20ingin%20tanya%2Fbeli%20Oli%20Mesin%20Federal%20Matic%200.8L"
-                 class="btn-wa" target="_blank" rel="noopener" data-requires-login>
-                <img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />
-                <span>Tanya / Beli via WA</span>
-              </a>
-            </div>
-          </article>
-
-          <article class="product-card" data-category="oli">
-            <div class="product-card__media">
-              <span class="product-card__tag">Oli</span>
-              <img src="assets/icons/package-gray.svg" alt="" width="48" height="48" />
-            </div>
-            <div class="product-card__body">
-              <h3 class="product-card__name">Oli Mesin Federal Matic 0.8L</h3>
-              <p class="product-card__price">Rp 45.000</p>
-              <span class="stock stock--ready">Stok Tersedia</span>
-              <a href="https://wa.me/6281234567890?text=Halo%20Admin%2C%20saya%20ingin%20tanya%2Fbeli%20Oli%20Mesin%20Federal%20Matic%200.8L"
-                 class="btn-wa" target="_blank" rel="noopener" data-requires-login>
-                <img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />
-                <span>Tanya / Beli via WA</span>
-              </a>
-            </div>
-          </article>
-
+        <!-- Diisi secara dinamis oleh js/katalog.js -->
+        <div class="product-grid" aria-live="polite" aria-busy="true">
+          <p class="catalog-loading">Memuat produk...</p>
         </div>
+
       </div>
     </section>
 

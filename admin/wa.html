@@ -21,34 +21,58 @@
       <div class="page-head page-head--spaced">
         <div>
           <h1 class="page-title">Config Akun WA</h1>
-          <p class="page-subtitle">Nomor WhatsApp penerima pesanan &amp; invoice otomatis</p>
+          <p class="page-subtitle">Nomor WhatsApp penerima pesanan, invoice, dan panggilan montir</p>
         </div>
       </div>
 
       <div class="wa-layout">
 
-        <!-- Form konfigurasi -->
         <form class="panel" id="wa-form" novalidate>
+
           <div class="form-field form-field--first">
             <label class="form-field__label" for="wa-nomor">Nomor WhatsApp Admin</label>
-            <input class="form-input" id="wa-nomor" name="nomor" type="tel" inputmode="tel" value="081234567890" placeholder="Contoh: 081234567890" autocomplete="off" required />
+            <input class="form-input" id="wa-nomor" name="nomor" type="tel" inputmode="tel"
+                   placeholder="Contoh: 6289532620002" autocomplete="off" required />
             <p class="form-field__error" id="wa-nomor-error" hidden></p>
           </div>
 
           <div class="form-field">
             <label class="form-field__label" for="wa-nama">Nama Penerima</label>
-            <input class="form-input" id="wa-nama" name="nama" type="text" value="Admin Sumber Lancar" maxlength="60" autocomplete="off" required />
+            <input class="form-input" id="wa-nama" name="nama" type="text"
+                   maxlength="60" autocomplete="off" required />
             <p class="form-field__error" id="wa-nama-error" hidden></p>
           </div>
 
           <div class="form-field">
-            <label class="form-field__label" for="wa-format">Format Invoice</label>
-            <textarea class="form-input form-input--textarea" id="wa-format" name="format" rows="5" aria-describedby="wa-format-hint" required>Halo Admin, saya ingin memesan:
+            <label class="form-field__label" for="wa-format">Format Pesan Pesanan</label>
+            <textarea class="form-input form-input--textarea" id="wa-format"
+                      name="format" rows="5"
+                      aria-describedby="wa-format-hint" required>Halo Admin, saya ingin memesan:
 {items}
 Total: {total}
 No. Invoice: {invoice}</textarea>
-            <p class="form-field__hint" id="wa-format-hint">Placeholder yang dapat dipakai: <code>{items}</code> <code>{total}</code> <code>{invoice}</code></p>
+            <p class="form-field__hint" id="wa-format-hint">
+              Placeholder: <code>{items}</code> <code>{total}</code> <code>{invoice}</code>
+            </p>
             <p class="form-field__error" id="wa-format-error" hidden></p>
+          </div>
+
+          <div class="form-field">
+            <label class="form-field__label" for="wa-format-panggilan">Format Pesan Panggilan Montir</label>
+            <textarea class="form-input form-input--textarea" id="wa-format-panggilan"
+                      name="format_panggilan" rows="7"
+                      aria-describedby="wa-format-panggilan-hint" required>Halo Admin Sumber Lancar, saya ingin memanggil montir:
+
+Nama: {nama}
+Lokasi: {alamat}
+Jenis Motor: {motor}
+Keluhan: {keluhan}
+
+Mohon segera dibantu. Terima kasih.</textarea>
+            <p class="form-field__hint" id="wa-format-panggilan-hint">
+              Placeholder: <code>{nama}</code> <code>{alamat}</code> <code>{motor}</code> <code>{keluhan}</code>
+            </p>
+            <p class="form-field__error" id="wa-format_panggilan-error" hidden></p>
           </div>
 
           <div class="form-actions">
@@ -58,17 +82,26 @@ No. Invoice: {invoice}</textarea>
           <p class="form-status" id="wa-status" role="status" hidden></p>
         </form>
 
-        <!-- Pratinjau pesan (diperbarui otomatis oleh js/wa.js) -->
-        <section class="panel" aria-labelledby="wa-preview-title">
-          <h2 class="form-field__label" id="wa-preview-title">Pratinjau Pesan</h2>
+        <div class="wa-previews">
 
-          <div class="wa-preview">
-            <p class="wa-preview__to" id="wa-preview-to"></p>
-            <div class="wa-bubble" id="wa-preview-body" aria-live="polite"></div>
-          </div>
+          <section class="panel" aria-labelledby="wa-preview-title">
+            <h2 class="form-field__label" id="wa-preview-title">Pratinjau Pesan Pesanan</h2>
+            <div class="wa-preview">
+              <p class="wa-preview__to" id="wa-preview-to"></p>
+              <div class="wa-bubble" id="wa-preview-body" aria-live="polite"></div>
+            </div>
+            <p class="wa-preview__note">Pratinjau memakai data contoh (INV-1024).</p>
+          </section>
 
-          <p class="wa-preview__note">Pratinjau memakai data contoh (INV-1024). Pesan asli diisi dari pesanan client.</p>
-        </section>
+          <section class="panel" aria-labelledby="wa-preview-panggil-title">
+            <h2 class="form-field__label" id="wa-preview-panggil-title">Pratinjau Pesan Panggilan Montir</h2>
+            <div class="wa-preview">
+              <div class="wa-bubble" id="wa-preview-panggil-body" aria-live="polite"></div>
+            </div>
+            <p class="wa-preview__note">Pratinjau memakai data contoh pelanggan.</p>
+          </section>
+
+        </div>
 
       </div>
     </div>
