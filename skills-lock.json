@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "skills": {
+    "blink-ai": {
+      "source": "blink-new/blink-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/blink-ai/SKILL.md",
+      "computedHash": "f52e1f20d54f6e6aa676b70843b07f26b38e8247ae2dbb9a5fc6dbef4d663272"
+    },
+    "blink-auth": {
+      "source": "blink-new/blink-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/blink-auth/SKILL.md",
+      "computedHash": "e9fc5a2804bc122eeb7a2e18c175a487c16ab546724c9d6435c61783d1ffc35e"
+    },
+    "blink-backend": {
+      "source": "blink-new/blink-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/blink-backend/SKILL.md",
+      "computedHash": "8358f63df7e71937568bb72087b76cef83d4faa994258e1f29616a9be832ff24"
+    },
+    "blink-connectors": {
+      "source": "blink-new/blink-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/blink-connectors/SKILL.md",
+      "computedHash": "0e87405ae2ca27c3b3524f898e3958e704f42aa86ddbfd67d8ecbe8af45d94e5"
+    },
+    "blink-database": {
+      "source": "blink-new/blink-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/blink-database/SKILL.md",
+      "computedHash": "1a69a216464332fca71426f877a5b73c2b1c9433c261f8cc74ccdaf187d8200e"
+    },
+    "blink-deploy": {
+      "source": "blink-new/blink-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/blink-deploy/SKILL.md",
+      "computedHash": "0766fb18f21c810f2745e22630655d50e93a5d35b6d38027405db246ffdd107c"
+    },
+    "blink-domains": {
+      "source": "blink-new/blink-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/blink-domains/SKILL.md",
+      "computedHash": "69f8cb6ddc7c2976ed20bcdb3a2a72a88db3353ea60389418a345b4ae8d1da46"
+    },
+    "blink-full-stack": {
+      "source": "blink-new/blink-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/blink-full-stack/SKILL.md",
+      "computedHash": "17a4022da0935b2705c70db3a20b9f4754f25dd74db4e29ad614631a0781b3c7"
+    },
+    "blink-github": {
+      "source": "blink-new/blink-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/blink-github/SKILL.md",
+      "computedHash": "d434c1842b3e1170ddd3b80633d3af4a5357aa5e9a37f6795b9a58d5422a2e6c"
+    },
+    "blink-realtime": {
+      "source": "blink-new/blink-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/blink-realtime/SKILL.md",
+      "computedHash": "25086b74adb1515ed3e0db0e58333543f2855063681652e1d77687ef4e69521c"
+    },
+    "blink-storage": {
+      "source": "blink-new/blink-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/blink-storage/SKILL.md",
+      "computedHash": "b89e40efdd88c37b3b985021e103f3e5d1b2e875735a453b5f9ac91339bcabc8"
+    }
+  }
+}

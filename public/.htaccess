@@ -1,0 +1,4 @@
+# Apache: arahkan semua permintaan yang bukan file ke index.php
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [QSA,L]

@@ -1,0 +1,270 @@
+/* ==========================================================================
+   responsive.css - aturan responsif untuk header client dan halaman katalog
+   Dimuat SETELAH css/style.css (menimpa ukuran tetap bawaan Figma).
+   Titik patah: 900px (header), 640px (2 kolom), 340px (1 kolom).
+   Untuk halaman client lain, cukup tambahkan <link> ke berkas ini.
+   ========================================================================== */
+
+/* ---------- Header client ---------- */
+@media (max-width: 900px) {
+  .site-header {
+    height: auto;
+    padding: 10px 0;
+  }
+
+  .site-header__inner {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .site-header .header-auth {
+    order: 2;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .site-header .header-user {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Menu turun ke baris sendiri dan bisa digeser mendatar */
+  .site-header .nav-links {
+    order: 3;
+    flex: 0 0 100%;
+    margin: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .site-header .nav-link {
+    flex: none;
+    white-space: nowrap;
+  }
+}
+
+/* ---------- Banner "CATALOG": skala mengikuti lebar layar ----------
+   Posisi px dari Figma diubah ke persen terhadap kotak 1152 x 482.6. */
+.banner {
+  height: auto;
+}
+
+.banner__inner {
+  width: 100%;
+  max-width: 1152px;
+  height: 0;
+  padding-bottom: 41.89%;           /* 482.6 / 1152 */
+}
+
+.banner__title {
+  left: 1.5625%;                    /* 18 / 1152 */
+  top: 9.01%;                       /* 43.5 / 482.6 */
+  width: 96.875%;                   /* 1116 / 1152 */
+  height: auto;
+}
+
+.banner__bike {
+  left: 25%;                        /* 288 / 1152 */
+  top: 28.07%;                      /* 135.5 / 482.6 */
+  width: 50%;                       /* 576 / 1152 */
+  height: 71.6%;                    /* 345.6 / 482.6 */
+  font-size: clamp(9px, 1.4vw, 14px);
+  line-height: 1.4;
+  border-radius: clamp(8px, 1.4vw, 16px) clamp(8px, 1.4vw, 16px) 0 0;
+}
+
+.banner__bike img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ---------- Katalog ---------- */
+.product-grid {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));   /* desktop = 4 kolom */
+}
+
+.product-card {
+  height: auto;
+  min-height: 0;
+}
+
+.product-card__brand {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-text-secondary);
+}
+
+.product-card__body .btn-wa {
+  margin-top: auto;                 /* tombol selalu di dasar kartu */
+}
+
+.product-card__body .stock {
+  margin-bottom: 12px;
+}
+
+/* Label stok */
+.stock--low {
+  color: #8a5a00;
+  background: rgba(237, 180, 23, 0.22);
+}
+
+.stock--out {
+  color: #b3261e;
+  background: rgba(179, 38, 30, 0.12);
+}
+
+.btn-wa--disabled {
+  color: var(--color-text-secondary);
+  background: #d9dce0;
+  cursor: not-allowed;
+}
+
+.btn-wa--disabled:hover {
+  filter: none;
+}
+
+/* Info jumlah, pesan kosong/galat, tombol muat lebih banyak */
+.catalog__meta {
+  margin: 16px 0 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--color-text-secondary);
+}
+
+.catalog__state {
+  margin: 32px 0;
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--color-text-secondary);
+  background: var(--color-card);
+  border: 1px dashed var(--color-border);
+  border-radius: 8px;
+}
+
+.catalog__state p {
+  margin: 0 0 12px;
+}
+
+.catalog__state p:last-child {
+  margin-bottom: 0;
+}
+
+.catalog__more {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.btn-more {
+  min-height: 44px;                 /* sasaran sentuh nyaman di HP */
+  padding: 0 24px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--color-dark);
+  background: var(--color-card);
+  border: 1px solid var(--color-dark);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-more:hover:not(:disabled) {
+  color: var(--color-text-light);
+  background: var(--color-dark);
+}
+
+.btn-more:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* Kerangka loading */
+.product-card--skeleton .product-card__media,
+.sk-line {
+  background: linear-gradient(90deg, #e9ebee 25%, #f4f5f7 37%, #e9ebee 63%);
+  background-size: 400% 100%;
+  animation: sl-shimmer 1.4s ease infinite;
+}
+
+.sk-line {
+  display: block;
+  width: 70%;
+  height: 12px;
+  margin-top: 10px;
+  border-radius: 4px;
+}
+
+.sk-line--wide { width: 90%; }
+.sk-line--short { width: 40%; }
+
+@keyframes sl-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-card--skeleton .product-card__media,
+  .sk-line {
+    animation: none;
+  }
+}
+
+/* Tablet & HP: 2 kolom, kartu lebih ringkas */
+@media (max-width: 640px) {
+  .catalog {
+    padding: 24px 0 32px;
+  }
+
+  .search__input {
+    height: 48px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .search__icon {
+    top: 14px;
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .product-card__tag {
+    font-size: 16px;
+    line-height: 20px;
+  }
+
+  .product-card__body {
+    padding: 10px;
+  }
+
+  .product-card__name {
+    font-size: 13px;
+    line-height: 16px;
+  }
+
+  .product-card__price {
+    font-size: 18px;
+    line-height: 22px;
+  }
+
+  .btn-wa {
+    height: 38px;
+    font-size: 11px;
+  }
+}
+
+/* Layar sangat sempit: 1 kolom */
+@media (max-width: 340px) {
+  .product-grid {
+    grid-template-columns: 1fr;
+  }
+}

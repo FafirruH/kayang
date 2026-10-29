@@ -1,0 +1,214 @@
+/* ==========================================================================
+   stok.css - tambahan halaman Stok (tabel dinamis, filter, pager, badge, form)
+   Dimuat SETELAH css/admin.css. Tabel jadi kartu di <= 768px (aturan .data-table--stack).
+   ========================================================================== */
+
+/* ---------- Filter ---------- */
+.toolbar--filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.toolbar__field {
+  flex: 0 1 180px;
+  min-width: 0;
+}
+
+.toolbar__field--grow {
+  flex: 1 1 260px;
+}
+
+.toolbar--filters .search-input {
+  max-width: none;
+}
+
+.search-input option {
+  color: #161b20;
+  background: #fff;
+}
+
+.list-meta {
+  min-height: 20px;
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--color-text-light-muted);
+}
+
+/* ---------- Tabel ---------- */
+.item-name__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.item-name__code {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-text-light-muted);
+}
+
+.data-table tr.is-inactive {
+  opacity: 0.6;
+}
+
+.btn--small {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+/* Badge status stok */
+.badge--stock-ok {
+  color: var(--status-done);
+  background: var(--status-done-bg);
+}
+
+.badge--stock-low {
+  color: var(--status-pending);
+  background: var(--status-pending-bg);
+}
+
+.badge--stock-out {
+  color: #ff6b61;
+  background: rgba(255, 107, 97, 0.15);
+}
+
+.badge--inactive {
+  margin-left: 6px;
+  color: var(--color-text-light-muted);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ---------- Pager & toast ---------- */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.pager__info {
+  font-size: 14px;
+  color: var(--color-text-light-muted);
+}
+
+.pager .btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 50;
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 10px 16px;
+  font-size: 14px;
+  line-height: 20px;
+  color: #fff;
+  background: #1f7a3d;
+  border-radius: var(--radius-sm);
+  transform: translateX(-50%);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.toast--error {
+  background: #b3261e;
+}
+
+/* ---------- Responsif ---------- */
+@media (max-width: 768px) {
+  .toolbar__field,
+  .toolbar__field--grow {
+    flex: 1 1 calc(50% - 6px);
+  }
+
+  .toolbar__field--grow {
+    flex-basis: 100%;
+  }
+
+  .data-table--stack td[data-label="Nama Barang"] {
+    padding-bottom: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .toolbar__field {
+    flex-basis: 100%;
+  }
+
+  .pager {
+    gap: 8px;
+  }
+}
+
+/* ---------- Form tambah/edit & penyesuaian stok ---------- */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 480px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+select.form-input {
+  padding-right: 12px;
+  background-image: none;
+}
+
+.form-input[readonly] {
+  color: #5d646c;
+  background: #e6e7ec;
+  cursor: not-allowed;
+}
+
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 14px;
+  color: #000;
+}
+
+.form-status--error {
+  color: #b3261e;
+  background: rgba(179, 38, 30, 0.12);
+}
+
+.stock-info {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 20px;
+  color: #161b20;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: var(--radius-sm);
+}
+
+.form-card + .form-card {
+  margin-top: 16px;
+}
+
+.form-page {
+  flex-direction: column;
+  align-items: center;
+}
+
+@media (max-width: 480px) {
+  .form-page {
+    padding-top: 32px;
+    padding-bottom: 48px;
+  }
+}
