@@ -11,20 +11,28 @@
       </span>
     </a>
 
-    <nav class="nav-links" aria-label="Navigasi utama">
-      <a href="index.html"    class="nav-link" data-nav="beranda">Beranda</a>
-      <a href="katalog.html"  class="nav-link" data-nav="katalog">Katalog</a>
-      <a href="panggilan.html" class="nav-link" data-nav="panggilan">Panggil Montir</a>
-      <!-- Keranjang butuh login: diarahkan ke halaman login oleh js/include.js -->
-      <a href="keranjang.html" class="nav-link" data-nav="keranjang" data-requires-login data-client-only>Keranjang</a>
-    </nav>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Buka menu">
+      <span class="nav-toggle__bar"></span>
+      <span class="nav-toggle__bar"></span>
+      <span class="nav-toggle__bar"></span>
+    </button>
 
-    <!-- Status akun diatur js/include.js: belum login = Login; sudah login = nama + (Dashboard Admin) + Logout -->
-    <div class="header-auth">
-      <a href="login.html" class="btn-login" data-auth-login>Login</a>
-      <span class="header-user" data-auth-user hidden></span>
-      <a href="admin/index.html" class="btn-login" data-auth-admin hidden>Dashboard Admin</a>
-      <button type="button" class="btn-login" data-logout data-auth-logout hidden>Logout</button>
+    <div class="site-nav" id="site-nav">
+      <nav class="nav-links" aria-label="Navigasi utama">
+        <a href="index.html"    class="nav-link" data-nav="beranda">Beranda</a>
+        <a href="katalog.html"  class="nav-link" data-nav="katalog">Katalog</a>
+        <a href="panggilan.html" class="nav-link" data-nav="panggilan">Panggil Montir</a>
+        <!-- Keranjang butuh login: diarahkan ke halaman login oleh js/include.js -->
+        <a href="keranjang.html" class="nav-link" data-nav="keranjang" data-requires-login data-client-only>Keranjang</a>
+      </nav>
+
+      <!-- Status akun diatur js/include.js -->
+      <div class="header-auth">
+        <a href="login.html" class="btn-login" data-auth-login>Login</a>
+        <span class="header-user" data-auth-user hidden></span>
+        <a href="admin/index.html" class="btn-login" data-auth-admin hidden>Dashboard Admin</a>
+        <button type="button" class="btn-login" data-logout data-auth-logout hidden>Logout</button>
+      </div>
     </div>
 
   </div>

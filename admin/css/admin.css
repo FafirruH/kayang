@@ -162,16 +162,6 @@ table {
 }
 
 /* Hormati pengguna yang mematikan animasi */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
 
 /* ---------- Layout dasar ---------- */
 .container {
@@ -454,51 +444,6 @@ main {
 }
 
 /* Layar kecil: menu jadi panel yang turun dari header */
-@media (max-width: 1024px) {
-  .nav-toggle {
-    display: flex;
-  }
-
-  .site-nav {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    margin-left: 0;
-    padding: 8px var(--container-padding) 16px;
-    background: var(--color-dark);
-    border-top: 1px solid var(--color-border-dark);
-    box-shadow: 0 16px 24px rgba(0, 0, 0, 0.25);
-  }
-
-  .site-nav.is-open {
-    display: flex;
-  }
-
-  .nav-links {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .nav-link {
-    height: 44px;
-    padding: 0 12px;
-  }
-
-  .btn-logout {
-    height: 44px;
-  }
-}
-
-@media (max-width: 480px) {
-  .brand__tagline {
-    display: none;
-  }
-}
 
 /* ==========================================================================
    Tahap 2 - Footer Admin
@@ -707,87 +652,8 @@ main {
 }
 
 /* ---------- Responsif beranda ---------- */
-@media (max-width: 1024px) {
-  .stat-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
 
 /* Tabel jadi kartu per baris di layar kecil */
-@media (max-width: 768px) {
-  .admin-hero {
-    padding: 40px 0;
-  }
-
-  .data-table--stack thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-  }
-
-  .data-table--stack,
-  .data-table--stack tbody,
-  .data-table--stack tr,
-  .data-table--stack td {
-    display: block;
-  }
-
-  .data-table--stack tr {
-    padding: 8px 16px;
-    border-bottom: 1px solid var(--tbl-border);
-  }
-
-  .data-table--stack tbody tr:last-child {
-    border-bottom: 0;
-  }
-
-  .data-table--stack td {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 8px 0;
-    border-bottom: 0;
-  }
-
-  .data-table--stack td::before {
-    content: attr(data-label);
-    flex: none;
-    font-size: 12px;
-    line-height: 16px;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-  }
-
-  .data-table--stack .data-table__empty td::before {
-    display: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .admin-hero__actions .btn {
-    width: 100%;
-  }
-
-  .stat-card {
-    padding: 16px;
-  }
-
-  .stat-card__value {
-    font-size: 26px;
-    line-height: 32px;
-    white-space: nowrap;
-  }
-}
-
-@media (max-width: 360px) {
-  .stat-grid {
-    grid-template-columns: 1fr;
-  }
-}
 
 /* ==========================================================================
    Tahap 4 - Stok sparepart (halaman gelap) + form tambah/edit barang
@@ -1021,44 +887,6 @@ body.page-dark {
 }
 
 /* ---------- Responsif stok & form ---------- */
-@media (max-width: 768px) {
-  .page-head {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .page-head .btn {
-    align-self: flex-start;
-  }
-
-  .search-input {
-    max-width: none;
-  }
-
-  .data-table__actions {
-    width: auto;
-  }
-
-  /* Di kartu mobile, foto barang disembunyikan agar nama tidak sempit */
-  .item-name__thumb {
-    display: none;
-  }
-
-  .form-page {
-    padding-top: 32px;
-    padding-bottom: 48px;
-  }
-}
-
-@media (max-width: 480px) {
-  .form-card {
-    padding: 20px 16px 24px;
-  }
-
-  .form-actions .btn {
-    width: 100%;
-  }
-}
 
 /* ==========================================================================
    Tahap 5 - Track pesanan: kartu pesanan + tombol ubah status
@@ -1180,33 +1008,6 @@ body.page-dark {
   background: var(--color-primary);
 }
 
-@media (max-width: 768px) {
-  .order-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 480px) {
-  .order-card {
-    padding: 16px;
-  }
-
-  .order-card__foot {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .status-group {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
-  }
-
-  .status-btn {
-    height: 36px;
-  }
-}
-
 /* ==========================================================================
    Tahap 6 - Daftar akun: filter role, dropdown role, badge Server
    ========================================================================== */
@@ -1314,17 +1115,6 @@ body.page-dark {
 
 .icon-btn:disabled:hover {
   background: transparent;
-}
-
-@media (max-width: 768px) {
-  .segmented {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .segmented__btn {
-    height: 32px;
-  }
 }
 
 /* ==========================================================================
@@ -1438,18 +1228,6 @@ body.page-dark {
   color: var(--color-text-muted);
 }
 
-@media (max-width: 900px) {
-  .wa-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 480px) {
-  .panel {
-    padding: 20px 16px;
-  }
-}
-
 /* ==========================================================================
    Tahap 8 - Penjaga halaman + pemberitahuan akses
    (login admin kini memakai ../login.html bersama)
@@ -1547,10 +1325,4 @@ body:not(.page-dark) .page-subtitle,
 /* Pastikan kolom kiri (form) tetap bisa scroll sendiri di layar pendek */
 .wa-layout {
   align-items: start;
-}
-
-@media (max-width: 900px) {
-  .wa-previews {
-    flex-direction: column;
-  }
 }
