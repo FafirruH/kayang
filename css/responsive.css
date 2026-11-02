@@ -216,6 +216,7 @@ main { min-width: 0; }
 .site-footer { position: relative; height: auto !important; min-height: var(--footer-height); }
 .site-footer .btn-emergency { position: static !important; inset: auto !important; transform: none !important; }
 
+
 /* Header client memakai geometri container yang sama dengan header admin.
    Lebar konten halaman tetap mengikuti --container-width milik client; aturan
    ini hanya menyeragamkan area header agar tepi kiri/kanannya konsisten. */
