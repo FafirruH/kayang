@@ -1,7 +1,6 @@
-# Konfigurasi lokal (berisi kredensial DB — jangan di-commit)
-config.local.php
+# Konfigurasi lokal (dapat berisi kredensial DB — jangan di-commit)
+/config.local.php
 config.local/
-config.php
 
 # Dependency Python (jika ada)
 .venv/
@@ -34,7 +33,10 @@ yarn-error.log*
 /storage/
 /tmp/
 
-# Database dump — jangan commit data production
+# Konfigurasi runtime API (dibuat saat aplikasi dijalankan)
+/api/config.json
+
+# Dump dan skrip database — dapat berisi data production atau perintah destruktif
 *.sql
 *.sqlite
 *.sqlite3
