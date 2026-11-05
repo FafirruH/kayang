@@ -1,9 +1,63 @@
 # Konfigurasi lokal (berisi kredensial DB — jangan di-commit)
 config.local.php
+config.local/
 config.php
 
 # Dependency Python (jika ada)
 .venv/
+
+# Agent & IDE config
+.agent/
+.agent
+.claude/
+.claude
+.config/
+.config
+skills-lock
+
+# Environment variables (berisi API key, secret, dll)
+.env
+.env.*
+.env.local
+.env.*.local
+
+# PHP dependencies
+/vendor/
+
+# Node dependencies (jika ada tooling JS)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Upload & storage (file yang diupload user)
+/uploads/
+/storage/
+/tmp/
+
+# Database dump — jangan commit data production
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+
+# IDE & editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# Backup & temp
+*.bak
+*.tmp
+*.swp
+*~
+*.orig
+
+# PHP session & cache
+/cache/
+/sessions/
+*.cache
 
 # Cache & log
 *.log
@@ -12,3 +66,4 @@ config.php
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
