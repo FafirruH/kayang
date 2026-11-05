@@ -1,244 +1,419 @@
-# Sumber Lancar - Sistem Bengkel Online
+# Sumber Lancar — Sistem Bengkel Online
 
-Website bengkel (client + admin) dengan **satu halaman login, satu sesi, dan akses berdasarkan role**.
-Dibangun dengan HTML, CSS, JavaScript, dan **backend native PHP + PostgreSQL**. Tanpa framework, tanpa build tool.
+Aplikasi web untuk toko sparepart dan bengkel motor. Pelanggan bisa cek katalog, pesan via WhatsApp, dan memanggil montir. Admin mengelola stok, transaksi, dan akun dari panel admin.
 
-> **PERINGATAN KEAMANAN (prototipe)**
-> Login, penyimpanan password, sesi, dan hak akses di versi ini hanya **simulasi frontend**.
-> Akun dan password disimpan apa adanya di `localStorage`, dan pengguna bisa melihat atau mengubahnya
-> lewat browser. Pengalihan berdasarkan role hanya mengatur tampilan, bukan perlindungan sungguhan.
-> **Jangan dipakai untuk akun atau data produksi.** Keamanan nyata membutuhkan backend
-> (sesi/token, hash password, dan pemeriksaan role di server).
+---
+
+## Daftar Isi
+
+- [Fitur](#fitur)
+- [Struktur Proyek](#struktur-proyek)
+- [Prasyarat](#prasyarat)
+- [Instalasi](#instalasi)
+- [Konfigurasi](#konfigurasi)
+- [Menjalankan Aplikasi](#menjalankan-aplikasi)
+- [Endpoint API](#endpoint-api)
+- [Halaman Frontend](#halaman-frontend)
+- [Akun Demo](#akun-demo)
+- [Kategori Barang](#kategori-barang)
+- [Alur Checkout](#alur-checkout)
+- [Arsitektur Frontend](#arsitektur-frontend)
+
+---
+
+## Fitur
+
+**Client (Pelanggan)**
+- Katalog sparepart dengan filter kategori dan pencarian
+- Tambah ke keranjang (localStorage), atur jumlah, hapus item
+- Voucher diskon (kode `DISKON5000`)
+- Checkout → pesanan tersimpan ke database → pesan otomatis dikirim ke WhatsApp admin
+- Form panggil montir → link WhatsApp dengan detail lokasi dan keluhan
+
+**Admin**
+- Dashboard: statistik pendapatan, pesanan pending, stok kritis, pelanggan
+- Manajemen stok: tambah, edit, nonaktifkan barang
+- Manajemen transaksi: filter, sort, selesaikan/batalkan, buat penjualan baru
+- Kartu stok: riwayat keluar-masuk per barang
+- Manajemen akun: tambah, edit role/WA/nama, aktifkan/nonaktifkan
+- Konfigurasi WhatsApp: nomor dan format pesan pesanan & panggilan montir
+- DataTable: search, sort kolom, pagination di semua tabel
+
+---
+
+## Struktur Proyek
+
+```
+kayang/
+├── admin/                  # Halaman admin
+│   ├── css/
+│   │   ├── admin.css       # Style admin
+│   │   └── responsive.css  # Responsive admin
+│   ├── js/
+│   │   ├── datatable.js    # Utility DataTable (search, sort, pagination)
+│   │   ├── index.js        # Dashboard
+│   │   ├── stok.js         # Halaman stok
+│   │   ├── stok-form.js    # Form tambah/edit barang
+│   │   ├── transaksi.js    # Halaman transaksi & kartu stok
+│   │   ├── akun.js         # Halaman daftar akun
+│   │   └── wa.js           # Konfigurasi WhatsApp
+│   ├── partials/
+│   │   ├── header.html     # Header admin
+│   │   └── footer.html     # Footer admin
+│   ├── index.html          # Dashboard
+│   ├── stok.html           # Daftar stok
+│   ├── stok-form.html      # Form tambah/edit barang
+│   ├── transaksi.html      # Manajemen transaksi
+│   ├── akun.html           # Daftar akun
+│   └── wa.html             # Konfigurasi WA
+│
+├── api/
+│   └── config.php          # API konfigurasi WA (GET/POST)
+│
+├── assets/
+│   └── icons/              # Ikon SVG
+│
+├── css/
+│   ├── style.css           # Style client
+│   └── responsive.css      # Responsive client
+│
+├── js/
+│   ├── config.js           # Konfigurasi frontend (API_BASE, WA_NUMBER, dll)
+│   ├── api.js              # HTTP client (SLApi) → semua request ke backend
+│   ├── auth.js             # Autentikasi frontend (SLAuth)
+│   ├── auth-pages.js       # Logic form login & register
+│   ├── include.js          # Load partials, kontrol akses, nav toggle
+│   ├── cart.js             # Keranjang belanja (SLCart, localStorage)
+│   ├── katalog.js          # Halaman katalog
+│   ├── keranjang.js        # Halaman keranjang & checkout
+│   └── panggilan.js        # Form panggil montir
+│
+├── partials/
+│   ├── header.html         # Header client
+│   └── footer.html         # Footer client
+│
+├── src/                    # Backend PHP
+│   ├── Controllers/
+│   │   ├── Admin/
+│   │   │   ├── ProductController.php
+│   │   │   ├── TransactionController.php
+│   │   │   ├── UserController.php
+│   │   │   ├── ReportController.php
+│   │   │   └── SupplierController.php
+│   │   ├── AuthController.php
+│   │   ├── CatalogController.php
+│   │   └── OrderController.php
+│   ├── Auth.php
+│   ├── Config.php
+│   ├── Db.php
+│   ├── Http.php
+│   ├── HttpException.php
+│   ├── Input.php
+│   ├── Jenis.php
+│   ├── Kernel.php
+│   ├── ProductFilter.php
+│   ├── RateLimiter.php
+│   ├── Router.php
+│   ├── Transactions.php
+│   ├── Wa.php
+│   ├── bootstrap.php
+│   └── routes.php
+│
+├── public/
+│   └── index.php           # Entry point backend (semua /api/* masuk sini)
+│
+├── index.html              # Beranda client
+├── katalog.html            # Katalog sparepart
+├── keranjang.html          # Keranjang belanja
+├── login.html              # Halaman login
+├── register.html           # Halaman register
+├── panggilan.html          # Form panggil montir
+├── config.php              # Konfigurasi backend (baca env / config.local.php)
+├── config.local.php        # Override lokal (kredensial DB — jangan di-commit)
+└── .gitignore
+```
 
 ---
 
 ## Prasyarat
 
-| Kebutuhan | Versi minimal |
-|---|---|
-| [Laragon](https://laragon.org) (atau XAMPP/WAMP) | — |
+| Kebutuhan | Versi |
+|-----------|-------|
 | PHP | 8.1+ |
-| PostgreSQL | 13+ |
-| pgAdmin / psql | — |
+| PostgreSQL | 14+ |
+| Web server | Apache (Laragon) atau Nginx |
+| Browser | Chrome/Firefox/Edge terbaru |
 
 ---
 
-## Setup Database
+## Instalasi
 
-1. Buat database baru di pgAdmin atau psql:
-   ```sql
-   CREATE DATABASE bengkel;
-   ```
-
-2. Jalankan seluruh isi `sql/bengkel.sql` ke database tersebut.  
-   Di psql:
-   ```
-   psql -U postgres -d bengkel -f sql/bengkel.sql
-   ```
-
-3. Sesuaikan kredensial di `api/db.php`:
-   ```php
-   define('DB_NAME', 'bengkel');   // nama database
-   define('DB_USER', 'postgres');  // user PostgreSQL
-   define('DB_PASS', 'postgres');  // password PostgreSQL
-   ```
-
----
-
-## Menjalankan
-
-Letakkan folder project di `C:\laragon\www\kayang\`, lalu buka:
+**1. Clone / salin proyek ke folder Laragon**
 
 ```
-http://localhost/kayang/
+C:\laragon\www\kayang\
 ```
 
-> `fetch()` untuk header/footer tidak jalan lewat `file://`. Wajib lewat web server.
+**2. Buat database PostgreSQL**
 
----
-
-## Akun untuk pengujian
-
-| Peran | Username | Password |
-|---|---|---|
-| **Admin** | `admin` | `admin123` |
-| **Client** | buat via `register.html` | — |
-
-- Akun admin juga tersimpan di tabel `users` database (username `admin`, role `ADMIN`).
-- Akun demo Budi, Siti, dst. hanya data di database, belum tersambung ke login frontend.
-- Untuk reset data frontend: hapus key `sl_accounts_v1` dan `sl_auth_session_v1` di localStorage browser.
-
----
-
-## Cara kerja login dan role
-
-1. `login.html` menerima username/email dan password. Tidak ada pilihan role.
-2. `js/auth.js` mencocokkan dengan daftar akun (`sl_accounts_v1`) lalu menyimpan satu sesi
-   `{ username, role }` di `sl_auth_session_v1`.
-3. Role `admin` diarahkan ke `admin/index.html`, role `client` ke `index.html`.
-4. Registrasi selalu membuat role `client`. Hanya admin yang bisa mengubah role di `admin/akun.html`.
-5. Role dibaca ulang dari data akun setiap kali halaman dibuka.
-6. Parameter `next` hanya menerima halaman internal. URL luar ditolak.
-
-Aturan akses per halaman diatur lewat `<body data-auth="...">` dan diperiksa `js/include.js`:
-
-| Halaman | `data-auth` | Siapa yang boleh |
-|---|---|---|
-| `index`, `katalog`, `panggilan` | (tidak ada) | semua orang |
-| `keranjang` | `client` | client yang sudah login |
-| `admin/*` | `admin` | admin yang sudah login |
-
----
-
-## API Backend (PHP)
-
-Semua endpoint ada di folder `api/`. Mengembalikan JSON `{ ok, data }` atau `{ ok, message }`.
-
-### `api/db.php`
-Koneksi PDO ke PostgreSQL. Di-include oleh endpoint lain — tidak dipanggil langsung.
-
-### `api/products.php` — Produk / Stok
-
-| Method | URL | Keterangan |
-|---|---|---|
-| GET | `/api/products.php` | Daftar produk aktif (untuk katalog client) |
-| GET | `/api/products.php?all=1` | Semua produk termasuk nonaktif (admin) |
-| GET | `/api/products.php?id=5` | Detail satu produk |
-| GET | `/api/products.php?q=oli&jenis=Oli&page=1` | Filter + pencarian + paginasi |
-| POST | `/api/products.php` | Tambah produk baru |
-| PUT | `/api/products.php?id=5` | Update produk |
-| DELETE | `/api/products.php?id=5` | Soft-delete (set `aktif = FALSE`) |
-
-Body POST/PUT (JSON):
-```json
-{
-  "nama_barang": "Oli Mesin Yamalube 1L",
-  "jenis_barang": "Oli",
-  "harga_jual_default": 55000,
-  "stok": 42,
-  "merk": "Yamalube",
-  "harga_beli_default": 46000,
-  "stok_minimal": 10
-}
+```sql
+CREATE DATABASE bengkel2;
 ```
 
-### `api/config.php` — Konfigurasi WhatsApp
+Jalankan file SQL migrasi (tabel `users`, `products`, `transactions`, `transaction_details`, view `v_stok_barang`, dll).
 
-| Method | URL | Keterangan |
-|---|---|---|
-| GET | `/api/config.php` | Baca config saat ini |
-| POST | `/api/config.php` | Simpan config baru |
+**3. Salin file konfigurasi**
 
-Config disimpan di `api/config.json`. Field yang tersedia:
+```bash
+cp config.local.example.php config.local.php
+```
+
+Edit `config.local.php` sesuai kredensial lokal:
+
+```php
+return [
+    'db' => [
+        'host' => '127.0.0.1',
+        'port' => '5432',
+        'name' => 'bengkel2',
+        'user' => 'postgres',
+        'pass' => 'password_anda',
+    ],
+    'app' => [
+        'debug'     => true,
+        'wa_number' => '6281234567890',
+    ],
+];
+```
+
+**4. Konfigurasi virtual host Apache (Laragon)**
+
+Arahkan `/kayang/public` sebagai document root untuk path `/api/*`, atau gunakan konfigurasi rewrite agar semua request ke `/kayang/public/index.php`.
+
+Contoh `.htaccess` di folder `public/`:
+
+```apache
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [QSA,L]
+```
+
+---
+
+## Konfigurasi
+
+### Frontend (`js/config.js`)
+
+```js
+window.SL_CONFIG = {
+  API_BASE:        "http://localhost/kayang/public",  // URL backend
+  WA_NUMBER:       "6281234567890",                   // Nomor WA admin (fallback)
+  CATALOG_PAGE_SIZE: 12,
+  ADMIN_PAGE_SIZE:   15,
+  REFRESH_MS:      30000  // Auto-refresh dashboard (ms)
+};
+```
+
+### Backend (`config.php` + `config.local.php`)
 
 | Key | Default | Keterangan |
-|---|---|---|
-| `wa_number` | `62895326202002` | Nomor WA penerima (tanpa `+` atau spasi) |
-| `wa_nama` | `Admin Sumber Lancar` | Nama penerima di pratinjau |
-| `format_pesanan` | (template) | Placeholder: `{items}` `{total}` `{invoice}` |
-| `format_panggilan` | (template) | Placeholder: `{nama}` `{alamat}` `{motor}` `{keluhan}` |
+|-----|---------|-----------|
+| `DB_HOST` | `127.0.0.1` | Host PostgreSQL |
+| `DB_PORT` | `5432` | Port PostgreSQL |
+| `DB_NAME` | `bengkel2` | Nama database |
+| `DB_USER` | `postgres` | User database |
+| `DB_PASS` | _(kosong)_ | Password database |
+| `APP_DEBUG` | `0` | Mode debug (1 = aktif) |
+| `WA_NUMBER` | `6281234567890` | Nomor WA admin |
+| `ALLOWED_ORIGINS` | `http://localhost:5500,...` | Origin CORS yang diizinkan |
 
-> Folder `api/` harus bisa ditulis PHP agar `config.json` tersimpan.
-
----
-
-## Fitur yang sudah tersambung ke database
-
-| Fitur | File | Keterangan |
-|---|---|---|
-| Katalog produk | `katalog.html` + `js/katalog.js` | Fetch dari API, filter kategori + search realtime |
-| Stok admin | `admin/stok.html` + `admin/js/stok.js` | Fetch + hapus via API |
-| Form tambah/edit barang | `admin/stok-form.html` + `admin/js/stok-form.js` | Load + simpan via API |
-| Config WA | `admin/wa.html` + `admin/js/wa.js` | Load + simpan via `api/config.php` |
-| Form panggil montir | `panggilan.html` + `js/panggilan.js` | Validasi → buka WA dengan pesan dari config |
-
-## Fitur yang masih simulasi frontend
-
-| Fitur | Keterangan |
-|---|---|
-| Login / registrasi | Masih `localStorage`; belum ke tabel `users` di database |
-| Pesanan | Data contoh; belum tersambung ke tabel `transactions` |
-| Statistik beranda admin | Data contoh; query tersedia di `sql/bengkel.sql` |
-| Keranjang | Tampilan statis |
-| Daftar akun admin | Dari `localStorage`, bukan tabel `users` |
+Nilai bisa diset via environment variable atau `config.local.php`.
 
 ---
 
-## Struktur
+## Menjalankan Aplikasi
+
+**Dengan Laragon:**
+
+1. Start Laragon → Apache + PostgreSQL aktif
+2. Buka browser: `http://localhost/kayang/`
+
+**Frontend saja (Live Server VS Code):**
+
+Buka `index.html` via Live Server (port 5500). Backend tetap jalan di Apache. Pastikan `ALLOWED_ORIGINS` di config mencakup `http://localhost:5500`.
+
+---
+
+## Endpoint API
+
+### Publik
+
+| Method | Endpoint | Keterangan |
+|--------|----------|-----------|
+| GET | `/api/health` | Health check |
+| GET | `/api/products` | Katalog produk aktif |
+| GET | `/api/categories` | Daftar kategori |
+
+### Autentikasi
+
+| Method | Endpoint | Keterangan |
+|--------|----------|-----------|
+| POST | `/api/auth/register` | Daftar akun (role CUSTOMER) |
+| POST | `/api/auth/login` | Login → set cookie sesi |
+| POST | `/api/auth/logout` | Logout |
+| GET | `/api/auth/me` | Data user yang sedang login |
+
+### Pelanggan (butuh login CUSTOMER)
+
+| Method | Endpoint | Keterangan |
+|--------|----------|-----------|
+| POST | `/api/orders` | Buat pesanan baru |
+| GET | `/api/orders` | Daftar pesanan saya |
+| GET | `/api/orders/{id}` | Detail pesanan |
+| POST | `/api/orders/{id}/cancel` | Batalkan pesanan |
+
+### Admin — Barang (butuh login ADMIN/MECHANIC)
+
+| Method | Endpoint | Keterangan |
+|--------|----------|-----------|
+| GET | `/api/admin/products` | Daftar barang |
+| GET | `/api/admin/products/{id}` | Detail barang |
+| POST | `/api/admin/products` | Tambah barang baru |
+| PUT | `/api/admin/products/{id}` | Edit barang |
+| DELETE | `/api/admin/products/{id}` | Nonaktifkan barang |
+| POST | `/api/admin/stock-adjustments` | Koreksi stok |
+
+### Admin — Transaksi
+
+| Method | Endpoint | Keterangan |
+|--------|----------|-----------|
+| GET | `/api/admin/transactions` | Daftar transaksi |
+| GET | `/api/admin/transactions/{id}` | Detail transaksi |
+| POST | `/api/admin/transactions/sales` | Buat penjualan baru |
+| POST | `/api/admin/transactions/purchases` | Buat pembelian baru |
+| PATCH | `/api/admin/transactions/{id}/status` | Update status transaksi |
+
+### Admin — Akun
+
+| Method | Endpoint | Keterangan |
+|--------|----------|-----------|
+| GET | `/api/admin/users` | Daftar akun |
+| POST | `/api/admin/users` | Tambah akun |
+| PATCH | `/api/admin/users/{id}` | Edit akun |
+
+### Admin — Laporan
+
+| Method | Endpoint | Keterangan |
+|--------|----------|-----------|
+| GET | `/api/admin/dashboard` | Data dashboard |
+| GET | `/api/admin/reports/kartu-stok` | Kartu stok per barang |
+| GET | `/api/admin/reports/restock` | Barang perlu restock |
+| GET | `/api/admin/reports/profit` | Laporan laba rugi |
+| GET | `/api/admin/reports/top-products` | Produk terlaris |
+
+---
+
+## Halaman Frontend
+
+### Client
+
+| Halaman | URL | Keterangan |
+|---------|-----|-----------|
+| Beranda | `/index.html` | Hero, menu, tentang, lokasi |
+| Katalog | `/katalog.html` | Daftar produk, filter, cari, keranjang |
+| Keranjang | `/keranjang.html` | Review order, voucher, checkout |
+| Panggil Montir | `/panggilan.html` | Form kirim ke WA |
+| Login | `/login.html` | Form login |
+| Register | `/register.html` | Form daftar akun |
+
+### Admin
+
+| Halaman | URL | Keterangan |
+|---------|-----|-----------|
+| Dashboard | `/admin/index.html` | Statistik, transaksi terbaru, produk terlaris |
+| Stok | `/admin/stok.html` | Tabel stok + search/sort/pagination |
+| Tambah/Edit Barang | `/admin/stok-form.html` | Form barang |
+| Transaksi | `/admin/transaksi.html` | Tabel transaksi + kartu stok |
+| Akun | `/admin/akun.html` | Tabel akun + tambah/edit |
+| Config WA | `/admin/wa.html` | Nomor & format pesan WA |
+
+---
+
+## Akun Demo
+
+| Username | Password | Role |
+|----------|----------|------|
+| `admin` | `admin123` | ADMIN |
+
+> Akun admin demo tidak bisa dihapus atau dinonaktifkan.
+
+---
+
+## Kategori Barang
+
+Kategori barang adalah **enum tetap** yang disimpan di database dan backend (`Jenis::ALL`). Tidak bisa ditambah dari UI — harus diubah di `src/Jenis.php` dan migrasi database.
+
+| Kategori |
+|----------|
+| Oli |
+| Rem |
+| Busi |
+| Ban |
+| Aki |
+| Rantai |
+| Filter |
+
+---
+
+## Alur Checkout
 
 ```
-kayang/
-├── index.html katalog.html keranjang.html panggilan.html   halaman client
-├── login.html register.html                                login & registrasi bersama
-├── _template.html                                          kerangka halaman client baru
-├── assets/icons/                                           ikon client
-├── css/style.css                                           CSS client + login
-├── js/
-│   ├── auth.js          modul autentikasi (akun, sesi, role, redirect aman)
-│   ├── auth-pages.js    form login & register
-│   ├── include.js       header/footer, menu aktif, kontrol akses, logout
-│   ├── katalog.js       render kartu produk dari API, filter, search
-│   └── panggilan.js     validasi form + kirim pesan montir via WhatsApp
-├── partials/            header.html, footer.html (client)
-├── api/
-│   ├── db.php           koneksi PDO PostgreSQL
-│   ├── products.php     REST API produk (GET/POST/PUT/DELETE)
-│   ├── config.php       API konfigurasi WA (GET/POST)
-│   └── config.json      config tersimpan (dibuat otomatis, jangan commit ke git)
-├── sql/
-│   └── bengkel.sql      skema lengkap + data awal PostgreSQL
-└── admin/
-    ├── index.html akun.html pesanan.html stok.html stok-form.html wa.html
-    ├── _template.html   kerangka halaman admin baru
-    ├── css/admin.css
-    ├── js/
-    │   ├── akun.js      daftar akun (frontend)
-    │   ├── index.js     statistik beranda (frontend)
-    │   ├── pesanan.js   daftar pesanan (frontend)
-    │   ├── stok.js      daftar stok dari API
-    │   ├── stok-form.js form tambah/edit barang via API
-    │   └── wa.js        config WA via API + pratinjau ganda
-    ├── assets/          favicon.svg, icons/
-    └── partials/        header.html, footer.html (admin)
+1. Pelanggan tambah barang ke keranjang (localStorage)
+2. Buka keranjang.html → review item, isi voucher (opsional)
+3. Klik "Buat Pesanan"
+4. POST /api/orders → backend catat ke DB, stok ditahan 24 jam
+5. Backend kembalikan no_faktur
+6. Frontend ambil nomor WA & format pesan dari api/config.php
+7. Buka WhatsApp dengan pesan berisi detail pesanan + invoice
+8. Admin konfirmasi pembayaran di panel transaksi → PATCH status → COMPLETED
 ```
 
 ---
 
-## Database — ringkasan skema
+## Arsitektur Frontend
 
-| Tabel | Keterangan |
-|---|---|
-| `users` | Akun (ADMIN, MECHANIC, CUSTOMER) |
-| `suppliers` | Data supplier |
-| `products` | Katalog & stok sparepart |
-| `transactions` | Header transaksi (IN / OUT / ADJ) |
-| `transaction_details` | Baris item per transaksi |
+### JS Global
 
-View utama: `v_stok_barang` (stok tersedia real-time dengan penahan), `v_transaksi_header`, `v_kartu_stok`, `v_laporan_laba_rugi`.
+| Variabel | File | Keterangan |
+|----------|------|-----------|
+| `window.SL_CONFIG` | `js/config.js` | Konfigurasi app |
+| `window.SLApi` | `js/api.js` | HTTP client ke backend |
+| `window.SLAuth` | `js/auth.js` | Autentikasi & session |
+| `window.SLCart` | `js/cart.js` | Keranjang (localStorage) |
+| `window.SLDataTable` | `admin/js/datatable.js` | Tabel interaktif |
 
----
+### Urutan Load Script
 
-## Konvensi kode
+```html
+<!-- Sync (tanpa defer) — harus tersedia sebelum DOM diparse -->
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/cart.js"></script>   <!-- hanya halaman yang butuh cart -->
 
-- Class mengikuti BEM (`.blok__elemen--varian`), warna/font/ukuran lewat CSS variables di `:root`.
-- `data-page` menentukan menu aktif. `class="page-dark"` untuk halaman admin berlatar gelap.
-- Titik patah responsif admin: 1024px (hamburger), 900px (Config WA satu kolom), 768px (tabel → kartu), 480px, 360px.
-- Semua endpoint API mengembalikan `{ ok: true, data: ... }` atau `{ ok: false, message: "..." }`.
+<!-- Defer — jalan setelah DOM ready -->
+<script src="js/auth.js" defer></script>
+<script src="js/include.js" defer></script>
+<script src="js/[halaman].js" defer></script>
+```
 
----
+### Kontrol Akses
 
-## Catatan aksesibilitas
+Halaman dilindungi lewat atribut `data-auth` di `<body>`:
 
-Teks putih kecil di atas oranye merek `#fc5d00` (tombol utama dan status aktif) kontrasnya sekitar 3:1,
-di bawah 4.5:1. Itu keputusan warna merek; pertimbangkan teks lebih besar atau oranye lebih gelap.
+```html
+<body data-auth="admin">   <!-- redirect ke login jika bukan admin -->
+<body data-auth="client">  <!-- redirect ke login jika belum login -->
+<!-- tanpa data-auth = halaman publik -->
+```
 
----
-
-## Sebelum produksi
-
-1. Sambungkan login/registrasi ke tabel `users` di database (hash password dengan bcrypt/Argon2, sesi server-side).
-2. Tambahkan autentikasi ke endpoint API (session token atau JWT).
-3. Sambungkan pesanan, keranjang, dan statistik ke tabel `transactions`.
-4. Tambahkan `api/config.json` ke `.gitignore` (berisi nomor WA).
-5. Ganti ikon pengganti dengan aset asli dari Figma (nama file sama).
-6. Hapus `_template.html` dan `admin/_template.html`.
+`include.js` membaca atribut ini dan memanggil `SLAuth.requireRole()` saat halaman dibuka.

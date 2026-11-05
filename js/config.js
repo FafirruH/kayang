@@ -2,11 +2,9 @@
    config.js - pengaturan frontend (dimuat SEBELUM js/api.js)
    ========================================================================== */
 window.SL_CONFIG = {
-  // Alamat backend PHP. Default: host yang sama dengan halaman ini, port 8000.
-  // Pakai host yang sama dengan frontend (localhost dengan localhost, atau
-  // 127.0.0.1 dengan 127.0.0.1) agar cookie sesi login ikut terkirim.
-  // Bila API dan website ada di satu domain (reverse proxy), isi dengan "".
-  API_BASE: window.location.protocol + "//" + window.location.hostname + ":8000",
+  // Frontend bisa dibuka lewat Live Server (port 5500), sedangkan API PHP
+  // tetap dilayani Apache Laragon pada host yang sama di /kayang/public.
+  API_BASE: window.location.protocol + "//" + window.location.hostname + "/kayang/public",
 
   WA_NUMBER: "6281234567890",   // nomor WhatsApp admin (format internasional, tanpa +)
   CATALOG_PAGE_SIZE: 12,        // jumlah kartu per "Muat lebih banyak" (ringan untuk HP)

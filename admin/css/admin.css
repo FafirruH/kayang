@@ -1326,3 +1326,198 @@ body:not(.page-dark) .page-subtitle,
 .wa-layout {
   align-items: start;
 }
+
+/* ==========================================================================
+   Dashboard: kolom ganda, produk terlaris, kategori bar, tombol tambahan
+   ========================================================================== */
+
+/* Dua kolom di dashboard (transaksi terbaru + produk terlaris) */
+.dashboard__cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 40px;
+}
+
+.dashboard__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+/* Produk terlaris */
+.top-products-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.top-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 14px;
+}
+
+.top-item:last-child { border-bottom: 0; }
+
+.top-item--empty {
+  color: var(--color-text-muted);
+  justify-content: center;
+  padding: 24px;
+}
+
+.top-item__rank {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--color-primary);
+  background: rgba(252, 93, 0, 0.12);
+  border-radius: 50%;
+}
+
+.top-item__name {
+  flex: 1;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.top-item__meta {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* Kategori bar */
+.category-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cat-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.cat-item--empty { color: var(--color-text-muted); }
+
+.cat-item__label {
+  flex: none;
+  width: 60px;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.cat-item__bar-wrap {
+  flex: 1;
+  height: 8px;
+  background: rgba(22,27,32,.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.cat-item__bar {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 4px;
+  transition: width .4s ease;
+}
+
+.cat-item__value {
+  flex: none;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  min-width: 80px;
+  text-align: right;
+}
+
+/* Sel kosong / loading / error tabel */
+.data-table__empty-cell {
+  padding: 32px 16px !important;
+  text-align: center;
+  color: var(--tbl-text-muted);
+}
+
+.data-table__error {
+  color: var(--color-danger) !important;
+}
+
+/* Dashboard error banner */
+.dashboard-error {
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #c4282d;
+  background: var(--color-danger-bg);
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+}
+
+/* Tombol ukuran kecil */
+.btn--sm {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+/* Tombol bahaya */
+.btn--danger {
+  color: #fff;
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.btn--danger:hover {
+  background: #c4282d;
+  border-color: #c4282d;
+}
+
+/* Link bertipe tombol (invoice di tabel) */
+.btn-link {
+  color: var(--color-primary);
+  font-weight: 600;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.btn-link:hover { color: var(--color-primary-hover); }
+
+/* Laba negatif di tabel */
+.profit-neg { color: var(--color-danger); }
+
+/* ── DataTable: sort header ──────────────────────────────────────────────── */
+.sortable-col { cursor: pointer; user-select: none; white-space: nowrap; }
+.sortable-col:hover { color: var(--color-primary, #f97316); }
+.sortable-col.is-sorted { color: var(--color-primary, #f97316); }
+.sort-ind { font-size: .75em; opacity: .6; }
+.sortable-col.is-sorted .sort-ind { opacity: 1; }
+
+/* ── Pagination ellipsis ─────────────────────────────────────────────────── */
+.page-ellipsis { padding: .35rem .4rem; font-size: .8rem;
+                 color: var(--text-muted, #94a3b8); }
+
+/* ── Loading dots ────────────────────────────────────────────────────────── */
+@keyframes loading-blink { 0%,80%,100%{opacity:0} 40%{opacity:1} }
+.loading-dots::after { content: "..."; display: inline-block;
+  animation: loading-blink 1.4s infinite; letter-spacing: .1em; }

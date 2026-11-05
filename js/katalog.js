@@ -5,8 +5,8 @@
 (function () {
   "use strict";
 
-  var API = "/kayang/api/products.php";
-  var WA_NUMBER = "62895326202002"; // nomor WA bengkel
+  // Pakai SLApi (api.js) agar lewat backend utama, bukan file PHP lama
+  var WA_NUMBER = (window.SL_CONFIG && window.SL_CONFIG.WA_NUMBER) || "6281234567890";
 
   var grid    = document.querySelector(".product-grid");
   var search  = document.querySelector(".search__input");
@@ -40,7 +40,7 @@
 
   function cardHTML(p) {
     var habis = p.status_stok === "Habis";
-    var btnHTML = habis
+    var waBtn = habis
       ? '<button class="btn-wa btn-wa--disabled" disabled>' +
           '<img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />' +
           "<span>Stok Habis</span>" +
@@ -50,6 +50,16 @@
           '<img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />' +
           "<span>Tanya / Beli via WA</span>" +
         "</a>";
+
+    var cartBtn = habis ? "" :
+      '<button class="btn-cart" type="button"' +
+        ' data-product-id="' + p.product_id + '"' +
+        ' data-nama="' + escHtml(p.nama_barang) + '"' +
+        ' data-harga="' + (p.harga_jual || 0) + '"' +
+        ' data-jenis="' + escHtml(p.jenis_barang) + '"' +
+        ' aria-label="Tambah ' + escHtml(p.nama_barang) + ' ke keranjang">' +
+        "<span>+ Keranjang</span>" +
+      "</button>";
 
     return (
       '<article class="product-card" data-category="' +
@@ -62,7 +72,7 @@
           '<h3 class="product-card__name">' + escHtml(p.nama_barang) + "</h3>" +
           '<p class="product-card__price">' + formatRupiah(p.harga_jual) + "</p>" +
           stockBadge(p.status_stok) +
-          btnHTML +
+          '<div class="product-card__actions">' + waBtn + cartBtn + "</div>" +
         "</div>" +
       "</article>"
     );
@@ -79,38 +89,46 @@
   // ── Fetch & tampilkan ─────────────────────────────────────────────────────
   function load() {
     if (state.loading) return;
+    if (!window.SLApi) {
+      grid.innerHTML = '<p class="catalog-error">Gagal memuat produk. Pastikan server berjalan.</p>';
+      return;
+    }
     state.loading = true;
 
     grid.innerHTML =
       '<p class="catalog-loading" role="status" aria-live="polite">' +
       "Memuat produk...</p>";
 
-    var params = new URLSearchParams({ limit: 100 });
-    if (state.q)               params.set("q",     state.q);
-    if (state.jenis !== "semua") params.set("jenis", state.jenis);
+    var query = { per_page: 100 };
+    if (state.q)                 query.q     = state.q;
+    if (state.jenis !== "semua") query.jenis  = state.jenis;
 
-    fetch(API + "?" + params.toString())
-      .then(function (res) {
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        return res.json();
-      })
+    SLApi.get("/api/products", query)
       .then(function (json) {
         state.loading = false;
-        if (!json.ok) throw new Error(json.message || "Error API");
 
-        var items = json.data.items;
-        if (!items || items.length === 0) {
-          grid.innerHTML =
-            '<p class="catalog-empty">Produk tidak ditemukan.</p>';
+        // Backend baru: { data: [...], meta: {...} }
+        var items = Array.isArray(json.data) ? json.data : (json.data && json.data.items) || [];
+        if (items.length === 0) {
+          grid.innerHTML = '<p class="catalog-empty">Produk tidak ditemukan.</p>';
           return;
         }
 
         grid.innerHTML = items.map(cardHTML).join("");
 
-        // Terapkan ulang proteksi login dari auth.js bila sudah ada
-        if (typeof window.authGuardLinks === "function") {
-          window.authGuardLinks(grid);
-        }
+        // Terapkan proteksi login pada link/tombol yang baru dibuat
+        grid.querySelectorAll("[data-requires-login]").forEach(function (el) {
+          el.addEventListener("click", function (event) {
+            var user = window.SLAuth && SLAuth.getCurrentUser();
+            if (user && user.role === "client") return;
+            event.preventDefault();
+            if (user) {
+              SLAuth.showNotice("Akun admin tidak dapat memakai fitur belanja.");
+              return;
+            }
+            window.location.href = SLAuth.loginUrl(SLAuth.currentPath());
+          });
+        });
       })
       .catch(function (err) {
         state.loading = false;
@@ -141,6 +159,30 @@
       }, 300);
     });
   }
+
+  // ── Tambah ke keranjang ───────────────────────────────────────────────────
+  grid.addEventListener("click", function (e) {
+    var btn = e.target.closest(".btn-cart");
+    if (!btn) return;
+    if (!window.SLCart) return;
+
+    SLCart.add({
+      product_id:   Number(btn.dataset.productId),
+      nama_barang:  btn.dataset.nama,
+      harga_jual:   Number(btn.dataset.harga),
+      jenis_barang: btn.dataset.jenis,
+      qty: 1
+    });
+
+    // Umpan balik singkat pada tombol
+    var orig = btn.querySelector("span").textContent;
+    btn.querySelector("span").textContent = "Ditambahkan!";
+    btn.disabled = true;
+    setTimeout(function () {
+      btn.querySelector("span").textContent = orig;
+      btn.disabled = false;
+    }, 1200);
+  });
 
   // ── Muat pertama kali ─────────────────────────────────────────────────────
   load();

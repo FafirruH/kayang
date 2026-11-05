@@ -8,8 +8,11 @@
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/admin.css" />
   <link rel="stylesheet" href="css/responsive.css" />
+  <script src="../js/config.js"></script>
+  <script src="../js/api.js"></script>
   <script src="../js/auth.js" defer></script>
   <script src="../js/include.js" defer></script>
+  <script src="js/datatable.js" defer></script>
   <script src="js/akun.js" defer></script>
 </head>
 <body data-auth="admin" class="page-dark" data-page="akun">
@@ -22,42 +25,106 @@
       <div class="page-head page-head--spaced">
         <div>
           <h1 class="page-title">Daftar Akun</h1>
-          <p class="page-subtitle">Admin utama dapat mengubah role client menjadi admin</p>
+          <p class="page-subtitle">Kelola akun pengguna dari database</p>
         </div>
-
-        <div class="segmented" role="group" aria-label="Filter role akun">
-          <button type="button" class="segmented__btn is-active" data-filter="all" aria-pressed="true">Semua</button>
-          <button type="button" class="segmented__btn" data-filter="admin" aria-pressed="false">Admin</button>
-          <button type="button" class="segmented__btn" data-filter="client" aria-pressed="false">Client</button>
-        </div>
+        <button id="btn-tambah-akun" class="btn btn--primary" type="button">
+          <img src="assets/icons/plus.svg" alt="" width="16" height="16" />
+          <span>Tambah Akun</span>
+        </button>
       </div>
 
-      <!-- Baris tabel dibuat oleh js/akun.js dari data akun bersama (js/auth.js) -->
+      <!-- Filter + Cari -->
+      <div class="filter-bar" style="margin-bottom:1rem">
+        <div class="segmented" role="group" aria-label="Filter role akun">
+          <button type="button" class="segmented__btn is-active" data-filter="" aria-pressed="true">Semua</button>
+          <button type="button" class="segmented__btn" data-filter="ADMIN" aria-pressed="false">Admin</button>
+          <button type="button" class="segmented__btn" data-filter="MECHANIC" aria-pressed="false">Montir</button>
+          <button type="button" class="segmented__btn" data-filter="CUSTOMER" aria-pressed="false">Pelanggan</button>
+        </div>
+        <label class="sr-only" for="akun-search">Cari akun</label>
+        <input id="akun-search" class="search-input" type="search" placeholder="Cari username / nama..." autocomplete="off" style="flex:1;min-width:180px" />
+        <span id="akun-count" style="font-size:.8rem;color:var(--text-muted,#94a3b8);align-self:center"></span>
+      </div>
+
       <div class="table-card table-card--dark">
         <table class="data-table data-table--stack" id="akun-table">
           <caption class="sr-only">Daftar akun terdaftar</caption>
           <thead>
             <tr>
-              <th scope="col">Nama</th>
-              <th scope="col">Email</th>
-              <th scope="col">Role</th>
-              <th scope="col">Bergabung</th>
+              <th scope="col" data-sort="nama_lengkap">Nama</th>
+              <th scope="col">No. WhatsApp</th>
+              <th scope="col" data-sort="role">Role</th>
+              <th scope="col" data-sort="aktif">Status</th>
+              <th scope="col" data-sort="jumlah_transaksi">Transaksi</th>
+              <th scope="col" data-sort="created_at">Bergabung</th>
               <th scope="col" class="data-table__actions">Aksi</th>
             </tr>
           </thead>
           <tbody>
-            <tr class="data-table__empty" hidden>
-              <td colspan="5">Tidak ada akun dengan role ini.</td>
+            <tr class="data-table__empty">
+              <td colspan="7">Memuat data...</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Pengumuman perubahan untuk pembaca layar -->
+      <div class="pagination" id="akun-pagination" role="navigation" aria-label="Halaman akun"></div>
+
       <p class="sr-only" id="akun-live" role="status" aria-live="polite"></p>
 
     </div>
   </main>
+
+  <!-- ══ Modal Tambah / Edit Akun ═══════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="akun-modal" role="dialog" aria-modal="true"
+       aria-labelledby="akun-modal-title" hidden>
+    <div class="modal">
+      <button class="modal-close-btn" id="akun-modal-close" aria-label="Tutup">&times;</button>
+      <h2 class="modal__title" id="akun-modal-title">Tambah Akun</h2>
+
+      <form id="akun-form" novalidate>
+        <div class="form-field">
+          <label class="form-field__label" for="akun-username">Username</label>
+          <input class="form-input" id="akun-username" name="username" type="text"
+                 autocomplete="off" autocapitalize="none" spellcheck="false" />
+          <p class="form-field__error" id="akun-username-error" hidden></p>
+        </div>
+        <div class="form-field">
+          <label class="form-field__label" for="akun-nama">Nama Lengkap</label>
+          <input class="form-input" id="akun-nama" name="nama_lengkap" type="text" />
+          <p class="form-field__error" id="akun-nama-error" hidden></p>
+        </div>
+        <div class="form-field">
+          <label class="form-field__label" for="akun-telp">No. WhatsApp</label>
+          <input class="form-input" id="akun-telp" name="no_telepon" type="tel"
+                 placeholder="08xxxxxxxxxx" />
+          <p class="form-field__error" id="akun-telp-error" hidden></p>
+        </div>
+        <div class="form-field">
+          <label class="form-field__label" for="akun-role">Role</label>
+          <select class="form-input" id="akun-role" name="role">
+            <option value="CUSTOMER">Pelanggan</option>
+            <option value="MECHANIC">Montir</option>
+            <option value="ADMIN">Admin</option>
+          </select>
+        </div>
+        <div class="form-field" id="akun-password-wrap">
+          <label class="form-field__label" for="akun-password">Password</label>
+          <input class="form-input" id="akun-password" name="password" type="password"
+                 autocomplete="new-password" />
+          <p class="form-field__hint" style="font-size:.8rem;color:var(--text-muted,#94a3b8);margin-top:.25rem" id="akun-password-hint"></p>
+          <p class="form-field__error" id="akun-password-error" hidden></p>
+        </div>
+
+        <p id="akun-form-status" hidden style="font-size:.85rem;color:#f87171;margin-top:.5rem"></p>
+
+        <div class="form-actions" style="margin-top:1.25rem">
+          <button class="btn btn--primary" type="submit" id="akun-form-submit">Simpan</button>
+          <button class="btn btn--ghost" type="button" id="akun-form-cancel">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <div data-include="footer"></div>
 

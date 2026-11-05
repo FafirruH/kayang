@@ -1,0 +1,14 @@
+# Konfigurasi lokal (berisi kredensial DB — jangan di-commit)
+config.local.php
+config.php
+
+# Dependency Python (jika ada)
+.venv/
+
+# Cache & log
+*.log
+/logs/
+
+# OS
+.DS_Store
+Thumbs.db

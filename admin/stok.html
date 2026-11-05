@@ -8,8 +8,11 @@
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/admin.css" />
   <link rel="stylesheet" href="css/responsive.css" />
+  <script src="../js/config.js"></script>
+  <script src="../js/api.js"></script>
   <script src="../js/auth.js" defer></script>
   <script src="../js/include.js" defer></script>
+  <script src="js/datatable.js" defer></script>
   <script src="js/stok.js" defer></script>
 </head>
 <body data-auth="admin" class="page-dark" data-page="stok">
@@ -30,21 +33,21 @@
         </a>
       </div>
 
-      <div class="toolbar">
+      <div class="toolbar" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
         <label class="sr-only" for="stok-search">Cari barang</label>
         <input id="stok-search" class="search-input" type="search" placeholder="Cari barang..." autocomplete="off" />
+        <span id="stok-count" style="font-size:.8rem;color:var(--text-muted,#94a3b8)"></span>
       </div>
 
-      <!-- Baris diisi secara dinamis oleh js/stok.js dari API -->
       <div class="table-card table-card--dark">
         <table class="data-table data-table--stack" id="stok-table">
           <caption class="sr-only">Daftar stok sparepart</caption>
           <thead>
             <tr>
-              <th scope="col">Nama Barang</th>
-              <th scope="col">Kategori</th>
-              <th scope="col">Harga</th>
-              <th scope="col">Stok</th>
+              <th scope="col" data-sort="nama_barang">Nama Barang</th>
+              <th scope="col" data-sort="jenis_barang">Kategori</th>
+              <th scope="col" data-sort="harga_jual">Harga</th>
+              <th scope="col" data-sort="tersedia">Stok</th>
               <th scope="col" class="data-table__actions">Aksi</th>
             </tr>
           </thead>
@@ -55,6 +58,8 @@
           </tbody>
         </table>
       </div>
+
+      <div class="pagination" id="stok-pagination" role="navigation" aria-label="Halaman stok"></div>
 
     </div>
   </main>

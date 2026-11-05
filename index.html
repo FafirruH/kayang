@@ -132,7 +132,7 @@
           <ul class="info-list">
             <li class="info-list__item">
               <img src="assets/icons/map-pin-sm.svg" alt="" width="20" height="20" />
-              <span>Jl. Raya Contoh</span>
+              <span>Toko Sumber Lancar</span>
             </li>
             <li class="info-list__item">
               <img src="assets/icons/clock.svg" alt="" width="20" height="20" />
@@ -140,17 +140,27 @@
             </li>
           </ul>
 
-          <!-- Ganti href dengan link Google Maps lokasi bengkel -->
-          <a href="https://maps.google.com/" class="btn-track" target="_blank" rel="noopener">
+          <a href="https://maps.app.goo.gl/864JEKY2tvSt4nju6" class="btn-track" target="_blank" rel="noopener">
             <img src="assets/icons/navigation.svg" alt="" width="16" height="16" />
             <span>Track Us</span>
           </a>
         </div>
 
-        <!-- Placeholder peta: ganti isinya dengan <iframe src="(embed Google Maps)" ...></iframe> -->
         <div class="map-box">
-          <a href="https://maps.google.com/" class="map-box__chip" target="_blank" rel="noopener">Open in Maps ↗</a>
-          <span class="map-box__label">Peta Google Maps (placeholder)</span>
+          <a href="https://maps.app.goo.gl/864JEKY2tvSt4nju6" class="map-box__chip" target="_blank" rel="noopener">
+            Open in Maps ↗
+          </a>
+          <iframe
+            class="map-box__iframe"
+            src="https://maps.google.com/maps?output=embed&hl=id&q=Toko+Sumber+Lancar&z=17"
+            width="100%"
+            height="100%"
+            style="border:0;"
+            loading="lazy"
+            allowfullscreen
+            referrerpolicy="no-referrer-when-downgrade"
+            title="Lokasi Toko Sumber Lancar di Google Maps"
+          ></iframe>
         </div>
 
       </div>

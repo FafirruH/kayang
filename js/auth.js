@@ -29,7 +29,7 @@
     id: 1,
     username: "admin",
     name: "Admin Utama",
-    email: "admin@sumberlancar.id",
+    no_whatsapp: "6281234567890",
     password: "admin123",
     role: "admin",
     joined: "2024-01-01",
@@ -39,19 +39,21 @@
   // Akun contoh agar tabel Daftar Akun tidak kosong. Tanpa password,
   // jadi tidak bisa dipakai login (hanya data tampilan).
   var SAMPLE_ACCOUNTS = [
-    { id: 2, username: "budi", name: "Budi Santoso", email: "budi@gmail.com", role: "client", joined: "2026-08-12" },
-    { id: 3, username: "siti", name: "Siti Aminah", email: "siti@gmail.com", role: "client", joined: "2026-09-03" },
-    { id: 4, username: "rudi", name: "Rudi Hartono", email: "rudi@gmail.com", role: "admin", joined: "2026-07-21" }
+    { id: 2, username: "budi", name: "Budi Santoso", no_whatsapp: "6281111111111", role: "client", joined: "2026-08-12" },
+    { id: 3, username: "siti", name: "Siti Aminah", no_whatsapp: "6282222222222", role: "client", joined: "2026-09-03" },
+    { id: 4, username: "rudi", name: "Rudi Hartono", no_whatsapp: "6283333333333", role: "admin", joined: "2026-07-21" }
   ];
 
   var HOME = { admin: "admin/index.html", client: "index.html" };
   var ROLES = ["admin", "client"];
 
-  /* ---------- Lokasi root website (dihitung dari alamat auth.js) ---------- */
-  var scriptEl = document.currentScript;
-  var ROOT_URL = scriptEl && scriptEl.src
-    ? new URL("../", scriptEl.src)
-    : new URL("./", window.location.href);
+  /* ---------- Lokasi root website ---------- */
+  var _path     = window.location.pathname;
+  var _adminIdx = _path.indexOf("/admin/");
+  var _rootPath = _adminIdx !== -1
+    ? _path.slice(0, _adminIdx + 1)
+    : _path.slice(0, _path.lastIndexOf("/") + 1);
+  var ROOT_URL  = new URL(_rootPath, window.location.href);
 
   function rootUrl(path) {
     return new URL(path, ROOT_URL).href;
@@ -143,7 +145,7 @@
   }
 
   function publicAccount(acc) {
-    return { id: acc.id, username: acc.username, name: acc.name || acc.username, email: acc.email || "", role: acc.role, joined: acc.joined, protected: !!acc.protected };
+    return { id: acc.id, username: acc.username, name: acc.name || acc.username, no_whatsapp: acc.no_whatsapp || "", role: acc.role, joined: acc.joined, protected: !!acc.protected };
   }
 
   /* ---------- Sesi ---------- */
@@ -156,6 +158,17 @@
   function getCurrentUser() {
     var session = readJSON(SESSION_KEY);
     if (!session || !session.username) return null;
+    if (session.source === "backend") {
+      if (ROLES.indexOf(session.role) === -1) {
+        clearSession();
+        return null;
+      }
+      return {
+        username: session.username,
+        name: session.name || session.username,
+        role: session.role
+      };
+    }
     var acc = findByUsername(session.username);
     if (!acc || ROLES.indexOf(acc.role) === -1) {
       clearSession();
@@ -199,9 +212,10 @@
 
   // Registrasi hanya untuk client: role tidak pernah diambil dari input
   function registerClient(input) {
-    var username = String((input && input.username) || "").trim();
-    var password = String((input && input.password) || "");
-    var password2 = String((input && input.password2) || "");
+    var username    = String((input && input.username)    || "").trim();
+    var password    = String((input && input.password)    || "");
+    var password2   = String((input && input.password2)   || "");
+    var no_whatsapp = String((input && input.no_whatsapp) || "").trim();
 
     if (username.length < 3) return { ok: false, field: "username", error: "Username minimal 3 karakter." };
     if (!/^[A-Za-z0-9._-]+$/.test(username)) {
@@ -211,6 +225,9 @@
     if (findByUsername(username)) return { ok: false, field: "username", error: "Username sudah dipakai." };
     if (password.length < 6) return { ok: false, field: "password", error: "Password minimal 6 karakter." };
     if (password !== password2) return { ok: false, field: "password2", error: "Konfirmasi password tidak cocok." };
+    if (!/^(08|62)\d{8,13}$/.test(no_whatsapp.replace(/[\s\-().+]/g, ""))) {
+      return { ok: false, field: "no_whatsapp", error: "Masukkan nomor WhatsApp yang valid, contoh: 081234567890." };
+    }
 
     var list = getAccounts();
     var nextId = list.reduce(function (max, a) { return Math.max(max, a.id || 0); }, 0) + 1;
@@ -218,7 +235,7 @@
       id: nextId,
       username: username,
       name: username,
-      email: "",
+      no_whatsapp: no_whatsapp,
       password: password,
       role: "client",
       joined: new Date().toISOString().slice(0, 10),

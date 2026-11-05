@@ -1,222 +1,181 @@
 /* ==========================================================================
-   akun.js - halaman Daftar Akun
-   Data akun dibaca/ditulis lewat window.SLAuth (sumber yang sama dengan
-   register dan login), sehingga perubahan role langsung berlaku saat login
-   berikutnya.
-   - Filter Semua / Admin / Client
-   - Ubah role lewat dropdown (dengan konfirmasi)
-   - Tombol pensil: menuju dropdown role akun tersebut
-   - Hapus akun dengan konfirmasi
-   Akun server (Admin Utama) dan akun yang sedang login tidak dapat diubah
-   atau dihapus. Ini simulasi frontend, bukan keamanan server.
+   admin/js/akun.js — Daftar Akun (SLDataTable)
    ========================================================================== */
 
 (function () {
   "use strict";
 
-  var Auth = window.SLAuth;
-  var table = document.getElementById("akun-table");
-  var live = document.getElementById("akun-live");
-  if (!table || !Auth || !Auth.hasRole("admin")) return;
+  if (!window.SLApi)       { console.error("[akun.js] SLApi belum dimuat"); return; }
+  if (!window.SLDataTable) { console.error("[akun.js] datatable.js belum dimuat"); return; }
 
-  var body = table.tBodies[0];
-  var emptyRow = body.querySelector(".data-table__empty");
-  var filterButtons = document.querySelectorAll("[data-filter]");
-  var currentFilter = "all";
-  var accounts = [];
-  var me = null;
-
-  var ROLE_LABEL = { admin: "Admin", client: "Client" };
-  var ICON_BASE = "assets/icons/";
-
-  function announce(text) {
-    if (live) live.textContent = text;
+  function esc(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
-
-  function el(tag, className, text) {
-    var node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text !== undefined) node.textContent = text;
-    return node;
+  function fmt(ts) {
+    if (!ts) return "-";
+    return new Date(ts).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
   }
-
-  function cell(label, className) {
-    var td = el("td", className || "");
-    td.setAttribute("data-label", label);
-    return td;
+  function roleLabel(r) { return { ADMIN: "Admin", MECHANIC: "Montir", CUSTOMER: "Pelanggan" }[r] || r; }
+  function roleBadge(r) {
+    var cls = { ADMIN: "badge--done", MECHANIC: "badge--process", CUSTOMER: "badge--pending" }[r] || "badge--pending";
+    return '<span class="badge ' + cls + '">' + roleLabel(r) + "</span>";
   }
+  function announce(t) { var e = document.getElementById("akun-live"); if (e) e.textContent = t; }
 
-  function icon(name, size) {
-    var img = el("img");
-    img.src = ICON_BASE + name + ".svg";
-    img.alt = "";
-    if (size) { img.width = size; img.height = size; }
-    return img;
-  }
+  /* ── State filter role ─────────────────────────────────────────────────── */
+  var filterRole = "";
 
-  function locked(acc) {
-    return acc.protected || (me && me.username.toLowerCase() === acc.username.toLowerCase());
-  }
-
-  function lockTitle(acc) {
-    return acc.protected ? "Akun server tidak dapat diubah" : "Akun yang sedang dipakai tidak dapat diubah";
-  }
-
-  function buildRow(acc) {
-    var isLocked = locked(acc);
-    var tr = el("tr");
-    tr.setAttribute("data-id", acc.id);
-    tr.setAttribute("data-role", acc.role);
-    if (acc.protected) tr.setAttribute("data-protected", "");
-    if (isLocked) tr.setAttribute("data-locked", "");
-
-    var tdName = cell("Nama");
-    var name = el("span", "user-name");
-    name.appendChild(el("span", "user-name__text", acc.name));
-    if (acc.protected) {
-      var badge = el("span", "badge-server");
-      badge.appendChild(icon("shield", 10));
-      badge.appendChild(document.createTextNode("Server"));
-      name.appendChild(badge);
+  var dt = new SLDataTable({
+    tableId:     "akun-table",
+    searchId:    "akun-search",
+    paginId:     "akun-pagination",
+    countId:     "akun-count",
+    colspan:     7,
+    per:         15,
+    defaultSort: "nama_lengkap",
+    emptyText:   "Tidak ada akun ditemukan.",
+    params:      function () { return { role: filterRole }; },
+    fetch:       function (p) { return SLApi.get("/api/admin/users", p); },
+    renderRow:   function (u) {
+      var aktifBadge   = u.aktif
+        ? '<span class="badge badge--done">Aktif</span>'
+        : '<span class="badge badge--off">Nonaktif</span>';
+      var toggleLabel  = u.aktif ? "Nonaktifkan" : "Aktifkan";
+      var toggleClass  = u.aktif ? "btn--danger"  : "btn--ghost";
+      return (
+        "<tr>" +
+          '<td data-label="Nama">' +
+            '<span style="font-weight:500">' + esc(u.nama_lengkap || u.username) + "</span>" +
+            '<br><span style="font-size:.75rem;color:var(--text-muted,#94a3b8)">@' + esc(u.username) + "</span>" +
+          "</td>" +
+          '<td data-label="No. WhatsApp" class="data-table__muted">' + esc(u.no_telepon || "-") + "</td>" +
+          '<td data-label="Role">' + roleBadge(u.role) + "</td>" +
+          '<td data-label="Status">' + aktifBadge + "</td>" +
+          '<td data-label="Transaksi" class="data-table__muted">' + (u.jumlah_transaksi || 0) + "</td>" +
+          '<td data-label="Bergabung" class="data-table__muted">' + fmt(u.created_at) + "</td>" +
+          '<td data-label="Aksi" class="data-table__actions">' +
+            '<span class="row-actions">' +
+              '<button class="btn btn--sm btn--ghost btn-edit" type="button"' +
+                ' data-id="' + u.id + '"' +
+                ' data-username="' + esc(u.username) + '"' +
+                ' data-nama="' + esc(u.nama_lengkap || "") + '"' +
+                ' data-telp="' + esc(u.no_telepon || "") + '"' +
+                ' data-role="' + esc(u.role) + '"' +
+                ' aria-label="Edit ' + esc(u.username) + '">Edit</button>' +
+              '<button class="btn btn--sm ' + toggleClass + ' btn-toggle" type="button"' +
+                ' data-id="' + u.id + '" data-aktif="' + (u.aktif ? "true" : "false") + '"' +
+                ' aria-label="' + toggleLabel + " " + esc(u.username) + '">' + toggleLabel + "</button>" +
+            "</span>" +
+          "</td>" +
+        "</tr>"
+      );
     }
-    tdName.appendChild(name);
-    tr.appendChild(tdName);
+  });
 
-    tr.appendChild(cell("Email", "data-table__muted")).textContent = acc.email || "-";
-
-    var tdRole = cell("Role");
-    var select = el("select", "role-select" + (acc.role === "admin" ? " is-admin" : ""));
-    select.setAttribute("aria-label", "Role " + acc.name);
-    select.setAttribute("data-role-select", "");
-    ["admin", "client"].forEach(function (role) {
-      var opt = el("option", "", ROLE_LABEL[role]);
-      opt.value = role;
-      opt.selected = role === acc.role;
-      select.appendChild(opt);
-    });
-    if (isLocked) { select.disabled = true; select.title = lockTitle(acc); }
-    tdRole.appendChild(select);
-    tr.appendChild(tdRole);
-
-    tr.appendChild(cell("Bergabung", "data-table__muted")).textContent = acc.joined || "-";
-
-    var tdAct = cell("Aksi");
-    var actions = el("span", "row-actions");
-    var edit = el("button", "icon-btn");
-    edit.type = "button";
-    edit.setAttribute("data-edit", "");
-    edit.setAttribute("aria-label", "Ubah role " + acc.name);
-    edit.appendChild(icon("pencil"));
-    var del = el("button", "icon-btn icon-btn--danger");
-    del.type = "button";
-    del.setAttribute("data-delete", "");
-    del.setAttribute("aria-label", "Hapus akun " + acc.name);
-    del.appendChild(icon("trash"));
-    if (isLocked) {
-      [edit, del].forEach(function (btn) { btn.disabled = true; btn.title = lockTitle(acc); });
-    }
-    actions.appendChild(edit);
-    actions.appendChild(del);
-    tdAct.appendChild(actions);
-    tr.appendChild(tdAct);
-
-    return tr;
-  }
-
-  function render() {
-    me = Auth.getCurrentUser();
-    accounts = Auth.listAccounts();
-    Array.prototype.slice.call(body.rows).forEach(function (row) {
-      if (row !== emptyRow) row.remove();
-    });
-    accounts.forEach(function (acc) {
-      body.insertBefore(buildRow(acc), emptyRow);
-    });
-    applyFilter();
-  }
-
-  function applyFilter() {
-    var visible = 0;
-    accounts.forEach(function (acc) {
-      var row = body.querySelector('tr[data-id="' + acc.id + '"]');
-      if (!row) return;
-      var show = currentFilter === "all" || acc.role === currentFilter;
-      row.hidden = !show;
-      if (show) visible++;
-    });
-
-    emptyRow.hidden = visible > 0;
-    emptyRow.cells[0].textContent = accounts.length === 0
-      ? "Belum ada akun terdaftar."
-      : "Tidak ada akun dengan role ini.";
-  }
-
-  function findAccount(row) {
-    var id = Number(row.getAttribute("data-id"));
-    return accounts.filter(function (a) { return a.id === id; })[0];
-  }
-
-  filterButtons.forEach(function (button) {
-    button.addEventListener("click", function () {
-      currentFilter = button.getAttribute("data-filter");
-      filterButtons.forEach(function (btn) {
-        var active = btn === button;
-        btn.classList.toggle("is-active", active);
-        btn.setAttribute("aria-pressed", active ? "true" : "false");
+  /* ── Filter role ───────────────────────────────────────────────────────── */
+  document.querySelectorAll("[data-filter]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("[data-filter]").forEach(function (b) {
+        b.classList.remove("is-active"); b.setAttribute("aria-pressed", "false");
       });
-      applyFilter();
+      btn.classList.add("is-active"); btn.setAttribute("aria-pressed", "true");
+      filterRole = btn.dataset.filter;
+      dt.state.page = 1;
+      dt.load();
     });
   });
 
-  // Ubah role
-  body.addEventListener("change", function (event) {
-    var select = event.target.closest("[data-role-select]");
-    if (!select) return;
+  /* ── Table click delegation ────────────────────────────────────────────── */
+  var tbody = document.querySelector("#akun-table tbody");
+  if (tbody) {
+    tbody.addEventListener("click", function (e) {
+      var editBtn = e.target.closest(".btn-edit");
+      if (editBtn) { openModal({ id: editBtn.dataset.id, username: editBtn.dataset.username, nama_lengkap: editBtn.dataset.nama, no_telepon: editBtn.dataset.telp, role: editBtn.dataset.role }); return; }
 
-    var row = select.closest("tr");
-    var acc = findAccount(row);
-    if (!acc) return;
-    var next = select.value;
-    if (next === acc.role) return;
+      var toggleBtn = e.target.closest(".btn-toggle");
+      if (toggleBtn) {
+        var aktif = toggleBtn.dataset.aktif === "true";
+        if (!confirm("Yakin ingin " + (aktif ? "nonaktifkan" : "aktifkan") + " akun ini?")) return;
+        toggleBtn.disabled = true;
+        SLApi.patch("/api/admin/users/" + toggleBtn.dataset.id, { aktif: !aktif })
+          .then(function () { announce("Akun berhasil diperbarui."); dt.load(); })
+          .catch(function (err) { toggleBtn.disabled = false; alert("Gagal: " + (err && err.message ? err.message : "error")); });
+      }
+    });
+  }
 
-    var ok = window.confirm("Ubah role \"" + acc.name + "\" menjadi " + ROLE_LABEL[next] + "?");
-    if (!ok) {
-      select.value = acc.role; // batal: kembalikan pilihan
-      return;
+  /* ── Modal tambah / edit ───────────────────────────────────────────────── */
+  var modal      = document.getElementById("akun-modal");
+  var modalTitle = document.getElementById("akun-modal-title");
+  var form       = document.getElementById("akun-form");
+  var formStatus = document.getElementById("akun-form-status");
+  var formSubmit = document.getElementById("akun-form-submit");
+  var passHint   = document.getElementById("akun-password-hint");
+  var editingId  = null;
+
+  function openModal(data) {
+    if (!modal || !form) return;
+    form.reset();
+    if (formStatus) { formStatus.hidden = true; formStatus.textContent = ""; }
+    if (data) {
+      editingId = data.id;
+      if (modalTitle) modalTitle.textContent = "Edit Akun";
+      form.elements.username.value     = data.username     || "";
+      form.elements.nama_lengkap.value = data.nama_lengkap || "";
+      form.elements.no_telepon.value   = data.no_telepon   || "";
+      form.elements.role.value         = data.role         || "CUSTOMER";
+      form.elements.username.disabled  = true;
+      form.elements.password.required  = false;
+      if (passHint) passHint.textContent = "Kosongkan jika tidak ingin mengubah password.";
+    } else {
+      editingId = null;
+      if (modalTitle) modalTitle.textContent = "Tambah Akun";
+      form.elements.username.disabled = false;
+      form.elements.password.required = true;
+      if (passHint) passHint.textContent = "";
     }
+    modal.hidden = false;
+    modal.setAttribute("aria-hidden", "false");
+    var first = form.querySelector("input:not([disabled])");
+    if (first) first.focus();
+  }
 
-    var result = Auth.updateRole(acc.id, next);
-    if (!result.ok) {
-      select.value = acc.role;
-      announce(result.error);
-      return;
-    }
-    render();
-    announce("Role " + acc.name + " diubah menjadi " + ROLE_LABEL[next] + ".");
-  });
+  function closeModal() {
+    if (modal) { modal.hidden = true; modal.setAttribute("aria-hidden", "true"); }
+    editingId = null;
+  }
 
-  body.addEventListener("click", function (event) {
-    var row = event.target.closest("tr");
-    if (!row || row === emptyRow || row.hasAttribute("data-locked")) return;
-    var acc = findAccount(row);
-    if (!acc) return;
+  var btnTambah = document.getElementById("btn-tambah-akun");
+  if (btnTambah) btnTambah.addEventListener("click", function () { openModal(null); });
+  document.getElementById("akun-modal-close") && document.getElementById("akun-modal-close").addEventListener("click", closeModal);
+  document.getElementById("akun-form-cancel") && document.getElementById("akun-form-cancel").addEventListener("click", closeModal);
+  if (modal) {
+    modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
+  }
 
-    // Pensil: arahkan ke dropdown role
-    if (event.target.closest("[data-edit]")) {
-      var select = row.querySelector("[data-role-select]");
-      if (select) select.focus();
-      return;
-    }
+  if (form) {
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (formStatus) { formStatus.hidden = true; }
+      var body = { nama_lengkap: form.elements.nama_lengkap.value.trim(), no_telepon: form.elements.no_telepon.value.trim(), role: form.elements.role.value };
+      var pw = form.elements.password.value;
+      if (pw) body.password = pw;
+      if (formSubmit) formSubmit.disabled = true;
+      var req = editingId
+        ? SLApi.patch("/api/admin/users/" + editingId, body)
+        : (body.username = form.elements.username.value.trim(), SLApi.post("/api/admin/users", body));
+      req
+        .then(function () { closeModal(); announce(editingId ? "Akun diperbarui." : "Akun ditambahkan."); dt.load(); })
+        .catch(function (err) {
+          if (formSubmit) formSubmit.disabled = false;
+          var msg = err && err.status === 422 && err.details ? Object.values(err.details).join(" ") : (err && err.message ? err.message : "Terjadi kesalahan.");
+          if (formStatus) { formStatus.textContent = "Gagal: " + msg; formStatus.hidden = false; }
+        });
+    });
+  }
 
-    // Hapus akun
-    if (event.target.closest("[data-delete]")) {
-      if (!window.confirm("Hapus akun \"" + acc.name + "\"? Tindakan ini tidak dapat dibatalkan.")) return;
-      var result = Auth.deleteAccount(acc.id);
-      if (!result.ok) { announce(result.error); return; }
-      render();
-      announce("Akun " + acc.name + " dihapus.");
-    }
-  });
-
-  render();
+  dt.load();
 })();

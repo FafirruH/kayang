@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transaksi - Admin Sumber Lancar</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <script src="../js/config.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js" defer></script>
+  <script src="../js/include.js" defer></script>
+  <script src="js/datatable.js" defer></script>
+  <script src="js/transaksi.js" defer></script>
+  <style>
+    /* ── Kartu stok mini ── */
+    .stok-plus  { color: #22c55e; font-weight: 600; }
+    .stok-minus { color: #ef4444; font-weight: 600; }
+    .profit-neg { color: #ef4444; }
+
+    /* ── Filter bar ── */
+    .filter-bar { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; align-items: flex-end; }
+    .filter-bar select,
+    .filter-bar input  { padding: .4rem .6rem; border: 1px solid var(--border, #334155);
+                         border-radius: .375rem; background: var(--surface, #1e293b);
+                         color: inherit; font-size: .875rem; }
+    .filter-bar label  { font-size: .75rem; color: var(--text-muted, #94a3b8);
+                         display: flex; flex-direction: column; gap: .25rem; }
+
+    /* ── Modal detail / form ── */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6);
+                      display: flex; align-items: center; justify-content: center;
+                      z-index: 400; padding: 1rem; }
+    .modal-backdrop[hidden] { display: none; }
+    .modal         { background: var(--surface-2, #0f172a); border-radius: .75rem;
+                     padding: 1.5rem; width: 100%; max-width: 640px; max-height: 90vh;
+                     overflow-y: auto; position: relative; }
+    .modal__title  { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; }
+    .modal-close-btn { position: absolute; top: 1rem; right: 1rem;
+                       background: none; border: none; color: inherit;
+                       font-size: 1.25rem; cursor: pointer; line-height: 1; }
+    .modal-grid    { display: grid; gap: .4rem; margin-bottom: 1rem; }
+    .modal-row     { display: flex; justify-content: space-between; font-size: .875rem;
+                     padding: .3rem 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .modal-table   { width: 100%; border-collapse: collapse; font-size: .85rem; margin: .75rem 0; }
+    .modal-table th,
+    .modal-table td { padding: .4rem .5rem; border-bottom: 1px solid rgba(255,255,255,.07); text-align: left; }
+    .modal-total   { text-align: right; padding-top: .5rem; }
+    .modal-note    { font-size: .8rem; color: var(--text-muted, #94a3b8); margin-top: .5rem; }
+    .modal-loading,
+    .modal-error   { padding: 1.5rem; text-align: center; color: var(--text-muted, #94a3b8); }
+    .modal__actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 1.25rem; justify-content: flex-end; }
+
+    /* ── Form penjualan baru ── */
+    .sale-item-row { display: flex; gap: .5rem; align-items: center; margin-bottom: .5rem; flex-wrap: wrap; }
+    .sale-item-row .form-input { flex: 1; min-width: 120px; }
+    .sale-item-row .sale-item-qty  { max-width: 72px; flex: 0 0 72px; }
+    .sale-item-row .sale-item-harga { max-width: 120px; flex: 0 0 120px; }
+    #sale-status { display: block; margin-top: .5rem; font-size: .85rem; color: #f87171; }
+
+    /* ── Pagination ── */
+    .pagination { display: flex; gap: .375rem; flex-wrap: wrap; margin-top: 1rem; }
+    .page-btn   { padding: .35rem .7rem; border-radius: .375rem; border: 1px solid var(--border, #334155);
+                  background: transparent; color: inherit; cursor: pointer; font-size: .8rem; }
+    .page-btn--active { background: var(--accent, #f97316); border-color: var(--accent, #f97316);
+                        color: #fff; font-weight: 700; }
+
+    /* ── Kartu stok section ── */
+    .kartu-section { margin-top: 2.5rem; }
+    .kartu-section .toolbar { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+    .kartu-section select { padding: .4rem .6rem; border: 1px solid var(--border, #334155);
+                            border-radius: .375rem; background: var(--surface, #1e293b);
+                            color: inherit; font-size: .875rem; flex: 1; min-width: 200px; }
+  </style>
+</head>
+<body data-auth="admin" class="page-dark" data-page="transaksi">
+
+  <div data-include="header"></div>
+
+  <main>
+    <div class="container page-section">
+
+      <!-- ── Header ── -->
+      <div class="page-head page-head--spaced">
+        <div>
+          <h1 class="page-title">Manajemen Transaksi</h1>
+          <p class="page-subtitle">Penjualan, pembelian, dan koreksi stok</p>
+        </div>
+        <button id="btn-new-sale" class="btn btn--primary" type="button">
+          <img src="assets/icons/plus.svg" alt="" width="16" height="16" />
+          <span>Penjualan Baru</span>
+        </button>
+      </div>
+
+      <!-- ── Filter bar ── -->
+      <div class="filter-bar">
+        <label>
+          Tipe
+          <select id="filter-tipe">
+            <option value="">Semua tipe</option>
+            <option value="OUT">Penjualan</option>
+            <option value="IN">Pembelian</option>
+            <option value="ADJ_IN">Koreksi +</option>
+            <option value="ADJ_OUT">Koreksi -</option>
+          </select>
+        </label>
+        <label>
+          Status
+          <select id="filter-status">
+            <option value="">Semua status</option>
+            <option value="PENDING">Pending</option>
+            <option value="COMPLETED">Selesai</option>
+            <option value="CANCELLED">Dibatalkan</option>
+            <option value="EXPIRED">Kedaluwarsa</option>
+          </select>
+        </label>
+        <label>
+          Dari
+          <input id="filter-from" type="date" />
+        </label>
+        <label>
+          Sampai
+          <input id="filter-to" type="date" />
+        </label>
+        <label>
+          Cari invoice / pelanggan
+          <input id="filter-q" type="search" placeholder="Cari…" style="min-width:160px" />
+        </label>
+        <button id="filter-reset" class="btn btn--ghost btn--sm" type="button">Reset</button>
+        <span id="transaksi-count" style="font-size:.8rem;color:var(--text-muted,#94a3b8);align-self:flex-end"></span>
+      </div>
+
+      <!-- ── Tabel transaksi ── -->
+      <div class="table-card table-card--dark">
+        <table class="data-table data-table--stack" id="transaksi-table">
+          <caption class="sr-only">Daftar transaksi</caption>
+          <thead>
+            <tr>
+              <th scope="col" data-sort="no_faktur">Invoice</th>
+              <th scope="col" data-sort="tipe_transaksi">Tipe</th>
+              <th scope="col">Pihak</th>
+              <th scope="col" data-sort="tgl_transaksi">Tanggal</th>
+              <th scope="col" data-sort="total_bayar">Total</th>
+              <th scope="col" data-sort="status">Status</th>
+              <th scope="col" class="data-table__actions">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="7" class="data-table__empty-cell">Memuat data…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination" id="transaksi-pagination" role="navigation" aria-label="Halaman transaksi"></div>
+
+      <!-- ── Kartu Stok ── -->
+      <section class="kartu-section" aria-labelledby="kartu-title">
+        <div class="dashboard__head">
+          <h2 class="page-title" id="kartu-title">Kartu Stok</h2>
+          <p class="page-subtitle">Riwayat keluar-masuk per barang</p>
+        </div>
+
+        <form id="kartu-stok-form" class="toolbar">
+          <label class="sr-only" for="kartu-product-id">Pilih barang</label>
+          <select id="kartu-product-id">
+            <option value="">-- Pilih Barang --</option>
+          </select>
+          <button class="btn btn--primary btn--sm" type="submit">Tampilkan</button>
+        </form>
+
+        <div class="table-card table-card--dark">
+          <table class="data-table data-table--stack" id="kartu-table">
+            <caption class="sr-only">Kartu stok barang</caption>
+            <thead>
+              <tr>
+                <th scope="col">Tanggal</th>
+                <th scope="col">No Faktur</th>
+                <th scope="col">Tipe</th>
+                <th scope="col">Stok Awal</th>
+                <th scope="col">Perubahan</th>
+                <th scope="col">Stok Akhir</th>
+                <th scope="col">Catatan</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="7" class="data-table__empty-cell">Pilih barang untuk melihat riwayat stok.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ══ Modal Detail Transaksi ══════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="detail-modal" role="dialog" aria-modal="true"
+       aria-labelledby="modal-title" hidden>
+    <div class="modal">
+      <button class="modal-close-btn" id="modal-close" aria-label="Tutup">&times;</button>
+      <h2 class="modal__title" id="modal-title">Detail Transaksi</h2>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ══ Modal Penjualan Baru ═════════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="sale-modal" role="dialog" aria-modal="true"
+       aria-labelledby="sale-modal-title" hidden>
+    <div class="modal">
+      <button class="modal-close-btn" id="sale-modal-close" aria-label="Tutup">&times;</button>
+      <h2 class="modal__title" id="sale-modal-title">Penjualan Baru</h2>
+
+      <form id="sale-form" novalidate>
+
+        <!-- Identitas pelanggan: isi salah satu -->
+        <div class="form-field">
+          <label class="form-field__label" for="sale-customer-id">ID Pelanggan (terdaftar)</label>
+          <input class="form-input" id="sale-customer-id" type="number" min="1"
+                 placeholder="Contoh: 4 (kosongkan jika pembeli umum)" />
+        </div>
+        <div class="form-field">
+          <label class="form-field__label" for="sale-customer-nama">Nama Pembeli Umum</label>
+          <input class="form-input" id="sale-customer-nama" type="text"
+                 placeholder="Contoh: Pak Budi (kosongkan jika pelanggan terdaftar)" />
+        </div>
+
+        <!-- Diskon -->
+        <div class="form-field">
+          <label class="form-field__label" for="sale-diskon">Diskon (Rp, opsional)</label>
+          <input class="form-input" id="sale-diskon" type="number" min="0" placeholder="0" />
+        </div>
+
+        <!-- Baris produk -->
+        <p class="form-field__label" style="margin-bottom:.5rem">Barang</p>
+        <div id="sale-items"></div>
+
+        <button type="button" id="sale-add-item" class="btn btn--ghost btn--sm" style="margin-bottom:1rem">
+          + Tambah Baris
+        </button>
+
+        <p id="sale-status" hidden></p>
+
+        <div class="form-actions">
+          <button class="btn btn--primary" type="submit">Buat Penjualan</button>
+          <button class="btn btn--ghost" type="button" id="sale-modal-close-footer">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div data-include="footer"></div>
+
+  <script>
+    // Tombol Batal di footer form = sama dengan tutup modal
+    document.addEventListener("DOMContentLoaded", function () {
+      var btn = document.getElementById("sale-modal-close-footer");
+      if (btn) btn.addEventListener("click", function () {
+        var m = document.getElementById("sale-modal");
+        if (m) m.hidden = true;
+      });
+    });
+  </script>
+
+</body>
+</html>

@@ -6,8 +6,12 @@
   <title>Keranjang - Sumber Lancar</title>
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/responsive.css" />
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/cart.js"></script>
   <script src="js/auth.js" defer></script>
   <script src="js/include.js" defer></script>
+  <script src="js/keranjang.js" defer></script>
 </head>
 <body data-page="keranjang" data-auth="client">
 
@@ -18,125 +22,24 @@
     <section class="page-head">
       <div class="cart-wrap">
         <h1 class="section-title">Keranjang <span class="text-primary">Anda</span></h1>
-        <p class="page-head__desc">5 barang siap dipesan lewat WhatsApp.</p>
+        <p class="page-head__desc" id="cart-count-label">0 barang</p>
       </div>
     </section>
 
-    <section class="cart-wrap cart">
+    <!-- Tampil saat keranjang kosong -->
+    <section class="cart-wrap cart-empty-state" id="cart-empty" hidden>
+      <div class="cart-empty__inner">
+        <img src="assets/icons/package-gray.svg" alt="" width="64" height="64" />
+        <p class="cart-empty__text">Keranjang Anda masih kosong.</p>
+        <a href="katalog.html" class="btn btn--primary">Lihat Katalog</a>
+      </div>
+    </section>
 
-      <!-- Daftar barang. Tombol +/- masih statis (interaksi menyusul). -->
-      <div class="cart__items">
+    <!-- Tampil saat ada isi keranjang -->
+    <section class="cart-wrap cart" id="cart-wrap" hidden>
 
-        <article class="cart-item">
-          <div class="cart-item__media">
-            <span class="product-card__tag">Oli</span>
-            <img src="assets/icons/package-gray.svg" alt="" width="48" height="48" />
-          </div>
-          <div class="cart-item__info">
-            <h3 class="product-card__name">Oli Mesin Federal Matic 0.8L</h3>
-            <p class="product-card__price">Rp 45.000</p>
-            <span class="stock stock--ready">Stok Tersedia</span>
-            <a href="https://wa.me/62895326202002?text=Halo%20Admin%2C%20saya%20ingin%20tanya%2Fbeli%20Oli%20Mesin%20Federal%20Matic%200.8L"
-               class="btn-wa btn-wa--green" target="_blank" rel="noopener">
-              <img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />
-              <span>Tanya / Beli via WA</span>
-            </a>
-          </div>
-          <div class="qty" role="group" aria-label="Jumlah barang">
-            <button type="button" class="qty__btn" aria-label="Tambah jumlah">+</button>
-            <output class="qty__value">1</output>
-            <button type="button" class="qty__btn qty__btn--minus" aria-label="Kurangi jumlah">&minus;</button>
-          </div>
-        </article>
-
-        <article class="cart-item">
-          <div class="cart-item__media">
-            <span class="product-card__tag">Oli</span>
-            <img src="assets/icons/package-gray.svg" alt="" width="48" height="48" />
-          </div>
-          <div class="cart-item__info">
-            <h3 class="product-card__name">Oli Mesin Federal Matic 0.8L</h3>
-            <p class="product-card__price">Rp 45.000</p>
-            <span class="stock stock--ready">Stok Tersedia</span>
-            <a href="https://wa.me/62895326202002?text=Halo%20Admin%2C%20saya%20ingin%20tanya%2Fbeli%20Oli%20Mesin%20Federal%20Matic%200.8L"
-               class="btn-wa btn-wa--green" target="_blank" rel="noopener">
-              <img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />
-              <span>Tanya / Beli via WA</span>
-            </a>
-          </div>
-          <div class="qty" role="group" aria-label="Jumlah barang">
-            <button type="button" class="qty__btn" aria-label="Tambah jumlah">+</button>
-            <output class="qty__value">1</output>
-            <button type="button" class="qty__btn qty__btn--minus" aria-label="Kurangi jumlah">&minus;</button>
-          </div>
-        </article>
-
-        <article class="cart-item">
-          <div class="cart-item__media">
-            <span class="product-card__tag">Oli</span>
-            <img src="assets/icons/package-gray.svg" alt="" width="48" height="48" />
-          </div>
-          <div class="cart-item__info">
-            <h3 class="product-card__name">Oli Mesin Federal Matic 0.8L</h3>
-            <p class="product-card__price">Rp 45.000</p>
-            <span class="stock stock--ready">Stok Tersedia</span>
-            <a href="https://wa.me/62895326202002?text=Halo%20Admin%2C%20saya%20ingin%20tanya%2Fbeli%20Oli%20Mesin%20Federal%20Matic%200.8L"
-               class="btn-wa btn-wa--green" target="_blank" rel="noopener">
-              <img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />
-              <span>Tanya / Beli via WA</span>
-            </a>
-          </div>
-          <div class="qty" role="group" aria-label="Jumlah barang">
-            <button type="button" class="qty__btn" aria-label="Tambah jumlah">+</button>
-            <output class="qty__value">1</output>
-            <button type="button" class="qty__btn qty__btn--minus" aria-label="Kurangi jumlah">&minus;</button>
-          </div>
-        </article>
-
-        <article class="cart-item">
-          <div class="cart-item__media">
-            <span class="product-card__tag">Oli</span>
-            <img src="assets/icons/package-gray.svg" alt="" width="48" height="48" />
-          </div>
-          <div class="cart-item__info">
-            <h3 class="product-card__name">Oli Mesin Federal Matic 0.8L</h3>
-            <p class="product-card__price">Rp 45.000</p>
-            <span class="stock stock--ready">Stok Tersedia</span>
-            <a href="https://wa.me/62895326202002?text=Halo%20Admin%2C%20saya%20ingin%20tanya%2Fbeli%20Oli%20Mesin%20Federal%20Matic%200.8L"
-               class="btn-wa btn-wa--green" target="_blank" rel="noopener">
-              <img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />
-              <span>Tanya / Beli via WA</span>
-            </a>
-          </div>
-          <div class="qty" role="group" aria-label="Jumlah barang">
-            <button type="button" class="qty__btn" aria-label="Tambah jumlah">+</button>
-            <output class="qty__value">1</output>
-            <button type="button" class="qty__btn qty__btn--minus" aria-label="Kurangi jumlah">&minus;</button>
-          </div>
-        </article>
-
-        <article class="cart-item">
-          <div class="cart-item__media">
-            <span class="product-card__tag">Oli</span>
-            <img src="assets/icons/package-gray.svg" alt="" width="48" height="48" />
-          </div>
-          <div class="cart-item__info">
-            <h3 class="product-card__name">Oli Mesin Federal Matic 0.8L</h3>
-            <p class="product-card__price">Rp 45.000</p>
-            <span class="stock stock--ready">Stok Tersedia</span>
-            <a href="https://wa.me/62895326202002?text=Halo%20Admin%2C%20saya%20ingin%20tanya%2Fbeli%20Oli%20Mesin%20Federal%20Matic%200.8L"
-               class="btn-wa btn-wa--green" target="_blank" rel="noopener">
-              <img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />
-              <span>Tanya / Beli via WA</span>
-            </a>
-          </div>
-          <div class="qty" role="group" aria-label="Jumlah barang">
-            <button type="button" class="qty__btn" aria-label="Tambah jumlah">+</button>
-            <output class="qty__value">1</output>
-            <button type="button" class="qty__btn qty__btn--minus" aria-label="Kurangi jumlah">&minus;</button>
-          </div>
-        </article>
-
+      <div class="cart__items" id="cart-items">
+        <!-- Diisi oleh keranjang.js -->
       </div>
 
       <aside class="cart__side">
@@ -144,71 +47,60 @@
         <section class="panel voucher" aria-labelledby="voucher-title">
           <h2 class="panel__title" id="voucher-title">Voucher</h2>
           <form class="voucher__row" onsubmit="return false">
-            <input class="voucher__input" type="text" name="voucher" placeholder="Masukkan kode voucher" aria-label="Kode voucher" />
-            <button class="voucher__btn" type="submit">Redeem</button>
+            <input class="voucher__input" id="voucher-code" type="text" name="voucher" placeholder="Masukkan kode voucher" aria-label="Kode voucher" />
+            <button class="voucher__btn" id="voucher-apply" type="button">Redeem</button>
           </form>
-          <p class="voucher__hint">Kode voucher memberi potongan harga pada total pesanan.</p>
+          <p class="voucher__hint" id="voucher-msg">Kode voucher memberi potongan harga pada total pesanan.</p>
         </section>
 
         <section class="panel summary" aria-labelledby="summary-title">
           <h2 class="panel__title" id="summary-title">Ringkasan Pesanan</h2>
 
-          <ul class="summary__list">
-            <li class="summary__item">
-              <div>
-                <p class="summary__name">Oli Mesin Federal Matic 0.8L</p>
-                <p class="summary__meta">1 &times; Rp 45.000</p>
-              </div>
-              <span class="summary__price">Rp 45.000</span>
-            </li>
-            <li class="summary__item">
-              <div>
-                <p class="summary__name">Oli Mesin Federal Matic 0.8L</p>
-                <p class="summary__meta">1 &times; Rp 45.000</p>
-              </div>
-              <span class="summary__price">Rp 45.000</span>
-            </li>
-            <li class="summary__item">
-              <div>
-                <p class="summary__name">Oli Mesin Federal Matic 0.8L</p>
-                <p class="summary__meta">1 &times; Rp 45.000</p>
-              </div>
-              <span class="summary__price">Rp 45.000</span>
-            </li>
-            <li class="summary__item">
-              <div>
-                <p class="summary__name">Oli Mesin Federal Matic 0.8L</p>
-                <p class="summary__meta">1 &times; Rp 45.000</p>
-              </div>
-              <span class="summary__price">Rp 45.000</span>
-            </li>
-            <li class="summary__item">
-              <div>
-                <p class="summary__name">Oli Mesin Federal Matic 0.8L</p>
-                <p class="summary__meta">1 &times; Rp 45.000</p>
-              </div>
-              <span class="summary__price">Rp 45.000</span>
-            </li>
+          <ul class="summary__list" id="summary-list">
+            <!-- Diisi oleh keranjang.js -->
           </ul>
 
           <div class="summary__rows">
-            <div class="summary__row"><span>Subtotal (5 barang)</span><span>Rp 225.000</span></div>
-            <div class="summary__row"><span>Diskon voucher</span><span>&minus; Rp 0</span></div>
-            <div class="summary__row summary__row--total"><span>Total</span><span>Rp 225.000</span></div>
+            <div class="summary__row">
+              <span>Subtotal</span>
+              <span id="cart-subtotal">Rp 0</span>
+            </div>
+            <div class="summary__row">
+              <span>Diskon voucher</span>
+              <span id="cart-discount">&minus; Rp 0</span>
+            </div>
+            <div class="summary__row summary__row--total">
+              <span>Total</span>
+              <span id="cart-total">Rp 0</span>
+            </div>
           </div>
 
           <p class="summary__note">Pesanan dikirim ke admin lewat WhatsApp.</p>
 
-          <!-- Nomor WhatsApp placeholder, ganti dengan nomor asli. Isi pesan masih contoh. -->
-          <a href="https://wa.me/62895326202002?text=Halo%20Admin%2C%20saya%20ingin%20memesan%3A%0A5x%20Oli%20Mesin%20Federal%20Matic%200.8L%0ATotal%3A%20Rp%20225.000"
-             class="btn-checkout" target="_blank" rel="noopener">
+          <button id="btn-checkout" type="button" class="btn-checkout">
             <img src="assets/icons/message-circle.svg" alt="" width="24" height="24" />
-            <span>Pesan via WhatsApp</span>
-          </a>
+            <span>Buat Pesanan</span>
+          </button>
         </section>
 
       </aside>
     </section>
+
+    <!-- Konfirmasi setelah pesanan berhasil dibuat -->
+    <div class="modal-backdrop" id="order-confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title" hidden>
+      <div class="modal">
+        <h2 class="modal__title" id="confirm-title">Pesanan Dibuat!</h2>
+        <p>No faktur: <strong id="confirm-invoice"></strong></p>
+        <p class="modal-note">Stok barang telah ditahan 24 jam. Hubungi admin untuk konfirmasi pembayaran.</p>
+        <div class="modal__actions">
+          <a id="confirm-wa-link" class="btn btn--primary" target="_blank" rel="noopener" href="#" hidden>
+            <img src="assets/icons/message-circle.svg" alt="" width="16" height="16" />
+            Konfirmasi via WhatsApp
+          </a>
+          <button id="confirm-close" class="btn btn--ghost" type="button">Tutup</button>
+        </div>
+      </div>
+    </div>
 
   </main>
 
