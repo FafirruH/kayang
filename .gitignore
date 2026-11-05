@@ -7,12 +7,10 @@ config.local/
 
 # Agent & IDE config
 .agent/
-.agent
+.agents/
 .claude/
-.claude
 .config/
-.config
-skills-lock
+skills-lock.json
 
 # Environment variables (berisi API key, secret, dll)
 .env
