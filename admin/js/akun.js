@@ -131,12 +131,23 @@
   var formStatus = document.getElementById("akun-form-status");
   var formSubmit = document.getElementById("akun-form-submit");
   var passHint   = document.getElementById("akun-password-hint");
+  var roleSelect = document.getElementById("akun-role");
+  var roleHint   = document.getElementById("akun-role-hint");
   var editingId  = null;
+  var currentAdmin = window.SLAuth && SLAuth.getCurrentUser();
+  var canManageRoles = !!currentAdmin && String(currentAdmin.username).toLowerCase() === "admin";
 
   function openModal(data) {
     if (!modal || !form) return;
     form.reset();
     if (formStatus) { formStatus.hidden = true; formStatus.textContent = ""; }
+    if (roleSelect) roleSelect.disabled = !canManageRoles;
+    if (roleHint) {
+      roleHint.textContent = canManageRoles
+        ? ""
+        : "Role hanya dapat ditentukan atau diubah oleh Admin Utama.";
+      roleHint.hidden = canManageRoles;
+    }
     if (data) {
       editingId = data.id;
       if (modalTitle) modalTitle.textContent = "Edit Akun";
@@ -178,7 +189,8 @@
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       if (formStatus) { formStatus.hidden = true; }
-      var body = { nama_lengkap: form.elements.nama_lengkap.value.trim(), no_telepon: form.elements.no_telepon.value.trim(), role: form.elements.role.value };
+      var body = { nama_lengkap: form.elements.nama_lengkap.value.trim(), no_telepon: form.elements.no_telepon.value.trim() };
+      if (canManageRoles) body.role = form.elements.role.value;
       var pw = form.elements.password.value;
       if (pw) body.password = pw;
       if (formSubmit) formSubmit.disabled = true;

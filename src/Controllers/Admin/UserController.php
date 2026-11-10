@@ -66,8 +66,12 @@ final class UserController
         $nama     = $in->str('nama_lengkap', 2, 100);
         $telp     = $in->str('no_telepon', 8, 20, true, '/^[0-9+\- ]+$/');
         $alamat   = $in->str('alamat', 1, 500, false);
-        $role     = $in->enum('role', self::ROLES);
+        $role     = $in->enum('role', self::ROLES, false);
         $in->check();
+        if (!self::isMainAdmin($user) && $role !== null && $role !== 'CUSTOMER') {
+            throw new HttpException('Hanya Admin Utama yang dapat menentukan role akun', 403);
+        }
+        $role ??= 'CUSTOMER';
 
         $row = Db::one(
             'INSERT INTO users (username, password_hash, nama_lengkap, no_telepon, alamat, role)
@@ -97,6 +101,9 @@ final class UserController
         $f  = [];
 
         $role = $in->enum('role', self::ROLES, false);
+        if ($role !== null && !self::isMainAdmin($user)) {
+            throw new HttpException('Hanya Admin Utama yang dapat mengubah role akun', 403);
+        }
         if ($role !== null) { $f['role'] = $role; }
         $b = $in->bool('aktif');
         if ($b !== null) { $f['aktif'] = Db::bool($b); }
@@ -130,5 +137,10 @@ final class UserController
             throw new HttpException('Akun tidak ditemukan', 404);
         }
         Http::ok($row);
+    }
+
+    private static function isMainAdmin(?array $user): bool
+    {
+        return isset($user['username']) && strtolower((string) $user['username']) === 'admin';
     }
 }

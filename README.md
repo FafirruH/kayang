@@ -35,7 +35,7 @@ Aplikasi web untuk toko sparepart dan bengkel motor. Pelanggan bisa cek katalog,
 - Manajemen stok: tambah, edit, nonaktifkan barang
 - Manajemen transaksi: filter, sort, selesaikan/batalkan, buat penjualan baru
 - Kartu stok: riwayat keluar-masuk per barang
-- Manajemen akun: tambah, edit role/WA/nama, aktifkan/nonaktifkan
+- Manajemen akun: tambah, edit WA/nama, aktifkan/nonaktifkan; hanya Admin Utama yang dapat menentukan atau mengubah role
 - Konfigurasi WhatsApp: nomor dan format pesan pesanan & panggilan montir
 - DataTable: search, sort kolom, pagination di semua tabel
 
