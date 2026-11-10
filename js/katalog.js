@@ -10,7 +10,7 @@
 
   var grid    = document.querySelector(".product-grid");
   var search  = document.querySelector(".search__input");
-  var chips   = document.querySelectorAll(".chip[data-filter]");
+  var filters = document.querySelector(".filters");
 
   if (!grid) return;
 
@@ -63,9 +63,9 @@
 
     return (
       '<article class="product-card" data-category="' +
-        p.jenis_barang.toLowerCase() + '">' +
+        escHtml(p.jenis_barang.toLowerCase()) + '">' +
         '<div class="product-card__media">' +
-          '<span class="product-card__tag">' + p.jenis_barang + "</span>" +
+          '<span class="product-card__tag">' + escHtml(p.jenis_barang) + "</span>" +
           '<img src="assets/icons/package-gray.svg" alt="" width="48" height="48" />' +
         "</div>" +
         '<div class="product-card__body">' +
@@ -84,6 +84,27 @@
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  function loadCategories() {
+    if (!filters || !window.SLApi) return;
+
+    SLApi.get("/api/categories")
+      .then(function (json) {
+        var categories = Array.isArray(json.data) ? json.data : [];
+        categories.forEach(function (item) {
+          var chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "chip";
+          chip.dataset.filter = "kategori";
+          chip.dataset.jenis = item.jenis;
+          chip.textContent = item.jenis;
+          filters.appendChild(chip);
+        });
+      })
+      .catch(function (err) {
+        console.error("[katalog.js] Gagal memuat kategori", err);
+      });
   }
 
   // ── Fetch & tampilkan ─────────────────────────────────────────────────────
@@ -139,14 +160,19 @@
   }
 
   // ── Filter chip ───────────────────────────────────────────────────────────
-  chips.forEach(function (chip) {
-    chip.addEventListener("click", function () {
-      chips.forEach(function (c) { c.classList.remove("is-active"); });
+  if (filters) {
+    filters.addEventListener("click", function (event) {
+      var chip = event.target.closest(".chip[data-filter]");
+      if (!chip) return;
+
+      filters.querySelectorAll(".chip[data-filter]").forEach(function (item) {
+        item.classList.remove("is-active");
+      });
       chip.classList.add("is-active");
-      state.jenis = chip.dataset.filter;
+      state.jenis = chip.dataset.filter === "semua" ? "semua" : chip.dataset.jenis;
       load();
     });
-  });
+  }
 
   // ── Pencarian (debounce 300ms) ────────────────────────────────────────────
   if (search) {
@@ -185,5 +211,6 @@
   });
 
   // ── Muat pertama kali ─────────────────────────────────────────────────────
+  loadCategories();
   load();
 })();

@@ -28,12 +28,8 @@ final class ProductFilter
 
         $jenis = Http::query('jenis');
         if ($jenis !== '' && strtolower($jenis) !== 'semua') {
-            $j = Jenis::normalize($jenis);
-            if ($j === null) {
-                throw new HttpException('Jenis barang tidak dikenal', 422);
-            }
-            $where[] = 'jenis_barang = :jenis';
-            $args['jenis'] = $j;
+            $where[] = 'LOWER(jenis_barang) = LOWER(:jenis)';
+            $args['jenis'] = $jenis;
         }
 
         $status = $admin ? Http::query('status') : '';

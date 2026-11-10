@@ -351,9 +351,9 @@ Buka `index.html` via Live Server (port 5500). Backend tetap jalan di Apache. Pa
 
 ## Kategori Barang
 
-Kategori barang adalah **enum tetap** yang disimpan di database dan backend (`Jenis::ALL`). Tidak bisa ditambah dari UI — harus diubah di `src/Jenis.php` dan migrasi database.
+Kategori barang dapat diisi bebas melalui form admin, sepanjang 2–30 karakter. Katalog mengambil pilihan filter dari kategori barang aktif yang tersedia.
 
-| Kategori |
+| Contoh kategori awal |
 |----------|
 | Oli |
 | Rem |
@@ -362,6 +362,8 @@ Kategori barang adalah **enum tetap** yang disimpan di database dan backend (`Je
 | Aki |
 | Rantai |
 | Filter |
+
+Untuk database yang sudah ada, jalankan migrasi `database/alter_jenis_barang.sql` satu kali agar kategori baru diterima. Instalasi baru mendapatkan aturan ini dari `sql/bengkel.sql`.
 
 ---
 

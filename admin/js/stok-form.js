@@ -11,9 +11,6 @@
 
   if (!window.SLApi) { console.error("[stok-form.js] SLApi belum dimuat"); return; }
 
-  /* Kategori valid (harus sesuai enum di backend Jenis::ALL) */
-  var JENIS = ["Oli", "Rem", "Busi", "Ban", "Aki", "Rantai", "Filter"];
-
   var LIST_PAGE = "stok.html";
 
   var form    = document.getElementById("stok-form");
@@ -26,15 +23,8 @@
 
   var id = new URLSearchParams(window.location.search).get("id");
 
-  /* ── Isi dropdown kategori ─────────────────────────────────────────────── */
+  /* ── Input kategori bebas ──────────────────────────────────────────────── */
   var katSelect = document.getElementById("kategori-select");
-  if (katSelect) {
-    katSelect.innerHTML =
-      '<option value="">-- Pilih Kategori --</option>' +
-      JENIS.map(function (j) {
-        return '<option value="' + j + '">' + j + "</option>";
-      }).join("");
-  }
 
   /* ── Status helpers ────────────────────────────────────────────────────── */
   function showStatus(kind, text) {
@@ -82,7 +72,8 @@
     check("nama_barang", nama.length >= 2, "Nama barang minimal 2 karakter.");
 
     var jenis = katSelect ? katSelect.value : "";
-    check("jenis_barang", jenis !== "", "Pilih kategori terlebih dahulu.");
+    check("jenis_barang", jenis.trim().length >= 2 && jenis.trim().length <= 30,
+      "Kategori wajib diisi (2–30 karakter).");
 
     var harga = form.elements.harga_jual_default.value.trim();
     check("harga_jual_default", /^\d+$/.test(harga), "Masukkan harga berupa angka bulat.");
@@ -104,7 +95,7 @@
     var el = form.elements[name];
     if (el) el.addEventListener("input", function () { setError(name, ""); });
   });
-  if (katSelect) katSelect.addEventListener("change", function () { setError("jenis_barang", ""); });
+  if (katSelect) katSelect.addEventListener("input", function () { setError("jenis_barang", ""); });
 
   /* ── Mode Edit ─────────────────────────────────────────────────────────── */
   function setModeEdit() {

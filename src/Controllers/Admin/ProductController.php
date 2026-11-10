@@ -7,7 +7,6 @@ use App\Db;
 use App\Http;
 use App\HttpException;
 use App\Input;
-use App\Jenis;
 use App\ProductFilter;
 use App\Transactions;
 
@@ -56,7 +55,7 @@ final class ProductController
         $in    = new Input(Http::body());
         $kode  = $in->str('kode_barang', 2, 30, true, '/^[A-Za-z0-9_-]+$/');
         $nama  = $in->str('nama_barang', 2, 100);
-        $jenis = $in->enum('jenis_barang', Jenis::ALL);
+        $jenis = $in->str('jenis_barang', 2, 30);
         $merk  = $in->str('merk', 1, 50, false);
         $beli  = $in->int('harga_beli_default', 0, 2000000000, false) ?? 0;
         $jual  = $in->int('harga_jual_default', 0, 2000000000, false) ?? 0;
@@ -92,7 +91,7 @@ final class ProductController
         $f = [];
         $v = $in->str('nama_barang', 2, 100, false);
         if ($v !== null) { $f['nama_barang'] = $v; }
-        $v = $in->enum('jenis_barang', Jenis::ALL, false);
+        $v = $in->str('jenis_barang', 2, 30, false);
         if ($v !== null) { $f['jenis_barang'] = $v; }
         $v = $in->str('merk', 1, 50, false);
         if ($v !== null) { $f['merk'] = $v; }
