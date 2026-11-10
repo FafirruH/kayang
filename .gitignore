@@ -34,11 +34,10 @@ yarn-error.log*
 # Konfigurasi runtime API (dibuat saat aplikasi dijalankan)
 /api/config.json
 
-# Dump dan skrip database — dapat berisi data production atau perintah destruktif
+# Dump database lokal — dapat berisi data sensitif
 *.sql
-# Migrasi skema terpilih yang aman untuk version control.
-!/sql/migrations/alter_jenis_barang.sql
-!/sql/migrations/2026-11-10_fifo_inventory.sql
+# Satu-satunya SQL setup yang dipelihara di repository.
+!/sql/bengkel.sql
 *.sqlite
 *.sqlite3
 *.db

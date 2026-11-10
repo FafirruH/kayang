@@ -108,9 +108,8 @@ kayang/
 │   │   └── OrderController.php
 │   └── ...                 # Auth, database, HTTP, routing, transaksi
 │
-├── sql/migrations/
-│   ├── alter_jenis_barang.sql
-│   └── 2026-11-10_fifo_inventory.sql
+├── sql/
+│   └── bengkel.sql         # SQL tunggal: skema, data demo, query, dan demo
 ├── tests/                  # Smoke test
 │
 ├── index.html              # Beranda
@@ -125,11 +124,11 @@ kayang/
 └── .gitignore
 ```
 
-`config.local.php`, `api/config.json`, `.venv/`, direktori konfigurasi agen,
-serta dump lokal di `database/` tidak masuk Git. File SQL diabaikan secara
-default; hanya migrasi terpilih di `sql/migrations/` yang dikecualikan. File
-bootstrap `sql/bengkel.sql` tetap lokal karena berisi perintah `DROP`; jalankan
-hanya pada database baru/kosong, jangan pada database yang berisi data.
+`config.local.php`, `api/config.json`, `.venv/`, dan direktori konfigurasi agen
+tidak masuk Git. Dump SQL lokal juga diabaikan; `sql/bengkel.sql` adalah satu-
+satunya SQL setup yang dipelihara di repository. File tersebut berisi perintah
+`DROP`, jadi jalankan hanya pada database baru/kosong, jangan pada database yang
+sudah berisi data.
 Hindari memindahkan halaman atau aset web tanpa memperbarui tautan relatifnya—
 struktur saat ini menjaga URL yang digunakan di Laragon.
 
@@ -161,9 +160,10 @@ CREATE DATABASE bengkel2;
 ```
 
 Untuk database baru/kosong, bootstrap skema dari file lokal `sql/bengkel.sql`.
-File tersebut berisi perintah `DROP` dan data awal, jadi jangan jalankan pada
-database yang sudah berisi data. Untuk database yang sudah ada, jalankan hanya
-migrasi yang sesuai di bagian [Kategori Barang](#kategori-barang).
+File tersebut berisi skema lengkap, data demo, query laporan, demo transaksi,
+dan perintah `DROP`. Gunakan file itu saja untuk instalasi baru; jangan jalankan
+pada database yang sudah berisi data. SQL upgrade untuk database yang sudah ada
+tidak disediakan.
 
 **3. Salin file konfigurasi**
 
@@ -369,14 +369,11 @@ Kategori barang dapat diisi bebas melalui form admin, sepanjang 2–30 karakter.
 | Rantai |
 | Filter |
 
-Untuk database yang sudah ada:
+`sql/bengkel.sql` sudah memuat kategori bebas (2–30 karakter) dan struktur FIFO.
+File ini ditujukan untuk instalasi baru. SQL untuk meng-upgrade database yang
+sudah berisi data tidak disediakan; jangan jalankan bootstrap pada database itu.
 
-- Jalankan migrasi `sql/migrations/alter_jenis_barang.sql` satu kali agar kategori baru diterima.
-- Jalankan `sql/migrations/2026-11-10_fifo_inventory.sql` satu kali sebelum memakai versi aplikasi yang mendukung FIFO. Migrasi ini membuat lapisan biaya stok dan menginisialisasi stok saat ini sebagai satu lapisan dengan harga beli default yang tercatat. Migrasi tidak menghapus data transaksi.
-
-Instalasi baru mendapatkan struktur FIFO dari `sql/bengkel.sql`.
-
-Setiap transaksi Barang Masuk menyimpan harga beli aktual per barang sebagai satu lapisan stok. Penjualan dan koreksi stok keluar mengurangi lapisan tertua lebih dahulu (FIFO), dan laporan laba menggunakan modal dari lapisan yang terpakai. Harga jual tidak berubah. Harga beli default produk tetap menunjukkan harga pembelian terakhir untuk membantu input transaksi baru; stok lama di database yang sudah ada dimulai dari harga beli default saat migrasi. Nilai modal historis transaksi penjualan yang sudah selesai sebelum migrasi tetap menggunakan snapshot modal yang sudah tersimpan.
+Setiap transaksi Barang Masuk menyimpan harga beli aktual per barang sebagai satu lapisan stok. Penjualan dan koreksi stok keluar mengurangi lapisan tertua lebih dahulu (FIFO), dan laporan laba menggunakan modal dari lapisan yang terpakai. Harga jual tidak berubah. Harga beli default produk tetap menunjukkan harga pembelian terakhir untuk membantu input transaksi baru.
 
 ---
 
