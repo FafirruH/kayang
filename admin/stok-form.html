@@ -3,105 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tambah Barang - Admin Sumber Lancar</title>
   <meta name="robots" content="noindex, nofollow" />
-  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="css/admin.css" />
-  <link rel="stylesheet" href="css/responsive.css" />
-  <script src="../js/config.js"></script>
-  <script src="../js/api.js"></script>
-  <script src="../js/auth.js" defer></script>
-  <script src="../js/include.js" defer></script>
-  <script src="js/stok-form.js" defer></script>
+  <title>Form Barang - Admin Sumber Lancar</title>
+  <script>
+    window.location.replace("stok.html" + (window.location.search || "?new=1"));
+  </script>
 </head>
-<!-- stok-form.html          → Tambah barang
-     stok-form.html?id=3     → Edit barang (diatur js/stok-form.js) -->
-<body data-auth="admin" data-page="stok">
-
-  <div data-include="header"></div>
-
-  <main>
-    <div class="form-page">
-      <form class="form-card" id="stok-form" novalidate>
-        <h1 class="form-card__title" id="form-title">Tambah Barang</h1>
-
-        <!-- Kode barang (hanya mode tambah; disembunyikan saat edit) -->
-        <div class="form-field" id="kode-wrap">
-          <label class="form-field__label" for="kode_barang">Kode Barang</label>
-          <input class="form-input" id="kode_barang" name="kode_barang" type="text"
-                 placeholder="Contoh: OLI-YML-1L" autocomplete="off"
-                 style="text-transform:uppercase" />
-          <p class="form-field__hint" style="font-size:.8rem;color:var(--text-muted,#94a3b8);margin-top:.25rem">
-            Kode unik barang (huruf, angka, - atau _). Tidak bisa diubah setelah disimpan.
-          </p>
-          <p class="form-field__error" id="kode_barang-error" hidden></p>
-        </div>
-
-        <div class="form-field">
-          <label class="form-field__label" for="nama_barang">Nama Barang</label>
-          <input class="form-input" id="nama_barang" name="nama_barang" type="text"
-                 placeholder="Contoh: Oli Mesin Yamalube 1L" autocomplete="off" />
-          <p class="form-field__error" id="nama_barang-error" hidden></p>
-        </div>
-
-        <div class="form-field">
-          <label class="form-field__label" for="kategori-select">Kategori</label>
-          <input class="form-input" id="kategori-select" type="text" maxlength="30"
-                 placeholder="Contoh: Oli atau Aksesoris" autocomplete="off" />
-          <p class="form-field__error" id="jenis_barang-error" hidden></p>
-        </div>
-
-        <div class="form-field">
-          <label class="form-field__label" for="merk">Merk <span style="font-weight:400;color:var(--text-muted,#94a3b8)">(opsional)</span></label>
-          <input class="form-input" id="merk" name="merk" type="text"
-                 placeholder="Contoh: Yamalube" autocomplete="off" />
-        </div>
-
-        <div class="form-field">
-          <label class="form-field__label" for="harga_jual_default">Harga Jual (Rp)</label>
-          <input class="form-input" id="harga_jual_default" name="harga_jual_default"
-                 type="number" min="0" step="1" inputmode="numeric" placeholder="Contoh: 55000" />
-          <p class="form-field__error" id="harga_jual_default-error" hidden></p>
-        </div>
-
-        <div class="form-field">
-          <label class="form-field__label" for="harga_beli_default">Harga Beli (Rp) <span style="font-weight:400;color:var(--text-muted,#94a3b8)">(opsional)</span></label>
-          <input class="form-input" id="harga_beli_default" name="harga_beli_default"
-                 type="number" min="0" step="1" inputmode="numeric" placeholder="Contoh: 45000" />
-        </div>
-
-        <div class="form-field">
-          <label class="form-field__label" for="stok_minimal">Stok Minimal</label>
-          <input class="form-input" id="stok_minimal" name="stok_minimal"
-                 type="number" min="0" step="1" inputmode="numeric" value="5" />
-          <p class="form-field__hint" style="font-size:.8rem;color:var(--text-muted,#94a3b8);margin-top:.25rem">
-            Barang akan ditandai perlu perhatian jika stok di bawah angka ini.
-          </p>
-        </div>
-
-        <!-- Stok awal (hanya mode tambah; disembunyikan saat edit) -->
-        <div class="form-field" id="stok-awal-wrap">
-          <label class="form-field__label" for="stok_awal">Stok Awal</label>
-          <input class="form-input" id="stok_awal" name="stok_awal"
-                 type="number" min="0" step="1" inputmode="numeric" value="0" />
-          <p class="form-field__error" id="stok_awal-error" hidden></p>
-        </div>
-
-        <!-- Info stok saat edit (disembunyikan saat tambah) -->
-        <p id="stok-info" hidden
-           style="font-size:.85rem;color:var(--text-muted,#94a3b8);margin-bottom:.75rem"></p>
-
-        <div class="form-actions">
-          <button class="btn btn--primary" type="submit" id="form-submit">Simpan Barang</button>
-          <a class="form-actions__cancel" href="stok.html">Batal</a>
-        </div>
-
-        <p class="form-status" id="form-status" role="status" hidden></p>
-      </form>
-    </div>
-  </main>
-
-  <div data-include="footer"></div>
-
+<body>
+  <p>Membuka form barang… <a href="stok.html?new=1">Lanjutkan</a></p>
 </body>
 </html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Supplier - Admin Sumber Lancar</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <style>
+    .supplier-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(0, 0, 0, .6);
+    }
+    .supplier-modal-backdrop[hidden] { display: none; }
+    .supplier-modal {
+      position: relative;
+      width: 100%;
+      max-width: 612px;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      padding: 0;
+      background: transparent;
+    }
+    .supplier-modal .form-card { max-width: none; }
+    .supplier-modal .form-card__title { padding-right: 32px; }
+    .supplier-modal__close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 1;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      color: var(--color-dark);
+      background: transparent;
+      border: 0;
+      font-size: 24px;
+      line-height: 1;
+    }
+    .supplier-modal .btn--ghost {
+      color: var(--color-dark);
+      border-color: rgba(0, 0, 0, .2);
+    }
+    .page-dark .supplier-modal .form-input {
+      color: var(--color-dark);
+      background: #fff;
+      border-color: #000;
+    }
+    .supplier-modal .form-status--error {
+      color: #b3261e;
+      background: rgba(179, 38, 30, .12);
+    }
+    @media (max-width: 480px) {
+      .supplier-modal-backdrop { padding: 8px; }
+      .supplier-modal { max-height: calc(100vh - 16px); }
+    }
+  </style>
+  <script src="../js/config.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js" defer></script>
+  <script src="../js/include.js" defer></script>
+  <script src="js/datatable.js" defer></script>
+  <script src="js/dialog.js" defer></script>
+  <script src="js/supplier.js" defer></script>
+</head>
+<body data-auth="admin" class="page-dark" data-page="supplier">
+
+  <div data-include="header"></div>
+
+  <main>
+    <div class="container page-section">
+      <div class="page-head page-head--spaced">
+        <div>
+          <h1 class="page-title">Data Supplier</h1>
+          <p class="page-subtitle">Kelola supplier untuk transaksi Barang Masuk</p>
+        </div>
+        <button id="btn-add-supplier" class="btn btn--primary" type="button">
+          <img src="assets/icons/plus.svg" alt="" width="16" height="16" />
+          <span>Tambah Supplier</span>
+        </button>
+      </div>
+
+      <div class="filter-bar" style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;align-items:center">
+        <label class="sr-only" for="supplier-search">Cari supplier</label>
+        <input id="supplier-search" class="search-input" type="search" placeholder="Cari nama supplier..." autocomplete="off" style="flex:1;min-width:180px" />
+        <label class="sr-only" for="supplier-status-filter">Filter status</label>
+        <select id="supplier-status-filter" class="search-input" aria-label="Filter status supplier">
+          <option value="all">Semua supplier</option>
+          <option value="true">Aktif</option>
+          <option value="false">Nonaktif</option>
+        </select>
+        <span id="supplier-count" style="font-size:.8rem;color:var(--text-muted,#94a3b8)"></span>
+      </div>
+
+      <div class="table-card table-card--dark">
+        <table class="data-table data-table--stack" id="supplier-table">
+          <caption class="sr-only">Daftar supplier</caption>
+          <thead>
+            <tr>
+              <th scope="col" data-sort="nama_supplier">Nama Supplier</th>
+              <th scope="col">No. Telepon</th>
+              <th scope="col">Alamat</th>
+              <th scope="col" data-sort="aktif">Status</th>
+              <th scope="col" class="data-table__actions">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="5" class="data-table__empty-cell">Memuat data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="sr-only" id="supplier-live" role="status" aria-live="polite"></p>
+    </div>
+  </main>
+
+  <div class="supplier-modal-backdrop" id="supplier-modal" role="dialog" aria-modal="true"
+       aria-labelledby="supplier-modal-title" hidden>
+    <div class="supplier-modal">
+      <button class="supplier-modal__close" id="supplier-modal-close" type="button" aria-label="Tutup">&times;</button>
+      <form id="supplier-form" class="form-card" novalidate>
+        <h2 class="form-card__title" id="supplier-modal-title">Tambah Supplier</h2>
+        <div class="form-field">
+          <label class="form-field__label" for="supplier-name">Nama Supplier</label>
+          <input class="form-input" id="supplier-name" name="nama_supplier" type="text" maxlength="100" required />
+        </div>
+        <div class="form-field">
+          <label class="form-field__label" for="supplier-phone">No. Telepon / WhatsApp</label>
+          <input class="form-input" id="supplier-phone" name="no_telepon" type="tel" maxlength="20"
+                 placeholder="Contoh: 081234567890" required />
+        </div>
+        <div class="form-field">
+          <label class="form-field__label" for="supplier-address">Alamat <span class="form-optional">(opsional)</span></label>
+          <textarea class="form-input" id="supplier-address" name="alamat" maxlength="500" rows="3"
+                    style="height:auto;min-height:80px;padding-top:8px;padding-bottom:8px;resize:vertical"></textarea>
+        </div>
+        <p id="supplier-form-status" class="form-status form-status--error" role="status" hidden></p>
+        <div class="form-actions">
+          <button class="btn btn--primary" type="submit" id="supplier-form-submit">Simpan Supplier</button>
+          <button class="btn btn--ghost" type="button" id="supplier-form-cancel">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div data-include="footer"></div>
+</body>
+</html>

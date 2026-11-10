@@ -23,8 +23,10 @@ final class ReportController
                   AND date_trunc('month', completed_at) = date_trunc('month', now()))      AS pendapatan_bulan_ini,
               (SELECT COUNT(*) FROM transactions
                 WHERE tipe_transaksi = 'OUT' AND status = 'PENDING' AND expired_at > now()) AS pesanan_menahan_stok,
-              (SELECT COALESCE(SUM(stok::bigint * harga_beli_default), 0)
-                 FROM products WHERE aktif)                                                AS nilai_persediaan,
+              (SELECT COALESCE(SUM(b.remaining_quantity::bigint * b.unit_cost), 0)
+                 FROM inventory_batches b
+                 JOIN products p ON p.id = b.product_id
+                WHERE p.aktif)                                                             AS nilai_persediaan,
               (SELECT COUNT(*) FROM v_stok_barang
                 WHERE aktif AND status_stok <> 'Tersedia')                                 AS barang_perlu_perhatian,
               (SELECT COUNT(*) FROM users WHERE role = 'CUSTOMER')                         AS pelanggan_terdaftar
@@ -223,10 +225,16 @@ final class ReportController
             "SELECT p.kode_barang, p.nama_barang, p.jenis_barang,
                     SUM(d.jumlah)   AS terjual,
                     SUM(d.subtotal) AS omzet,
-                    SUM(d.jumlah * (d.harga_satuan_real - d.harga_modal)) AS laba_kotor
+                    SUM(d.subtotal - COALESCE(c.modal, d.jumlah::bigint * d.harga_modal)) AS laba_kotor
                FROM transaction_details d
                JOIN transactions t ON t.id = d.transaction_id
                JOIN products     p ON p.id = d.product_id
+               LEFT JOIN LATERAL (
+                 SELECT SUM(c.quantity::bigint * c.unit_cost) AS modal
+                   FROM transaction_detail_costs c
+                  WHERE c.transaction_id = d.transaction_id
+                    AND c.product_id = d.product_id
+               ) c ON TRUE
               WHERE t.tipe_transaksi = 'OUT' AND t.status = 'COMPLETED'
                 AND t.completed_at >= now() - make_interval(days => CAST(:hari AS integer))
               GROUP BY p.id

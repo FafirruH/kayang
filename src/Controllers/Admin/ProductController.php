@@ -49,34 +49,51 @@ final class ProductController
         Http::ok($row);
     }
 
-    /** POST /api/admin/products  (stok_awal opsional -> dicatat sebagai koreksi ADJ_IN) */
+    /** POST /api/admin/products (hanya mendaftarkan data master barang). */
     public static function create(array $params, ?array $user): void
     {
         $in    = new Input(Http::body());
-        $kode  = $in->str('kode_barang', 2, 30, true, '/^[A-Za-z0-9_-]+$/');
+        $kode  = $in->str('kode_barang', 2, 30, false, '/^[A-Za-z0-9_-]+$/');
         $nama  = $in->str('nama_barang', 2, 100);
         $jenis = $in->str('jenis_barang', 2, 30);
         $merk  = $in->str('merk', 1, 50, false);
-        $beli  = $in->int('harga_beli_default', 0, 2000000000, false) ?? 0;
         $jual  = $in->int('harga_jual_default', 0, 2000000000, false) ?? 0;
         $min   = $in->int('stok_minimal', 0, 1000000, false) ?? 5;
-        $awal  = $in->int('stok_awal', 0, 1000000, false) ?? 0;
+        foreach (['stok_awal', 'supplier_id', 'harga_beli_default'] as $field) {
+            if ($in->has($field)) {
+                $in->error($field, 'Stok dan harga beli dicatat melalui transaksi Barang Masuk');
+            }
+        }
         $in->check();
 
-        $id = (int) Db::tx(static function () use ($user, $kode, $nama, $jenis, $merk, $beli, $jual, $min, $awal) {
-            $id = (int) Db::val(
-                'INSERT INTO products (kode_barang, nama_barang, jenis_barang, merk,
-                                       harga_beli_default, harga_jual_default, stok_minimal)
-                 VALUES (:k, :n, :j, :m, :b, :h, :s) RETURNING id',
-                ['k' => strtoupper((string) $kode), 'n' => $nama, 'j' => $jenis, 'm' => $merk,
-                 'b' => $beli, 'h' => $jual, 's' => $min]
-            );
-            if ($awal > 0) {
-                self::postAdjustment($user['id'], $id, 'ADJ_IN', $awal, 'Stok awal barang');
+        $id = Db::tx(static function () use ($kode, $nama, $jenis, $merk, $jual, $min): int {
+            if ($kode !== null) {
+                return (int) Db::val(
+                    'INSERT INTO products (kode_barang, nama_barang, jenis_barang, merk,
+                                           harga_jual_default, stok_minimal)
+                     VALUES (:k, :n, :j, :m, :h, :s) RETURNING id',
+                    ['k' => strtoupper($kode), 'n' => $nama, 'j' => $jenis, 'm' => $merk,
+                     'h' => $jual, 's' => $min]
+                );
             }
+
+            $id = (int) Db::val("SELECT nextval(pg_get_serial_sequence('products', 'id'))");
+            $baseCode = 'BRG-' . str_pad((string) $id, 5, '0', STR_PAD_LEFT);
+            $code = $baseCode;
+            $suffix = 1;
+            while (Db::val('SELECT 1 FROM products WHERE kode_barang = :code', ['code' => $code]) !== null) {
+                $code = $baseCode . '-' . $suffix++;
+            }
+
+            Db::exec(
+                'INSERT INTO products (id, kode_barang, nama_barang, jenis_barang, merk,
+                                       harga_jual_default, stok_minimal)
+                 VALUES (:id, :k, :n, :j, :m, :h, :s)',
+                ['id' => $id, 'k' => $code, 'n' => $nama, 'j' => $jenis, 'm' => $merk,
+                 'h' => $jual, 's' => $min]
+            );
             return $id;
         });
-
         Http::ok(Db::one('SELECT ' . self::LIST_COLS . ' FROM v_stok_barang WHERE product_id = :id', ['id' => $id]), null, 201);
     }
 
@@ -87,6 +104,9 @@ final class ProductController
         if ($in->has('stok')) {
             $in->error('stok', 'Stok tidak diubah langsung; gunakan penyesuaian stok atau transaksi barang masuk');
         }
+        if ($in->has('harga_beli_default')) {
+            $in->error('harga_beli_default', 'Harga beli dicatat melalui transaksi Barang Masuk');
+        }
 
         $f = [];
         $v = $in->str('nama_barang', 2, 100, false);
@@ -95,7 +115,7 @@ final class ProductController
         if ($v !== null) { $f['jenis_barang'] = $v; }
         $v = $in->str('merk', 1, 50, false);
         if ($v !== null) { $f['merk'] = $v; }
-        foreach (['harga_beli_default', 'harga_jual_default', 'stok_minimal'] as $k) {
+        foreach (['harga_jual_default', 'stok_minimal'] as $k) {
             $n = $in->int($k, 0, 2000000000, false);
             if ($n !== null) { $f[$k] = $n; }
         }

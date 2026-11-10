@@ -117,7 +117,6 @@
 
   /* ── Pagination ─────────────────────────────────────────────────────────── */
   SLDataTable.prototype._renderPagination = function (meta) {
-    if (!this.paginEl) return;
     var total   = Number(meta.total) || 0;
     var current = Number(meta.page)  || 1;
     var pages   = Math.ceil(total / this.state.per);
@@ -126,6 +125,7 @@
       this.countEl.textContent = total.toLocaleString("id-ID") + " data";
     }
 
+    if (!this.paginEl) return;
     if (pages <= 1) { this.paginEl.innerHTML = ""; return; }
 
     var html = "";
@@ -158,6 +158,28 @@
     this.paginEl.innerHTML = html;
   };
 
+  function fetchAllPages(fetch, params) {
+    return fetch(params).then(function (first) {
+      var rows = first.data || [];
+      var meta = first.meta || {};
+      var pageSize = Number(params.per_page) || rows.length || 1;
+      var pages = Number(meta.total_pages) || Math.ceil((Number(meta.total) || rows.length) / pageSize);
+
+      function fetchPage(page) {
+        if (page > pages) return Promise.resolve({ data: rows, meta: meta });
+        var nextParams = {};
+        Object.keys(params).forEach(function (key) { nextParams[key] = params[key]; });
+        nextParams.page = page;
+        return fetch(nextParams).then(function (result) {
+          rows = rows.concat(result.data || []);
+          return fetchPage(page + 1);
+        });
+      }
+
+      return fetchPage(2);
+    });
+  }
+
   /* ── Load ──────────────────────────────────────────────────────────────── */
   SLDataTable.prototype.load = function () {
     var self    = this;
@@ -165,6 +187,8 @@
     var colspan = cfg.colspan || 6;
 
     if (!this.tbody) return;
+    this._requestId = (this._requestId || 0) + 1;
+    var requestId = this._requestId;
 
     this.tbody.innerHTML = '<tr><td colspan="' + colspan +
       '" class="data-table__empty-cell"><span class="loading-dots">Memuat data</span></td></tr>';
@@ -177,7 +201,7 @@
       sort:  this.state.sort  || undefined,
       order: this.state.order || undefined,
       page:  this.state.page,
-      per:   this.state.per
+      per_page: this.state.per
     };
     /* Merge params tambahan dari cfg.params() */
     if (cfg.params) {
@@ -187,8 +211,13 @@
       });
     }
 
-    cfg.fetch(params)
+    var request = cfg.allRows
+      ? fetchAllPages(cfg.fetch, params)
+      : cfg.fetch(params);
+
+    request
       .then(function (res) {
+        if (requestId !== self._requestId) return;
         var rows = res.data || [];
         var meta = res.meta || {};
         self.total = Number(meta.total) || rows.length;
@@ -217,9 +246,10 @@
         }
 
         self.tbody.innerHTML = rows.map(cfg.renderRow).join("");
-        self._renderPagination(meta);
+        self._renderPagination(cfg.allRows ? { total: rows.length, page: 1 } : meta);
       })
       .catch(function (err) {
+        if (requestId !== self._requestId) return;
         self.tbody.innerHTML = '<tr><td colspan="' + colspan + '" class="data-table__empty-cell data-table__error">' +
           "Gagal memuat: " + (err && err.message ? err.message : "server error") + "</td></tr>";
       });

@@ -8,11 +8,70 @@
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/admin.css" />
   <link rel="stylesheet" href="css/responsive.css" />
+  <style>
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(0, 0, 0, .6);
+    }
+    .modal-backdrop[hidden] { display: none; }
+    .modal--account {
+      position: relative;
+      width: 100%;
+      max-width: 612px;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      padding: 0;
+      background: transparent;
+    }
+    .modal--account .form-card { max-width: none; }
+    .modal--account .form-card__title { padding-right: 32px; }
+    .modal--account .modal-close-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 1;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      color: var(--color-dark);
+      background: transparent;
+      border: 0;
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .modal--account .btn--ghost {
+      color: var(--color-dark);
+      border-color: rgba(0, 0, 0, .2);
+    }
+    .page-dark .modal--account .form-input {
+      color: var(--color-dark);
+      background: #fff;
+      border-color: #000;
+    }
+    .page-dark .modal--account .form-input::placeholder { color: #737982; }
+    .modal--account .form-field__hint { color: var(--color-text-muted-light); }
+    .modal--account .form-status--error {
+      color: #b3261e;
+      background: rgba(179, 38, 30, .12);
+    }
+    @media (max-width: 480px) {
+      .modal-backdrop { padding: 8px; }
+      .modal--account { max-height: calc(100vh - 16px); }
+    }
+  </style>
   <script src="../js/config.js"></script>
   <script src="../js/api.js"></script>
   <script src="../js/auth.js" defer></script>
   <script src="../js/include.js" defer></script>
   <script src="js/datatable.js" defer></script>
+  <script src="js/dialog.js" defer></script>
   <script src="js/akun.js" defer></script>
 </head>
 <body data-auth="admin" class="page-dark" data-page="akun">
@@ -68,8 +127,6 @@
         </table>
       </div>
 
-      <div class="pagination" id="akun-pagination" role="navigation" aria-label="Halaman akun"></div>
-
       <p class="sr-only" id="akun-live" role="status" aria-live="polite"></p>
 
     </div>
@@ -78,11 +135,11 @@
   <!-- ══ Modal Tambah / Edit Akun ═══════════════════════════════════════════ -->
   <div class="modal-backdrop" id="akun-modal" role="dialog" aria-modal="true"
        aria-labelledby="akun-modal-title" hidden>
-    <div class="modal">
+    <div class="modal modal--account">
       <button class="modal-close-btn" id="akun-modal-close" aria-label="Tutup">&times;</button>
-      <h2 class="modal__title" id="akun-modal-title">Tambah Akun</h2>
 
-      <form id="akun-form" novalidate>
+      <form id="akun-form" class="form-card" novalidate>
+        <h2 class="form-card__title" id="akun-modal-title">Tambah Akun</h2>
         <div class="form-field">
           <label class="form-field__label" for="akun-username">Username</label>
           <input class="form-input" id="akun-username" name="username" type="text"
@@ -112,13 +169,13 @@
           <label class="form-field__label" for="akun-password">Password</label>
           <input class="form-input" id="akun-password" name="password" type="password"
                  autocomplete="new-password" />
-          <p class="form-field__hint" style="font-size:.8rem;color:var(--text-muted,#94a3b8);margin-top:.25rem" id="akun-password-hint"></p>
+          <p class="form-field__hint" id="akun-password-hint"></p>
           <p class="form-field__error" id="akun-password-error" hidden></p>
         </div>
 
-        <p id="akun-form-status" hidden style="font-size:.85rem;color:#f87171;margin-top:.5rem"></p>
+        <p id="akun-form-status" class="form-status form-status--error" role="status" hidden></p>
 
-        <div class="form-actions" style="margin-top:1.25rem">
+        <div class="form-actions">
           <button class="btn btn--primary" type="submit" id="akun-form-submit">Simpan</button>
           <button class="btn btn--ghost" type="button" id="akun-form-cancel">Batal</button>
         </div>

@@ -44,6 +44,7 @@ final class UserController
         $total = (int) Db::val("SELECT COUNT(*) FROM users u WHERE $w", $args);
         $rows  = Db::all(
             "SELECT u.id, u.username, u.nama_lengkap, u.no_telepon, u.role, u.aktif, u.created_at,
+                    CASE WHEN LOWER(u.username) = 'admin' THEN 1 ELSE 0 END AS admin_utama,
                     COUNT(t.id) AS jumlah_transaksi
                FROM users u
                LEFT JOIN transactions t ON t.customer_id = u.id
@@ -84,6 +85,14 @@ final class UserController
     /** PATCH /api/admin/users/{id}  {role?, aktif?, nama_lengkap?, no_telepon?, alamat?, password?} */
     public static function update(array $params, ?array $user): void
     {
+        $target = Db::one('SELECT username FROM users WHERE id = :id', ['id' => $params['id']]);
+        if ($target === null) {
+            throw new HttpException('Akun tidak ditemukan', 404);
+        }
+        if (strtolower((string) $target['username']) === 'admin') {
+            throw new HttpException('Akun Admin Utama tidak dapat diubah dari menu Akun. Gunakan Pengaturan WA untuk mengubah nomor WhatsApp.', 422);
+        }
+
         $in = new Input(Http::body());
         $f  = [];
 

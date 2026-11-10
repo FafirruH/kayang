@@ -45,93 +45,93 @@ Aplikasi web untuk toko sparepart dan bengkel motor. Pelanggan bisa cek katalog,
 
 ```
 kayang/
-├── admin/                  # Halaman admin
+├── admin/                  # Panel admin
+│   ├── assets/icons/
 │   ├── css/
-│   │   ├── admin.css       # Style admin
-│   │   └── responsive.css  # Responsive admin
+│   │   ├── admin.css
+│   │   ├── responsive.css
+│   │   └── stok.css
 │   ├── js/
-│   │   ├── datatable.js    # Utility DataTable (search, sort, pagination)
-│   │   ├── index.js        # Dashboard
-│   │   ├── stok.js         # Halaman stok
-│   │   ├── stok-form.js    # Form tambah/edit barang
-│   │   ├── transaksi.js    # Halaman transaksi & kartu stok
-│   │   ├── akun.js         # Halaman daftar akun
-│   │   └── wa.js           # Konfigurasi WhatsApp
+│   │   ├── datatable.js
+│   │   ├── dialog.js
+│   │   ├── index.js
+│   │   ├── stok.js
+│   │   ├── stok-form.js
+│   │   ├── transaksi.js
+│   │   ├── supplier.js
+│   │   ├── akun.js
+│   │   └── wa.js
 │   ├── partials/
-│   │   ├── header.html     # Header admin
-│   │   └── footer.html     # Footer admin
-│   ├── index.html          # Dashboard
-│   ├── stok.html           # Daftar stok
-│   ├── stok-form.html      # Form tambah/edit barang
-│   ├── transaksi.html      # Manajemen transaksi
-│   ├── akun.html           # Daftar akun
-│   └── wa.html             # Konfigurasi WA
+│   │   ├── header.html
+│   │   └── footer.html
+│   ├── index.html
+│   ├── stok.html
+│   ├── stok-form.html
+│   ├── transaksi.html
+│   ├── supplier.html
+│   ├── akun.html
+│   └── wa.html
 │
 ├── api/
-│   └── config.php          # API konfigurasi WA (GET/POST)
+│   └── config.php
 │
-├── assets/
-│   └── icons/              # Ikon SVG
+├── assets/icons/           # Aset bersama frontend
 │
 ├── css/
-│   ├── style.css           # Style client
-│   └── responsive.css      # Responsive client
+│   ├── style.css
+│   └── responsive.css
 │
 ├── js/
-│   ├── config.js           # Konfigurasi frontend (API_BASE, WA_NUMBER, dll)
-│   ├── api.js              # HTTP client (SLApi) → semua request ke backend
-│   ├── auth.js             # Autentikasi frontend (SLAuth)
-│   ├── auth-pages.js       # Logic form login & register
-│   ├── include.js          # Load partials, kontrol akses, nav toggle
-│   ├── cart.js             # Keranjang belanja (SLCart, localStorage)
-│   ├── katalog.js          # Halaman katalog
-│   ├── keranjang.js        # Halaman keranjang & checkout
-│   └── panggilan.js        # Form panggil montir
+│   ├── config.js
+│   ├── api.js
+│   ├── auth.js
+│   ├── auth-pages.js
+│   ├── include.js
+│   ├── cart.js
+│   ├── katalog.js
+│   ├── keranjang.js
+│   └── panggilan.js
 │
 ├── partials/
-│   ├── header.html         # Header client
-│   └── footer.html         # Footer client
+│   ├── header.html
+│   └── footer.html
 │
-├── src/                    # Backend PHP
+├── public/
+│   └── index.php           # API entry point
+│
+├── src/                    # Kode backend PHP
 │   ├── Controllers/
 │   │   ├── Admin/
-│   │   │   ├── ProductController.php
-│   │   │   ├── TransactionController.php
-│   │   │   ├── UserController.php
-│   │   │   ├── ReportController.php
-│   │   │   └── SupplierController.php
+│   │   │   └── ...         # Controller admin
 │   │   ├── AuthController.php
 │   │   ├── CatalogController.php
 │   │   └── OrderController.php
-│   ├── Auth.php
-│   ├── Config.php
-│   ├── Db.php
-│   ├── Http.php
-│   ├── HttpException.php
-│   ├── Input.php
-│   ├── Jenis.php
-│   ├── Kernel.php
-│   ├── ProductFilter.php
-│   ├── RateLimiter.php
-│   ├── Router.php
-│   ├── Transactions.php
-│   ├── Wa.php
-│   ├── bootstrap.php
-│   └── routes.php
+│   └── ...                 # Auth, database, HTTP, routing, transaksi
 │
-├── public/
-│   └── index.php           # Entry point backend (semua /api/* masuk sini)
+├── sql/migrations/
+│   ├── alter_jenis_barang.sql
+│   └── 2026-11-10_fifo_inventory.sql
+├── tests/                  # Smoke test
 │
-├── index.html              # Beranda client
-├── katalog.html            # Katalog sparepart
-├── keranjang.html          # Keranjang belanja
-├── login.html              # Halaman login
-├── register.html           # Halaman register
-├── panggilan.html          # Form panggil montir
-├── config.php              # Konfigurasi backend (baca env / config.local.php)
-├── config.local.php        # Override lokal (kredensial DB — jangan di-commit)
+├── index.html              # Beranda
+├── katalog.html
+├── keranjang.html
+├── login.html
+├── register.html
+├── panggilan.html
+├── config.php              # Konfigurasi backend
+├── config.local.example.php
+├── README.md
 └── .gitignore
 ```
+
+`config.local.php`, `api/config.json`, `.venv/`, direktori konfigurasi agen,
+serta dump lokal di `database/` tidak masuk Git. File SQL diabaikan secara
+default; hanya migrasi terpilih di `sql/migrations/` yang dikecualikan. File
+bootstrap `sql/bengkel.sql` tetap lokal karena berisi perintah `DROP`; jalankan
+hanya pada database baru/kosong, jangan pada database yang berisi data.
+Hindari memindahkan halaman atau aset web tanpa memperbarui tautan relatifnya—
+struktur saat ini menjaga URL yang digunakan di Laragon.
 
 ---
 
@@ -160,7 +160,10 @@ C:\laragon\www\kayang\
 CREATE DATABASE bengkel2;
 ```
 
-Jalankan file SQL migrasi (tabel `users`, `products`, `transactions`, `transaction_details`, view `v_stok_barang`, dll).
+Untuk database baru/kosong, bootstrap skema dari file lokal `sql/bengkel.sql`.
+File tersebut berisi perintah `DROP` dan data awal, jadi jangan jalankan pada
+database yang sudah berisi data. Untuk database yang sudah ada, jalankan hanya
+migrasi yang sesuai di bagian [Kategori Barang](#kategori-barang).
 
 **3. Salin file konfigurasi**
 
@@ -332,10 +335,13 @@ Buka `index.html` via Live Server (port 5500). Backend tetap jalan di Apache. Pa
 |---------|-----|-----------|
 | Dashboard | `/admin/index.html` | Statistik, transaksi terbaru, produk terlaris |
 | Stok | `/admin/stok.html` | Tabel stok + search/sort/pagination |
-| Tambah/Edit Barang | `/admin/stok-form.html` | Form barang |
-| Transaksi | `/admin/transaksi.html` | Tabel transaksi + kartu stok |
+| Tambah/Edit Barang | `/admin/stok.html` | Modal tambah/edit barang |
+| Transaksi | `/admin/transaksi.html` | Penjualan, Barang Masuk, dan kartu stok |
+| Supplier | `/admin/supplier.html` | Tambah/edit dan aktifkan/nonaktifkan supplier |
 | Akun | `/admin/akun.html` | Tabel akun + tambah/edit |
-| Config WA | `/admin/wa.html` | Nomor & format pesan WA |
+| Pengaturan WA | `/admin/wa.html` | Nomor & format pesan WhatsApp |
+
+**Tambah Barang** hanya mendaftarkan data master (kode, nama, kategori, harga jual, dan stok minimal). Kode barang boleh dikosongkan agar otomatis dibuat dalam format `BRG-<ID>` (contoh `BRG-00031`); admin juga dapat mengisi kode unik sendiri. Kode barang ditampilkan di daftar Stok dan tidak dapat diubah setelah dibuat. Catat stok awal maupun penambahan stok berikutnya beserta harga beli aktual melalui **Transaksi > Barang Masuk**. Transaksi Barang Masuk berstatus Pending; stok dan lapisan modal FIFO bertambah setelah transaksi diselesaikan.
 
 ---
 
@@ -345,7 +351,7 @@ Buka `index.html` via Live Server (port 5500). Backend tetap jalan di Apache. Pa
 |----------|----------|------|
 | `admin` | `admin123` | ADMIN |
 
-> Akun admin demo tidak bisa dihapus atau dinonaktifkan.
+> Akun Admin Utama (`admin`) tidak bisa diubah atau dinonaktifkan dari menu Akun. Ubah nomor WhatsApp melalui menu Pengaturan WA.
 
 ---
 
@@ -363,7 +369,14 @@ Kategori barang dapat diisi bebas melalui form admin, sepanjang 2–30 karakter.
 | Rantai |
 | Filter |
 
-Untuk database yang sudah ada, jalankan migrasi `database/alter_jenis_barang.sql` satu kali agar kategori baru diterima. Instalasi baru mendapatkan aturan ini dari `sql/bengkel.sql`.
+Untuk database yang sudah ada:
+
+- Jalankan migrasi `sql/migrations/alter_jenis_barang.sql` satu kali agar kategori baru diterima.
+- Jalankan `sql/migrations/2026-11-10_fifo_inventory.sql` satu kali sebelum memakai versi aplikasi yang mendukung FIFO. Migrasi ini membuat lapisan biaya stok dan menginisialisasi stok saat ini sebagai satu lapisan dengan harga beli default yang tercatat. Migrasi tidak menghapus data transaksi.
+
+Instalasi baru mendapatkan struktur FIFO dari `sql/bengkel.sql`.
+
+Setiap transaksi Barang Masuk menyimpan harga beli aktual per barang sebagai satu lapisan stok. Penjualan dan koreksi stok keluar mengurangi lapisan tertua lebih dahulu (FIFO), dan laporan laba menggunakan modal dari lapisan yang terpakai. Harga jual tidak berubah. Harga beli default produk tetap menunjukkan harga pembelian terakhir untuk membantu input transaksi baru; stok lama di database yang sudah ada dimulai dari harga beli default saat migrasi. Nilai modal historis transaksi penjualan yang sudah selesai sebelum migrasi tetap menggunakan snapshot modal yang sudah tersimpan.
 
 ---
 

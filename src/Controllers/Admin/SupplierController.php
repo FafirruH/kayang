@@ -65,8 +65,12 @@ final class SupplierController
         if ($v !== null) { $f['nama_supplier'] = $v; }
         $v = $in->str('no_telepon', 8, 20, false, '/^[0-9+\- ]+$/');
         if ($v !== null) { $f['no_telepon'] = $v; }
-        $v = $in->str('alamat', 1, 500, false);
-        if ($v !== null) { $f['alamat'] = $v; }
+        if ($in->has('alamat')) {
+            $rawAddress = $in->raw('alamat');
+            $f['alamat'] = $rawAddress === null || (is_string($rawAddress) && trim($rawAddress) === '')
+                ? null
+                : $in->str('alamat', 1, 500, false);
+        }
         $b = $in->bool('aktif');
         if ($b !== null) { $f['aktif'] = Db::bool($b); }
         $in->check();

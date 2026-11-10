@@ -22,6 +22,7 @@
     var cls = { ADMIN: "badge--done", MECHANIC: "badge--process", CUSTOMER: "badge--pending" }[r] || "badge--pending";
     return '<span class="badge ' + cls + '">' + roleLabel(r) + "</span>";
   }
+  function isMainAdmin(u) { return Number(u.admin_utama) === 1; }
   function announce(t) { var e = document.getElementById("akun-live"); if (e) e.textContent = t; }
 
   /* ── State filter role ─────────────────────────────────────────────────── */
@@ -30,15 +31,16 @@
   var dt = new SLDataTable({
     tableId:     "akun-table",
     searchId:    "akun-search",
-    paginId:     "akun-pagination",
     countId:     "akun-count",
     colspan:     7,
-    per:         15,
+    per:         50,
+    allRows:     true,
     defaultSort: "nama_lengkap",
     emptyText:   "Tidak ada akun ditemukan.",
     params:      function () { return { role: filterRole }; },
     fetch:       function (p) { return SLApi.get("/api/admin/users", p); },
     renderRow:   function (u) {
+      var mainAdmin = isMainAdmin(u);
       var aktifBadge   = u.aktif
         ? '<span class="badge badge--done">Aktif</span>'
         : '<span class="badge badge--off">Nonaktif</span>';
@@ -49,6 +51,7 @@
           '<td data-label="Nama">' +
             '<span style="font-weight:500">' + esc(u.nama_lengkap || u.username) + "</span>" +
             '<br><span style="font-size:.75rem;color:var(--text-muted,#94a3b8)">@' + esc(u.username) + "</span>" +
+            (mainAdmin ? '<br><span class="badge badge--done">Admin Utama</span>' : "") +
           "</td>" +
           '<td data-label="No. WhatsApp" class="data-table__muted">' + esc(u.no_telepon || "-") + "</td>" +
           '<td data-label="Role">' + roleBadge(u.role) + "</td>" +
@@ -56,7 +59,9 @@
           '<td data-label="Transaksi" class="data-table__muted">' + (u.jumlah_transaksi || 0) + "</td>" +
           '<td data-label="Bergabung" class="data-table__muted">' + fmt(u.created_at) + "</td>" +
           '<td data-label="Aksi" class="data-table__actions">' +
-            '<span class="row-actions">' +
+            (mainAdmin
+              ? '<span class="data-table__muted">Tidak Bisa Diubah</span>'
+              : '<span class="row-actions">' +
               '<button class="btn btn--sm btn--ghost btn-edit" type="button"' +
                 ' data-id="' + u.id + '"' +
                 ' data-username="' + esc(u.username) + '"' +
@@ -67,7 +72,7 @@
               '<button class="btn btn--sm ' + toggleClass + ' btn-toggle" type="button"' +
                 ' data-id="' + u.id + '" data-aktif="' + (u.aktif ? "true" : "false") + '"' +
                 ' aria-label="' + toggleLabel + " " + esc(u.username) + '">' + toggleLabel + "</button>" +
-            "</span>" +
+            "</span>") +
           "</td>" +
         "</tr>"
       );
@@ -97,11 +102,24 @@
       var toggleBtn = e.target.closest(".btn-toggle");
       if (toggleBtn) {
         var aktif = toggleBtn.dataset.aktif === "true";
-        if (!confirm("Yakin ingin " + (aktif ? "nonaktifkan" : "aktifkan") + " akun ini?")) return;
-        toggleBtn.disabled = true;
-        SLApi.patch("/api/admin/users/" + toggleBtn.dataset.id, { aktif: !aktif })
-          .then(function () { announce("Akun berhasil diperbarui."); dt.load(); })
-          .catch(function (err) { toggleBtn.disabled = false; alert("Gagal: " + (err && err.message ? err.message : "error")); });
+        window.SLDialog.confirm({
+          title: (aktif ? "Nonaktifkan" : "Aktifkan") + " Akun?",
+          message: "Yakin ingin " + (aktif ? "menonaktifkan" : "mengaktifkan") + " akun ini?",
+          danger: aktif,
+          confirmLabel: aktif ? "Ya, Nonaktifkan" : "Ya, Aktifkan"
+        }).then(function (confirmed) {
+          if (!confirmed) return;
+          toggleBtn.disabled = true;
+          SLApi.patch("/api/admin/users/" + toggleBtn.dataset.id, { aktif: !aktif })
+            .then(function () { announce("Akun berhasil diperbarui."); dt.load(); })
+            .catch(function (err) {
+              toggleBtn.disabled = false;
+              window.SLDialog.alert({
+                title: "Gagal Memperbarui Akun",
+                message: err && err.message ? err.message : "Terjadi kesalahan."
+              });
+            });
+        });
       }
     });
   }

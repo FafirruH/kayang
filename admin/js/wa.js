@@ -1,5 +1,5 @@
 /* ==========================================================================
-   admin/js/wa.js — Config WA (tersambung ke api/config.php)
+   admin/js/wa.js — Pengaturan WA (tersambung ke api/config.php)
    - Load config saat halaman dibuka
    - Pratinjau pesan pesanan & panggilan montir langsung saat mengetik
    - Simpan ke API saat submit
@@ -193,7 +193,7 @@
         elNomor.value = json.data.wa_number; // simpan bentuk bersih
         updatePreview();
         elStatus.className   = "form-status form-status--ok";
-        elStatus.textContent = "Konfigurasi tersimpan.";
+        elStatus.textContent = "Tersimpan.";
         elStatus.hidden      = false;
       })
       .catch(function (err) {

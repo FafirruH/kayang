@@ -8,12 +8,15 @@
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/admin.css" />
   <link rel="stylesheet" href="css/responsive.css" />
+  <link rel="stylesheet" href="css/stok.css" />
   <script src="../js/config.js"></script>
   <script src="../js/api.js"></script>
   <script src="../js/auth.js" defer></script>
   <script src="../js/include.js" defer></script>
   <script src="js/datatable.js" defer></script>
+  <script src="js/dialog.js" defer></script>
   <script src="js/stok.js" defer></script>
+  <script src="js/stok-form.js" defer></script>
 </head>
 <body data-auth="admin" class="page-dark" data-page="stok">
 
@@ -27,10 +30,10 @@
           <h1 class="page-title">Stok Sparepart</h1>
           <p class="page-subtitle">Kelola daftar barang bengkel</p>
         </div>
-        <a href="stok-form.html" class="btn btn--primary">
+        <button id="btn-add-product" class="btn btn--primary" type="button">
           <img src="assets/icons/plus.svg" alt="" width="16" height="16" />
           <span>Tambah Barang</span>
-        </a>
+        </button>
       </div>
 
       <div class="toolbar" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
@@ -44,6 +47,8 @@
           <caption class="sr-only">Daftar stok sparepart</caption>
           <thead>
             <tr>
+              <th scope="col" data-sort="product_id">ID</th>
+              <th scope="col" data-sort="kode_barang">Kode Barang</th>
               <th scope="col" data-sort="nama_barang">Nama Barang</th>
               <th scope="col" data-sort="jenis_barang">Kategori</th>
               <th scope="col" data-sort="harga_jual">Harga</th>
@@ -53,16 +58,77 @@
           </thead>
           <tbody>
             <tr class="data-table__empty">
-              <td colspan="5">Memuat data...</td>
+              <td colspan="7">Memuat data...</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="pagination" id="stok-pagination" role="navigation" aria-label="Halaman stok"></div>
-
     </div>
   </main>
+
+  <div class="product-form-backdrop" id="product-form-modal" role="dialog" aria-modal="true"
+       aria-labelledby="form-title" hidden>
+    <div class="product-form-modal">
+      <button class="product-form-close" id="product-form-close" type="button" aria-label="Tutup">&times;</button>
+      <form class="form-card" id="stok-form" novalidate>
+        <h2 class="form-card__title" id="form-title">Tambah Barang</h2>
+
+        <div class="form-field" id="kode-wrap">
+          <label class="form-field__label" for="kode_barang">Kode Barang <span class="form-optional">(opsional)</span></label>
+          <input class="form-input" id="kode_barang" name="kode_barang" type="text"
+                 placeholder="Kosongkan untuk kode otomatis, contoh BRG-00031" autocomplete="off" style="text-transform:uppercase" />
+          <p class="form-field__hint">Kode otomatis dibuat dari ID barang. Anda juga boleh mengisi kode sendiri. Kode tidak bisa diubah setelah disimpan.</p>
+          <p class="form-field__error" id="kode_barang-error" hidden></p>
+        </div>
+
+        <div class="form-field">
+          <label class="form-field__label" for="nama_barang">Nama Barang</label>
+          <input class="form-input" id="nama_barang" name="nama_barang" type="text"
+                 placeholder="Contoh: Oli Mesin Yamalube 1L" autocomplete="off" />
+          <p class="form-field__error" id="nama_barang-error" hidden></p>
+        </div>
+
+        <div class="form-field">
+          <label class="form-field__label" for="kategori-select">Kategori</label>
+          <input class="form-input" id="kategori-select" type="text" maxlength="30"
+                 placeholder="Contoh: Oli atau Aksesoris" autocomplete="off" />
+          <p class="form-field__error" id="jenis_barang-error" hidden></p>
+        </div>
+
+        <div class="form-field">
+          <label class="form-field__label" for="merk">Merk <span class="form-optional">(opsional)</span></label>
+          <input class="form-input" id="merk" name="merk" type="text"
+                 placeholder="Contoh: Yamalube" autocomplete="off" />
+        </div>
+
+        <div class="form-field">
+          <label class="form-field__label" for="harga_jual_default">Harga Jual (Rp)</label>
+          <input class="form-input" id="harga_jual_default" name="harga_jual_default"
+                 type="number" min="0" step="1" inputmode="numeric" placeholder="Contoh: 55000" />
+          <p class="form-field__error" id="harga_jual_default-error" hidden></p>
+        </div>
+
+        <div class="form-field">
+          <label class="form-field__label" for="stok_minimal">Stok Minimal</label>
+          <input class="form-input" id="stok_minimal" name="stok_minimal"
+                 type="number" min="0" step="1" inputmode="numeric" value="5" />
+          <p class="form-field__hint">Barang akan ditandai perlu perhatian jika stok di bawah angka ini.</p>
+        </div>
+
+        <p class="form-field__hint">Form ini hanya mendaftarkan data barang. Catat jumlah stok dan harga beli aktual melalui menu Transaksi &gt; Barang Masuk.</p>
+
+        <p id="stok-info" class="stock-info" hidden></p>
+
+        <div class="form-actions">
+          <button class="btn btn--primary" type="submit" id="form-submit">Simpan Barang</button>
+          <button class="btn btn--ghost" type="button" id="product-form-cancel">Batal</button>
+        </div>
+
+        <p class="form-status" id="form-status" role="status" hidden></p>
+      </form>
+    </div>
+  </div>
 
   <div data-include="footer"></div>
 

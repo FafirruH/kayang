@@ -52,13 +52,51 @@
     .modal-loading,
     .modal-error   { padding: 1.5rem; text-align: center; color: var(--text-muted, #94a3b8); }
     .modal__actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 1.25rem; justify-content: flex-end; }
+    .modal--action { max-width: 460px; }
+    .action-dialog__message { color: var(--text-muted, #94a3b8); white-space: pre-line; }
 
     /* ── Form penjualan baru ── */
-    .sale-item-row { display: flex; gap: .5rem; align-items: center; margin-bottom: .5rem; flex-wrap: wrap; }
-    .sale-item-row .form-input { flex: 1; min-width: 120px; }
-    .sale-item-row .sale-item-qty  { max-width: 72px; flex: 0 0 72px; }
-    .sale-item-row .sale-item-harga { max-width: 120px; flex: 0 0 120px; }
-    #sale-status { display: block; margin-top: .5rem; font-size: .85rem; color: #f87171; }
+    .modal--sale { max-width: 612px; padding: 0; background: transparent; }
+    .modal--sale .form-card { max-width: none; }
+    .modal--sale .form-card__title { padding-right: 2rem; }
+    .modal--sale .modal-close-btn { color: #000; }
+    .modal--sale .btn--ghost { color: var(--color-dark); border-color: rgba(0, 0, 0, .2); }
+    .modal--purchase { max-width: 612px; padding: 0; background: transparent; }
+    .modal--purchase .form-card { max-width: none; }
+    .modal--purchase .form-card__title { padding-right: 2rem; }
+    .modal--purchase .modal-close-btn { color: #000; }
+    .modal--purchase .btn--ghost { color: var(--color-dark); border-color: rgba(0, 0, 0, .2); }
+    .page-dark .modal--sale .form-input {
+      color: var(--color-dark);
+      background: #fff;
+      border-color: #000;
+    }
+    .page-dark .modal--purchase .form-input {
+      color: var(--color-dark);
+      background: #fff;
+      border-color: #000;
+    }
+    .page-dark .modal--sale .form-input::placeholder { color: #737982; }
+    .sale-items-title { margin: 1.25rem 0 .5rem; }
+    .sale-item-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 72px minmax(110px, 130px) 36px;
+      gap: .5rem;
+      align-items: end;
+      margin-bottom: .75rem;
+    }
+    .sale-item-row .form-field { min-width: 0; margin-top: 0; }
+    .sale-item-row .form-field__label { font-size: 10px; }
+    .sale-product-select-label { margin-top: .5rem; }
+    .sale-item-row .form-input { min-width: 0; }
+    .sale-item-remove { width: 36px; height: 38px; padding: 0; }
+    #sale-status { display: block; margin-top: .5rem; font-size: .85rem; color: #b3261e; }
+
+    @media (max-width: 520px) {
+      .sale-item-row { grid-template-columns: minmax(0, 1fr) 72px 36px; }
+      .sale-item-row .sale-item-product-field { grid-column: 1 / -1; }
+      .sale-item-row .sale-item-harga-field { grid-column: 1 / 3; }
+    }
 
     /* ── Pagination ── */
     .pagination { display: flex; gap: .375rem; flex-wrap: wrap; margin-top: 1rem; }
@@ -88,10 +126,16 @@
           <h1 class="page-title">Manajemen Transaksi</h1>
           <p class="page-subtitle">Penjualan, pembelian, dan koreksi stok</p>
         </div>
-        <button id="btn-new-sale" class="btn btn--primary" type="button">
-          <img src="assets/icons/plus.svg" alt="" width="16" height="16" />
-          <span>Penjualan Baru</span>
-        </button>
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem">
+          <button id="btn-new-purchase" class="btn btn--ghost" type="button">
+            <img src="assets/icons/plus.svg" alt="" width="16" height="16" />
+            <span>Barang Masuk</span>
+          </button>
+          <button id="btn-new-sale" class="btn btn--primary" type="button">
+            <img src="assets/icons/plus.svg" alt="" width="16" height="16" />
+            <span>Penjualan Baru</span>
+          </button>
+        </div>
       </div>
 
       <!-- ── Filter bar ── -->
@@ -153,9 +197,6 @@
         </table>
       </div>
 
-      <!-- Pagination -->
-      <div class="pagination" id="transaksi-pagination" role="navigation" aria-label="Halaman transaksi"></div>
-
       <!-- ── Kartu Stok ── -->
       <section class="kartu-section" aria-labelledby="kartu-title">
         <div class="dashboard__head">
@@ -166,7 +207,7 @@
         <form id="kartu-stok-form" class="toolbar">
           <label class="sr-only" for="kartu-product-id">Pilih barang</label>
           <select id="kartu-product-id">
-            <option value="">-- Pilih Barang --</option>
+            <option value="">Pilih Barang</option>
           </select>
           <button class="btn btn--primary btn--sm" type="submit">Tampilkan</button>
         </form>
@@ -208,20 +249,20 @@
   <!-- ══ Modal Penjualan Baru ═════════════════════════════════════════════════ -->
   <div class="modal-backdrop" id="sale-modal" role="dialog" aria-modal="true"
        aria-labelledby="sale-modal-title" hidden>
-    <div class="modal">
+    <div class="modal modal--sale">
       <button class="modal-close-btn" id="sale-modal-close" aria-label="Tutup">&times;</button>
-      <h2 class="modal__title" id="sale-modal-title">Penjualan Baru</h2>
 
-      <form id="sale-form" novalidate>
+      <form id="sale-form" class="form-card" novalidate>
+        <h2 class="form-card__title" id="sale-modal-title">Penjualan Baru</h2>
 
         <!-- Identitas pelanggan: isi salah satu -->
         <div class="form-field">
-          <label class="form-field__label" for="sale-customer-id">ID Pelanggan (terdaftar)</label>
+          <label class="form-field__label" for="sale-customer-id">ID Pelanggan <span style="font-weight:400">(opsional)</span></label>
           <input class="form-input" id="sale-customer-id" type="number" min="1"
                  placeholder="Contoh: 4 (kosongkan jika pembeli umum)" />
         </div>
         <div class="form-field">
-          <label class="form-field__label" for="sale-customer-nama">Nama Pembeli Umum</label>
+          <label class="form-field__label" for="sale-customer-nama">Nama Pembeli <span style="font-weight:400">(opsional)</span></label>
           <input class="form-input" id="sale-customer-nama" type="text"
                  placeholder="Contoh: Pak Budi (kosongkan jika pelanggan terdaftar)" />
         </div>
@@ -233,11 +274,11 @@
         </div>
 
         <!-- Baris produk -->
-        <p class="form-field__label" style="margin-bottom:.5rem">Barang</p>
+        <p class="form-field__label sale-items-title">Barang</p>
         <div id="sale-items"></div>
 
-        <button type="button" id="sale-add-item" class="btn btn--ghost btn--sm" style="margin-bottom:1rem">
-          + Tambah Baris
+        <button type="button" id="sale-add-item" class="btn btn--ghost btn--sm">
+          + Tambah Barang
         </button>
 
         <p id="sale-status" hidden></p>
@@ -250,6 +291,62 @@
     </div>
   </div>
 
+  <!-- ══ Modal Barang Masuk ═══════════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="purchase-modal" role="dialog" aria-modal="true"
+       aria-labelledby="purchase-modal-title" hidden>
+    <div class="modal modal--purchase">
+      <button class="modal-close-btn" id="purchase-modal-close" aria-label="Tutup">&times;</button>
+      <form id="purchase-form" class="form-card" novalidate>
+        <h2 class="form-card__title" id="purchase-modal-title">Barang Masuk</h2>
+        <div class="form-field">
+          <label class="form-field__label" for="purchase-supplier">Supplier</label>
+          <select class="form-input" id="purchase-supplier" required>
+            <option value="">Memuat supplier...</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-field__label" for="purchase-reference">No. Referensi <span style="font-weight:400">(opsional)</span></label>
+          <input class="form-input" id="purchase-reference" type="text" maxlength="50" placeholder="Contoh: SJ-001" />
+        </div>
+        <p class="form-field__label sale-items-title">Barang</p>
+        <p class="modal-note">Isi harga beli aktual untuk penerimaan ini. Harga boleh berbeda dari pembelian sebelumnya; penjualan memakai biaya stok dengan metode FIFO.</p>
+        <div id="purchase-items"></div>
+        <button type="button" id="purchase-add-item" class="btn btn--ghost btn--sm">+ Tambah Barang</button>
+        <div class="form-field">
+          <label class="form-field__label" for="purchase-note">Catatan <span style="font-weight:400">(opsional)</span></label>
+          <textarea class="form-input" id="purchase-note" maxlength="500" rows="2"
+                    style="height:auto;min-height:64px;padding-top:8px;padding-bottom:8px;resize:vertical"></textarea>
+        </div>
+        <p id="purchase-status" class="form-status" role="status" hidden></p>
+        <div class="form-actions">
+          <button class="btn btn--primary" type="submit" id="purchase-submit">Buat Transaksi Barang Masuk</button>
+          <button class="btn btn--ghost" type="button" id="purchase-modal-close-footer">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="action-dialog" role="dialog" aria-modal="true"
+       aria-labelledby="action-dialog-title" aria-describedby="action-dialog-message" hidden>
+    <div class="modal modal--action">
+      <button class="modal-close-btn" id="action-dialog-close" type="button" aria-label="Tutup">&times;</button>
+      <h2 class="modal__title" id="action-dialog-title"></h2>
+      <p class="action-dialog__message" id="action-dialog-message"></p>
+      <div class="form-field" id="action-payment-wrap" hidden>
+        <label class="form-field__label" for="action-payment-method">Metode Pembayaran</label>
+        <select class="form-input" id="action-payment-method">
+          <option value="TUNAI">Tunai</option>
+          <option value="TRANSFER">Transfer</option>
+          <option value="QRIS">QRIS</option>
+        </select>
+      </div>
+      <div class="modal__actions">
+        <button class="btn btn--ghost" id="action-dialog-cancel" type="button">Batal</button>
+        <button class="btn btn--primary" id="action-dialog-confirm" type="button">Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
   <div data-include="footer"></div>
 
   <script>
@@ -258,6 +355,11 @@
       var btn = document.getElementById("sale-modal-close-footer");
       if (btn) btn.addEventListener("click", function () {
         var m = document.getElementById("sale-modal");
+        if (m) m.hidden = true;
+      });
+      var purchaseBtn = document.getElementById("purchase-modal-close-footer");
+      if (purchaseBtn) purchaseBtn.addEventListener("click", function () {
+        var m = document.getElementById("purchase-modal");
         if (m) m.hidden = true;
       });
     });

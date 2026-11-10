@@ -1,7 +1,7 @@
 /* ==========================================================================
-   admin/js/stok-form.js — form tambah / edit barang (SLApi)
-   - stok-form.html        → mode Tambah
-   - stok-form.html?id=3   → mode Edit
+   admin/js/stok-form.js — modal tambah / edit barang (SLApi)
+   - stok.html             → mode Tambah
+   - stok.html?id=3        → mode Edit
    Catatan: stok TIDAK bisa diubah langsung via edit — gunakan penyesuaian
    stok (stock-adjustments) atau transaksi barang masuk.
    ========================================================================== */
@@ -19,9 +19,14 @@
   var titleEl  = document.getElementById("form-title");
   var submitEl = document.getElementById("form-submit");
   var statusEl = document.getElementById("form-status");
-  var stokWrap = document.getElementById("stok-awal-wrap");
+  var modal    = document.getElementById("product-form-modal");
+  var addBtn   = document.getElementById("btn-add-product");
+  var closeBtn = document.getElementById("product-form-close");
+  var cancelBtn = document.getElementById("product-form-cancel");
+  var kodeWrap = document.getElementById("kode-wrap");
 
-  var id = new URLSearchParams(window.location.search).get("id");
+  var params = new URLSearchParams(window.location.search);
+  var id = params.get("id");
 
   /* ── Input kategori bebas ──────────────────────────────────────────────── */
   var katSelect = document.getElementById("kategori-select");
@@ -48,10 +53,44 @@
   }
 
   function clearErrors() {
-    ["kode_barang", "nama_barang", "jenis_barang", "harga_jual_default", "stok_awal"].forEach(function (n) {
+    ["kode_barang", "nama_barang", "jenis_barang", "harga_jual_default"].forEach(function (n) {
       setError(n, "");
     });
   }
+
+  function openAddModal() {
+    id = null;
+    form.reset();
+    clearErrors();
+    titleEl.textContent = "Tambah Barang";
+    submitEl.textContent = "Simpan Barang";
+    submitEl.disabled = false;
+    document.title = "Tambah Barang - Admin Sumber Lancar";
+    if (kodeWrap) kodeWrap.hidden = false;
+    var stokInfo = document.getElementById("stok-info");
+    if (stokInfo) stokInfo.hidden = true;
+    statusEl.hidden = true;
+    if (modal) modal.hidden = false;
+  }
+
+  function closeModal() {
+    if (modal) modal.hidden = true;
+    if (window.location.search) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }
+
+  if (addBtn) addBtn.addEventListener("click", openAddModal);
+  if (closeBtn) closeBtn.addEventListener("click", closeModal);
+  if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
+  if (modal) {
+    modal.addEventListener("click", function (e) {
+      if (e.target === modal) closeModal();
+    });
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && modal && !modal.hidden) closeModal();
+  });
 
   /* ── Validasi ───────────────────────────────────────────────────────────── */
   function validate(isEdit) {
@@ -64,8 +103,8 @@
 
     if (!isEdit) {
       var kode = (form.elements.kode_barang.value || "").trim();
-      check("kode_barang", /^[A-Za-z0-9_-]{2,30}$/.test(kode),
-        "Kode barang wajib diisi (2–30 karakter, huruf/angka/-/_).");
+      check("kode_barang", kode === "" || /^[A-Za-z0-9_-]{2,30}$/.test(kode),
+        "Kode barang harus 2–30 karakter (huruf/angka/-/_), atau kosongkan untuk kode otomatis.");
     }
 
     var nama = (form.elements.nama_barang.value || "").trim();
@@ -78,11 +117,6 @@
     var harga = form.elements.harga_jual_default.value.trim();
     check("harga_jual_default", /^\d+$/.test(harga), "Masukkan harga berupa angka bulat.");
 
-    if (!isEdit) {
-      var stok = form.elements.stok_awal ? form.elements.stok_awal.value.trim() : "0";
-      check("stok_awal", /^\d+$/.test(stok), "Masukkan stok awal berupa angka bulat.");
-    }
-
     if (!ok) {
       var first = form.querySelector("[aria-invalid]");
       if (first) first.focus();
@@ -91,7 +125,7 @@
   }
 
   /* ── Clear error on input ──────────────────────────────────────────────── */
-  ["kode_barang", "nama_barang", "harga_jual_default", "stok_awal"].forEach(function (name) {
+  ["kode_barang", "nama_barang", "harga_jual_default"].forEach(function (name) {
     var el = form.elements[name];
     if (el) el.addEventListener("input", function () { setError(name, ""); });
   });
@@ -113,9 +147,7 @@
         document.title       = "Edit Barang - Admin Sumber Lancar";
 
         // Sembunyikan field kode & stok awal di mode edit
-        var kodeWrap = document.getElementById("kode-wrap");
         if (kodeWrap) kodeWrap.hidden = true;
-        if (stokWrap) stokWrap.hidden = true;
 
         // Tampilkan stok saat ini sebagai info (readonly)
         var stokInfo = document.getElementById("stok-info");
@@ -127,7 +159,6 @@
 
         form.elements.nama_barang.value       = p.nama_barang           || "";
         form.elements.harga_jual_default.value = p.harga_jual            || p.harga_jual_default || 0;
-        form.elements.harga_beli_default.value = p.harga_beli            || p.harga_beli_default || 0;
         form.elements.stok_minimal.value       = p.stok_minimal          || 0;
         form.elements.merk.value               = p.merk                  || "";
         if (katSelect) katSelect.value         = p.jenis_barang          || "";
@@ -155,7 +186,6 @@
       nama_barang:        (form.elements.nama_barang.value || "").trim(),
       jenis_barang:       katSelect ? katSelect.value : "",
       harga_jual_default: parseInt(form.elements.harga_jual_default.value, 10),
-      harga_beli_default: parseInt(form.elements.harga_beli_default.value || "0", 10),
       stok_minimal:       parseInt(form.elements.stok_minimal.value       || "0", 10),
       merk:               (form.elements.merk.value || "").trim() || undefined
     };
@@ -164,24 +194,40 @@
     if (id) {
       req = SLApi.put("/api/admin/products/" + id, payload);
     } else {
-      payload.kode_barang = (form.elements.kode_barang.value || "").trim().toUpperCase();
-      payload.stok_awal   = parseInt(form.elements.stok_awal.value || "0", 10);
+      var kodeBarang = (form.elements.kode_barang.value || "").trim();
+      if (kodeBarang) payload.kode_barang = kodeBarang.toUpperCase();
       req = SLApi.post("/api/admin/products", payload);
     }
 
     req
-      .then(function () {
-        showStatus("ok", "Barang tersimpan. Kembali ke daftar stok...");
-        setTimeout(function () { window.location.href = LIST_PAGE; }, 1000);
+      .then(function (res) {
+        var saved = res.data || res;
+        var codeMessage = !id && saved.kode_barang ? " Kode barang: " + saved.kode_barang + "." : "";
+        showStatus("ok", id
+          ? "Data barang tersimpan. Stok dan harga beli hanya diubah melalui Transaksi > Barang Masuk."
+          : "Data barang tersimpan." + codeMessage + " Catat stok masuk melalui Transaksi > Barang Masuk.");
+        setTimeout(function () {
+          window.location.href = LIST_PAGE;
+        }, 1200);
       })
       .catch(function (err) {
         submitEl.disabled = false;
         var msg = err && err.status === 422 && err.details
           ? Object.values(err.details).join(" ")
           : (err && err.message ? err.message : "Gagal menyimpan.");
+        if (err && err.status === 409) {
+          msg = /kode barang sudah dipakai/i.test(msg)
+            ? "Kode barang sudah digunakan. Pilih kode lain atau kosongkan untuk membuat kode otomatis."
+            : msg;
+        }
         showStatus("error", msg);
       });
   });
 
-  setModeEdit();
+  if (id) {
+    if (modal) modal.hidden = false;
+    setModeEdit();
+  } else if (params.get("new") === "1") {
+    openAddModal();
+  }
 })();
