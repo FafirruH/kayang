@@ -1,10 +1,13 @@
 /* ==========================================================================
    config.js - pengaturan frontend (dimuat SEBELUM js/api.js)
    ========================================================================== */
+var configScriptPath = new URL(document.currentScript.src).pathname;
+var projectPath = configScriptPath.replace(/\/js\/config\.js$/, "");
+var apiBase = window.location.protocol + "//" + window.location.hostname + projectPath + "/public";
+
 window.SL_CONFIG = {
-  // Frontend bisa dibuka lewat Live Server (port 5500), sedangkan API PHP
-  // tetap dilayani Apache Laragon pada host yang sama di /kayang/public.
-  API_BASE: window.location.protocol + "//" + window.location.hostname + "/kayang/public",
+  // Ambil folder proyek dari lokasi config.js; API dilayani Apache pada host yang sama.
+  API_BASE: apiBase,
 
   WA_NUMBER: "6281234567890",   // nomor WhatsApp admin (format internasional, tanpa +)
   CATALOG_PAGE_SIZE: 12,        // jumlah kartu per "Muat lebih banyak" (ringan untuk HP)

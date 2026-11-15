@@ -6,6 +6,8 @@
   <title>Register - Sumber Lancar</title>
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/responsive.css" />
+  <!-- Transisi halus login <-> register (aturan namanya ada di css/responsive.css) -->
+  <style>@view-transition { navigation: auto; }</style>
   <script src="js/config.js"></script>
   <script src="js/api.js"></script>
   <script src="js/auth.js" defer></script>
@@ -27,7 +29,7 @@
     </section>
 
     <section class="auth__panel">
-      <div class="auth-form auth-form--sm">
+      <div class="auth-form">
 
         <nav class="auth-tabs" aria-label="Masuk atau daftar">
           <a href="login.html" class="auth-tabs__tab">Login</a>
@@ -42,7 +44,7 @@
           <div class="auth-field">
             <label class="auth-field__label" for="username">Username</label>
             <div class="auth-input">
-              <img src="assets/icons/user.svg" alt="" width="16" height="16" />
+              <img src="assets/icons/user.svg" alt="" width="24" height="24" />
               <input id="username" name="username" type="text" autocomplete="username" required />
             </div>
             <p class="auth-field__error" id="username-error" hidden></p>
@@ -51,7 +53,7 @@
           <div class="auth-field">
             <label class="auth-field__label" for="password">Password</label>
             <div class="auth-input">
-              <img src="assets/icons/lock.svg" alt="" width="16" height="16" />
+              <img src="assets/icons/lock.svg" alt="" width="24" height="24" />
               <input id="password" name="password" type="password" autocomplete="new-password" required />
             </div>
             <p class="auth-field__error" id="password-error" hidden></p>
@@ -60,7 +62,7 @@
           <div class="auth-field">
             <label class="auth-field__label" for="password2">Ulangi Password</label>
             <div class="auth-input">
-              <img src="assets/icons/lock.svg" alt="" width="16" height="16" />
+              <img src="assets/icons/lock.svg" alt="" width="24" height="24" />
               <input id="password2" name="password2" type="password" autocomplete="new-password" required />
             </div>
             <p class="auth-field__error" id="password2-error" hidden></p>
@@ -69,7 +71,7 @@
           <div class="auth-field">
             <label class="auth-field__label" for="no_whatsapp">No. WhatsApp</label>
             <div class="auth-input">
-              <img src="assets/icons/message-circle.svg" alt="" width="16" height="16" />
+              <img src="assets/icons/message-circle.svg" alt="" width="24" height="24" />
               <input id="no_whatsapp" name="no_whatsapp" type="tel" autocomplete="tel" placeholder="08xxxxxxxxxx" required />
             </div>
             <p class="auth-field__error" id="no_whatsapp-error" hidden></p>

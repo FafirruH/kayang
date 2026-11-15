@@ -4,7 +4,7 @@
 SET TIME ZONE 'Asia/Jakarta';
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-DROP VIEW     IF EXISTS v_laporan_laba_rugi, v_kartu_stok, v_transaksi_header, v_stok_barang CASCADE;
+DROP VIEW     IF EXISTS v_laporan_adj_out, v_laporan_laba_rugi, v_kartu_stok, v_transaksi_header, v_stok_barang CASCADE;
 DROP TABLE    IF EXISTS transaction_detail_costs, inventory_batches, transaction_details, transactions, products, suppliers, users CASCADE;
 DROP SEQUENCE IF EXISTS seq_faktur_out, seq_faktur_in, seq_faktur_adj;
 DROP FUNCTION IF EXISTS buat_penjualan(integer, jsonb, integer, text, integer, integer);
@@ -282,7 +282,14 @@ BEGIN
       SELECT stok, nama_barang INTO v_stok, v_nama
         FROM products WHERE id = r.product_id FOR UPDATE;
 
-      v_delta := CASE WHEN NEW.tipe_transaksi IN ('IN', 'ADJ_IN') THEN r.jumlah ELSE -r.jumlah END;
+      IF NEW.tipe_transaksi IN ('IN', 'ADJ_IN') THEN
+        v_delta := r.jumlah;
+      ELSIF NEW.tipe_transaksi IN ('OUT', 'ADJ_OUT') THEN
+        v_delta := -r.jumlah;
+      ELSE
+        RAISE EXCEPTION 'Tipe transaksi % tidak didukung', NEW.tipe_transaksi
+          USING ERRCODE = 'check_violation';
+      END IF;
 
       IF v_stok + v_delta < 0 THEN
         RAISE EXCEPTION 'Stok fisik "%" tidak cukup (stok %, dibutuhkan %)', v_nama, v_stok, r.jumlah
@@ -293,7 +300,8 @@ BEGIN
         INSERT INTO inventory_batches (
           product_id, source_transaction_id, received_quantity, remaining_quantity, unit_cost, created_at
         ) VALUES (r.product_id, NEW.id, r.jumlah, r.jumlah, r.harga_satuan_real, NEW.completed_at);
-      ELSE
+      ELSIF NEW.tipe_transaksi IN ('OUT', 'ADJ_OUT') THEN
+        -- ADJ_OUT memakai biaya batch FIFO yang sama, tetapi dilaporkan terpisah dari HPP penjualan.
         v_left := r.jumlah;
         FOR b IN
           SELECT id, remaining_quantity, unit_cost
@@ -317,6 +325,9 @@ BEGIN
           RAISE EXCEPTION 'Lapisan stok "%" tidak cukup untuk menyelesaikan transaksi', v_nama
             USING ERRCODE = 'check_violation';
         END IF;
+      ELSE
+        RAISE EXCEPTION 'Tipe transaksi % tidak didukung', NEW.tipe_transaksi
+          USING ERRCODE = 'check_violation';
       END IF;
 
       UPDATE products
@@ -442,6 +453,25 @@ SELECT bulan,
        SUM(penjualan) - SUM(diskon) - SUM(modal)      AS laba_kotor
 FROM per_transaksi
 GROUP BY bulan;
+
+CREATE VIEW v_laporan_adj_out AS
+SELECT t.id AS transaction_id,
+       t.no_faktur,
+       t.completed_at,
+       t.catatan,
+       SUM(d.jumlah) AS jumlah_barang,
+       SUM(c.nilai_biaya_fifo) AS nilai_biaya_fifo
+FROM transactions t
+JOIN transaction_details d ON d.transaction_id = t.id
+JOIN LATERAL (
+  SELECT SUM(cost.quantity::bigint * cost.unit_cost) AS nilai_biaya_fifo
+  FROM transaction_detail_costs cost
+  WHERE cost.transaction_id = d.transaction_id
+    AND cost.product_id = d.product_id
+) c ON TRUE
+WHERE t.status = 'COMPLETED'
+  AND t.tipe_transaksi = 'ADJ_OUT'
+GROUP BY t.id;
 
 CREATE FUNCTION expire_pending() RETURNS INTEGER
 LANGUAGE plpgsql AS $$

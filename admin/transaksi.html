@@ -98,6 +98,49 @@
       .sale-item-row .sale-item-harga-field { grid-column: 1 / 3; }
     }
 
+    /* ── Kolom Aksi tabel transaksi: tombol rata tengah (desktop) ── */
+    @media (min-width: 769px) {
+      #transaksi-table th.data-table__actions,
+      #transaksi-table td.data-table__actions { text-align: center; }
+    }
+
+    /* ── Tombol buka/tutup filter: hanya tampil di mobile ── */
+    .filter-toggle { display: none; }
+
+    @media (max-width: 768px) {
+      .filter-toggle {
+        display: flex; align-items: center; justify-content: space-between;
+        width: 100%; height: 44px; margin-bottom: 10px; padding: 0 14px;
+        font-size: 14px;
+      }
+      .filter-toggle__chevron {
+        width: 8px; height: 8px; margin-left: 8px;
+        border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+        transform: rotate(45deg) translateY(-2px); transition: transform .2s ease;
+      }
+      .filter-toggle[aria-expanded="true"] .filter-toggle__chevron {
+        transform: rotate(-135deg) translateY(-2px);
+      }
+
+      /* Tersembunyi dulu; muncul saat tombol diklik */
+      .filter-bar--collapsible { display: none; }
+      .filter-bar--collapsible.is-open {
+        display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      /* Semua kotak sama lebar & sama tinggi */
+      .filter-bar--collapsible label,
+      .filter-bar--collapsible label:has(#filter-q) { grid-column: auto; width: 100%; }
+      .filter-bar--collapsible select,
+      .filter-bar--collapsible input,
+      .filter-bar--collapsible #filter-q {
+        box-sizing: border-box; width: 100%; min-width: 0 !important; height: 44px;
+      }
+      .filter-bar--collapsible > .btn { width: 100%; height: 44px; }
+      .filter-bar--collapsible > span { grid-column: auto; }
+    }
+
     /* ── Pagination ── */
     .pagination { display: flex; gap: .375rem; flex-wrap: wrap; margin-top: 1rem; }
     .page-btn   { padding: .35rem .7rem; border-radius: .375rem; border: 1px solid var(--border, #334155);
@@ -126,7 +169,7 @@
           <h1 class="page-title">Manajemen Transaksi</h1>
           <p class="page-subtitle">Penjualan, pembelian, dan koreksi stok</p>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:.5rem">
+        <div class="page-head__actions">
           <button id="btn-new-purchase" class="btn btn--ghost" type="button">
             <img src="assets/icons/plus.svg" alt="" width="16" height="16" />
             <span>Barang Masuk</span>
@@ -138,8 +181,14 @@
         </div>
       </div>
 
-      <!-- ── Filter bar ── -->
-      <div class="filter-bar">
+      <!-- ── Filter bar ── (mobile: tersembunyi, dibuka lewat tombol) -->
+      <button id="filter-toggle" class="btn btn--ghost filter-toggle" type="button"
+              aria-expanded="false" aria-controls="filter-panel">
+        <span class="filter-toggle__label">Filter &amp; Pencarian</span>
+        <span class="filter-toggle__chevron" aria-hidden="true"></span>
+      </button>
+
+      <div class="filter-bar filter-bar--collapsible" id="filter-panel">
         <label>
           Tipe
           <select id="filter-tipe">
@@ -352,6 +401,12 @@
   <script>
     // Tombol Batal di footer form = sama dengan tutup modal
     document.addEventListener("DOMContentLoaded", function () {
+      var ft = document.getElementById("filter-toggle");
+      var fp = document.getElementById("filter-panel");
+      if (ft && fp) ft.addEventListener("click", function () {
+        var open = fp.classList.toggle("is-open");
+        ft.setAttribute("aria-expanded", open ? "true" : "false");
+      });
       var btn = document.getElementById("sale-modal-close-footer");
       if (btn) btn.addEventListener("click", function () {
         var m = document.getElementById("sale-modal");

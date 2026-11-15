@@ -703,22 +703,25 @@ main {
 
 /* Placeholder gambar motor (menimpa tulisan CATALOG seperti di Figma) */
 .banner__bike {
-  position: absolute;
-  left: 288px;
-  top: 135.5px;
-  width: 576px;
-  height: 345.6px;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  font-size: 14px;
-  line-height: 20px;
-  color: var(--color-text-secondary);
-  background: rgba(233, 235, 238, 0.85);
-  border: 2px dashed var(--color-border);
-  border-radius: 16px 16px 0 0;
+    position: absolute;
+    right: 3%;
+    bottom: 0;
+    width: min(48%, 576px);
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 2;
+    pointer-events: none;
 }
 
+.banner__bike img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: bottom center;
+}
 /* ---------- Area katalog ---------- */
 .catalog {
   padding: 40px 0;
@@ -1235,45 +1238,45 @@ body.page-dark {
   overflow: hidden;
 }
 
-/* Kunci inggris: kotak 616.75px di kanan atas, isi 520px miring -12 derajat */
+/* Kunci inggris: ukuran diperbesar dan digeser ke kiri */
 .call__wrench {
   position: absolute;
-  top: -8.37px;
-  right: -144.37px;
+  top: -35px;
+  right: -105px;
   display: grid;
   place-items: center;
-  width: 616.75px;
-  height: 616.75px;
+  width: 720px;
+  height: 720px;
   pointer-events: none;
 }
 
 .call__wrench-tilt {
-  width: 520px;
-  height: 520px;
-  opacity: 0.9;
+  width: 650px;
+  height: 650px;
+  opacity: 1;
   transform: rotate(-12deg);
 }
 
 .call__wrench-tilt img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
-
-.call__wrench-ph {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  text-align: center;
-  font-size: 14px;
-  line-height: 20px;
-  color: var(--color-text-muted);
-  background: rgba(240, 242, 244, 0.06);
-  border: 2px dashed var(--color-border-light);
-  border-radius: 16px;
+.call__wrench,
+.call__wrench-tilt,
+.call__wrench-tilt img {
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
 }
 
+.call__wrench-tilt img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
 /* Form */
 .call-form {
   position: relative;
@@ -1368,7 +1371,9 @@ body.page-dark {
 
 .auth {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+  min-height: max(100svh, 900px);
 }
 
 /* ---------- Panel kiri: merek ---------- */
@@ -1377,14 +1382,10 @@ body.page-dark {
   --hl-left: 35px;
   --stripe-left: 15px;
   position: relative;
-  overflow: hidden;
+  align-self: stretch;
+  min-width: 0;
+  min-height: max(100svh, 620px);
   background: #171c20;
-}
-
-.page-register .auth__brand {
-  --hl-offset: 158px;
-  --hl-left: 36px;
-  --stripe-left: 7px;
 }
 
 .auth-brand {
@@ -1444,6 +1445,9 @@ body.page-dark {
 
 /* ---------- Panel kanan: form ---------- */
 .auth__panel {
+  min-width: 0;
+  min-height: max(100svh, 900px);
+  box-sizing: border-box;
   background: var(--color-page);
   padding: max(48px, calc((100vh - 600px) / 2)) 24px 48px clamp(24px, 25%, 240px);
 }
