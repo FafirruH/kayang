@@ -160,10 +160,12 @@ CREATE DATABASE bengkel2;
 ```
 
 Untuk database baru/kosong, bootstrap skema dari file lokal `sql/bengkel.sql`.
-File tersebut berisi skema lengkap, data demo, query laporan, demo transaksi,
-dan perintah `DROP`. Gunakan file itu saja untuk instalasi baru; jangan jalankan
-pada database yang sudah berisi data. SQL upgrade untuk database yang sudah ada
-tidak disediakan.
+File tersebut berisi skema lengkap, fungsi, trigger, view, dan sedikit data uji
+dalam satu skrip. Skrip ini menjalankan perintah `DROP`; gunakan hanya untuk
+instalasi baru atau database test kosong, jangan jalankan pada database yang
+sudah berisi data. Untuk database yang sudah ada, tinjau dan backup database
+sebelum menjalankan migrasi non-reset
+`sql/migrations/2026_11_17_transaction_integrity.sql`.
 
 **3. Salin file konfigurasi**
 
@@ -179,19 +181,27 @@ return [
         'host' => '127.0.0.1',
         'port' => '5432',
         'name' => 'bengkel2',
-        'user' => 'postgres',
-        'pass' => 'password_anda',
+        'user' => 'bengkel_app',
+        'pass' => 'ganti_dengan_password_kuat',
     ],
     'app' => [
-        'debug'     => true,
+        'debug'     => false,
         'wa_number' => '6281234567890',
     ],
 ];
 ```
 
+Jangan gunakan role superuser PostgreSQL untuk aplikasi. Berikan role aplikasi
+hanya hak akses yang dibutuhkan pada database ini. Untuk deployment, gunakan
+password unik dan rahasia, HTTPS, serta `debug` nonaktif.
+
 **4. Konfigurasi virtual host Apache (Laragon)**
 
 Arahkan `/kayang/public` sebagai document root untuk path `/api/*`, atau gunakan konfigurasi rewrite agar semua request ke `/kayang/public/index.php`.
+Jadikan folder `public/` sebagai web root bila memungkinkan. Aturan keamanan di
+`.htaccess` hanya berlaku pada Apache; untuk Nginx, pasang aturan deny yang
+setara agar `.git`, `sql/`, `tests/`, `src/`, dan file konfigurasi tidak dapat
+diakses melalui HTTP.
 
 Contoh `.htaccess` di folder `public/`:
 
@@ -224,11 +234,11 @@ window.SL_CONFIG = {
 | `DB_HOST` | `127.0.0.1` | Host PostgreSQL |
 | `DB_PORT` | `5432` | Port PostgreSQL |
 | `DB_NAME` | `bengkel2` | Nama database |
-| `DB_USER` | `postgres` | User database |
+| `DB_USER` | _(kosong)_ | User database; atur melalui konfigurasi lokal |
 | `DB_PASS` | _(kosong)_ | Password database |
 | `APP_DEBUG` | `0` | Mode debug (1 = aktif) |
 | `WA_NUMBER` | `6281234567890` | Nomor WA admin |
-| `ALLOWED_ORIGINS` | `http://localhost:5500,...` | Origin CORS yang diizinkan |
+| `ALLOWED_ORIGINS` | `http://localhost:5500,http://127.0.0.1:5500` | Origin tambahan yang diizinkan untuk CORS |
 
 Nilai bisa diset via environment variable atau `config.local.php`.
 
@@ -347,11 +357,18 @@ Buka `index.html` via Live Server (port 5500). Backend tetap jalan di Apache. Pa
 
 ## Akun Demo
 
-| Username | Password | Role |
-|----------|----------|------|
-| `admin` | `admin123` | ADMIN |
+Bootstrap membuat password acak untuk akun `admin` dan menampilkannya sekali
+sebagai PostgreSQL `NOTICE`. Simpan password tersebut dengan aman. Migrasi
+integritas transaksi juga merotasi password `admin123` lama jika masih aktif,
+lalu menampilkan password baru sebagai `NOTICE`.
 
-> Akun Admin Utama (`admin`) tidak bisa diubah atau dinonaktifkan dari menu Akun. Ubah nomor WhatsApp melalui menu Pengaturan WA.
+Untuk pengujian lokal tersedia akun `slamet` / `montir123` (MECHANIC) dan
+`budi` / `client123` (CUSTOMER). Data uji hanya mencakup tiga produk, dua
+pembelian untuk menguji FIFO, dan satu penjualan untuk laporan.
+
+> Akun dan data uji selain password admin acak hanya untuk development. Jangan
+> gunakan data demo di production. Akun Admin Utama (`admin`) tidak bisa diubah
+> atau dinonaktifkan dari menu Akun. Ubah nomor WhatsApp melalui menu Pengaturan WA.
 
 ---
 
@@ -370,8 +387,8 @@ Kategori barang dapat diisi bebas melalui form admin, sepanjang 2–30 karakter.
 | Filter |
 
 `sql/bengkel.sql` sudah memuat kategori bebas (2–30 karakter) dan struktur FIFO.
-File ini ditujukan untuk instalasi baru. SQL untuk meng-upgrade database yang
-sudah berisi data tidak disediakan; jangan jalankan bootstrap pada database itu.
+File ini ditujukan untuk instalasi baru; jangan jalankan bootstrap pada database
+yang sudah berisi data.
 
 Setiap transaksi Barang Masuk menyimpan harga beli aktual per barang sebagai satu lapisan stok. Penjualan dan koreksi stok keluar mengurangi lapisan tertua lebih dahulu (FIFO), dan laporan laba menggunakan modal dari lapisan yang terpakai. Harga jual tidak berubah. Harga beli default produk tetap menunjukkan harga pembelian terakhir untuk membantu input transaksi baru.
 

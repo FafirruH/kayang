@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pengaturan Akun - Sumber Lancar</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <script src="js/config.js"></script>
+  <script src="js/api.js?v=20261117"></script>
+  <script src="js/auth.js" defer></script>
+  <script src="js/include.js" defer></script>
+  <script src="js/pengaturan-akun.js" defer></script>
+</head>
+<body class="page-login page-config" data-auth="client">
+
+  <main class="auth">
+
+    <section class="auth__brand">
+      <a href="index.html" class="auth-brand" aria-label="Sumber Lancar - Beranda">
+        <img src="assets/icons/wrench-orange.svg" alt="" width="24" height="24" />
+        <span>Sumber Lancar</span>
+      </a>
+
+      <p class="auth-headline">Kelola stok bengkel<br /><span>tanpa ribet.</span></p>
+
+      <div class="auth-stripe" aria-hidden="true"></div>
+    </section>
+
+    <section class="auth__panel">
+      <div class="auth-form auth-form--config">
+
+        <h1 class="auth-title">Pengaturan Akun</h1>
+
+        <form id="config-form" action="#" novalidate>
+          <p class="auth-msg" id="auth-msg" role="alert" hidden></p>
+
+          <div class="auth-field">
+            <label class="auth-field__label" for="username">Username</label>
+            <div class="auth-input">
+              <img src="assets/icons/user.svg" alt="" width="24" height="24" />
+              <input id="username" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required />
+            </div>
+            <p class="auth-field__error" id="username-error" hidden></p>
+          </div>
+
+          <div class="auth-field">
+            <label class="auth-field__label" for="nama_lengkap">Nama Lengkap</label>
+            <div class="auth-input">
+              <img src="assets/icons/user.svg" alt="" width="24" height="24" />
+              <input id="nama_lengkap" name="nama_lengkap" type="text" autocomplete="name" required />
+            </div>
+            <p class="auth-field__error" id="nama_lengkap-error" hidden></p>
+          </div>
+
+          <div class="auth-field">
+            <label class="auth-field__label" for="no_telepon">No WA</label>
+            <div class="auth-input">
+              <img src="assets/icons/message-circle.svg" alt="" width="24" height="24" />
+              <input id="no_telepon" name="no_telepon" type="tel" autocomplete="tel" placeholder="08xxxxxxxxxx" required />
+            </div>
+            <p class="auth-field__error" id="no_telepon-error" hidden></p>
+          </div>
+
+          <div class="auth-field">
+            <label class="auth-field__label" for="password">Password</label>
+            <div class="auth-input">
+              <img src="assets/icons/lock.svg" alt="" width="24" height="24" />
+              <input id="password" name="password" type="password" autocomplete="new-password" placeholder="Kosongkan jika tidak diganti" />
+            </div>
+            <p class="auth-field__error" id="password-error" hidden></p>
+          </div>
+
+          <button class="auth-submit" type="submit">Konfirmasi</button>
+        </form>
+
+        <a href="index.html" class="auth-back">&larr; Kembali ke beranda</a>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Popup verifikasi password setelah tombol Konfirmasi -->
+  <div class="modal-backdrop" id="verify-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="verify-title" aria-describedby="verify-desc">
+      <h2 class="modal__title" id="verify-title">Verifikasi Password</h2>
+      <p class="modal__desc" id="verify-desc">Masukkan password akun Anda saat ini untuk menyimpan perubahan.</p>
+      <form id="verify-form" novalidate>
+        <label class="auth-field__label" for="verify-password">Password</label>
+        <div class="auth-input">
+          <img src="assets/icons/lock.svg" alt="" width="24" height="24" />
+          <input id="verify-password" name="current_password" type="password" autocomplete="current-password" required />
+        </div>
+        <p class="auth-field__error" id="verify-error" role="alert" hidden></p>
+        <div class="modal__actions">
+          <button type="button" class="btn btn--ghost" id="verify-cancel">Batal</button>
+          <button type="submit" class="btn btn--primary" id="verify-submit">Verifikasi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,11 +1,10 @@
 /* ==========================================================================
-   admin/js/transaksi.js - Halaman manajemen transaksi & kartu stok
+   admin/js/transaksi.js — Halaman manajemen transaksi
    Fitur:
      - Daftar transaksi (filter tipe, status, tanggal, pencarian)
      - Selesaikan / batalkan transaksi PENDING
      - Buat penjualan baru (dari stok)
      - Catat barang masuk dari supplier untuk barang yang sudah terdaftar
-     - Kartu stok per barang (riwayat keluar-masuk)
    ========================================================================== */
 
 (function () {
@@ -266,9 +265,107 @@
   var saleItems  = document.getElementById("sale-items");
   var btnAddItem = document.getElementById("sale-add-item");
   var saleStatus = document.getElementById("sale-status");
+  var saleCustomerSearch = document.getElementById("sale-customer-search");
+  var saleCustomerSelect = document.getElementById("sale-customer-id");
+  var saleCustomerName = document.getElementById("sale-customer-nama");
+  var saleCustomerSearchStatus = document.getElementById("sale-customer-search-status");
+  var saleCustomerSearchTimer = null;
+  var saleCustomerSearchRequest = 0;
   var productCache = [];
   var productLoading = true;
   var productLoadError = "";
+
+  function resetSaleCustomerSearch() {
+    if (saleCustomerSearchTimer) window.clearTimeout(saleCustomerSearchTimer);
+    saleCustomerSearchRequest += 1;
+    if (saleCustomerSearch) saleCustomerSearch.value = "";
+    if (saleCustomerSelect) {
+      saleCustomerSelect.disabled = false;
+      saleCustomerSelect.innerHTML = '<option value="">Ketik username atau nama untuk mencari</option>';
+    }
+    if (saleCustomerSearchStatus) {
+      saleCustomerSearchStatus.textContent = "Masukkan minimal 2 karakter untuk mencari pelanggan terdaftar.";
+    }
+  }
+
+  function searchSaleCustomers() {
+    if (!saleCustomerSearch || !saleCustomerSelect) return;
+    if (saleCustomerSearchTimer) window.clearTimeout(saleCustomerSearchTimer);
+
+    var query = saleCustomerSearch.value.trim();
+    var requestId = ++saleCustomerSearchRequest;
+    saleCustomerSelect.value = "";
+
+    if (query.length < 2) {
+      saleCustomerSelect.disabled = false;
+      saleCustomerSelect.innerHTML = '<option value="">' +
+        (query ? "Ketik minimal 2 karakter" : "Ketik username atau nama untuk mencari") +
+        "</option>";
+      if (saleCustomerSearchStatus) {
+        saleCustomerSearchStatus.textContent = query
+          ? "Masukkan minimal 2 karakter untuk mencari."
+          : "Masukkan minimal 2 karakter untuk mencari pelanggan terdaftar.";
+      }
+      return;
+    }
+
+    saleCustomerSelect.disabled = true;
+    saleCustomerSelect.innerHTML = '<option value="">Mencari pelanggan...</option>';
+    if (saleCustomerSearchStatus) saleCustomerSearchStatus.textContent = "Mencari pelanggan...";
+
+    saleCustomerSearchTimer = window.setTimeout(function () {
+      SLApi.get("/api/admin/users", {
+        role: "CUSTOMER",
+        aktif: "true",
+        q: query,
+        page: 1,
+        per_page: 50
+      }).then(function (res) {
+        if (requestId !== saleCustomerSearchRequest ||
+            query !== saleCustomerSearch.value.trim()) return;
+
+        var users = res.data || [];
+        saleCustomerSelect.disabled = false;
+        saleCustomerSelect.innerHTML = '<option value="">' +
+          (users.length ? "Pilih pelanggan" : "Pelanggan tidak ditemukan") +
+          "</option>" +
+          users.map(function (user) {
+            var displayName = user.nama_lengkap || user.username;
+            return '<option value="' + esc(user.id) + '">' +
+              "@" + esc(user.username) + " - " + esc(displayName) +
+              "</option>";
+          }).join("");
+        if (saleCustomerSearchStatus) {
+          saleCustomerSearchStatus.textContent = users.length
+            ? users.length + " pelanggan ditemukan. Pilih pelanggan dari daftar."
+            : "Tidak ada pelanggan aktif yang cocok.";
+        }
+      }).catch(function (error) {
+        if (requestId !== saleCustomerSearchRequest ||
+            query !== saleCustomerSearch.value.trim()) return;
+        saleCustomerSelect.disabled = false;
+        saleCustomerSelect.innerHTML = '<option value="">Pencarian gagal</option>';
+        if (saleCustomerSearchStatus) {
+          saleCustomerSearchStatus.textContent = "Gagal mencari pelanggan: " +
+            (error && error.message ? error.message : "Terjadi kesalahan.");
+        }
+      });
+    }, 250);
+  }
+
+  if (saleCustomerSearch) {
+    saleCustomerSearch.addEventListener("input", searchSaleCustomers);
+  }
+  if (saleCustomerSelect && saleCustomerName) {
+    saleCustomerSelect.addEventListener("change", function () {
+      if (saleCustomerSelect.value) saleCustomerName.value = "";
+    });
+  }
+  if (saleCustomerName && saleCustomerSelect) {
+    saleCustomerName.addEventListener("input", function () {
+      if (saleCustomerName.value.trim()) saleCustomerSelect.value = "";
+    });
+  }
 
   function refreshSaleProductOptions() {
     if (!saleItems) return;
@@ -281,6 +378,7 @@
   function openSaleModal() {
     if (!saleModal) return;
     if (saleForm) saleForm.reset();
+    resetSaleCustomerSearch();
     if (saleStatus) {
       saleStatus.textContent = productLoadError || (productLoading ? "Memuat daftar barang..." : "");
       saleStatus.hidden = !productLoadError && !productLoading;
@@ -380,8 +478,8 @@
   if (saleForm) {
     saleForm.addEventListener("submit", function (e) {
       e.preventDefault();
-      var custId   = saleForm.querySelector("#sale-customer-id");
-      var custNama = saleForm.querySelector("#sale-customer-nama");
+      var custId   = saleCustomerSelect;
+      var custNama = saleCustomerName;
       var diskon   = saleForm.querySelector("#sale-diskon");
       var items = Array.prototype.map.call(saleItems.querySelectorAll(".sale-item-row"), function(row){
         var pid   = parseInt(row.querySelector(".sale-item-product").value,10);
@@ -400,7 +498,7 @@
       if (custId   && custId.value)   body.customer_id    = parseInt(custId.value,10);
       if (custNama && custNama.value) body.nama_pelanggan = custNama.value.trim();
       if (!body.customer_id && !body.nama_pelanggan) {
-        if (saleStatus) { saleStatus.textContent="Isi ID pelanggan atau nama pembeli umum."; saleStatus.hidden=false; }
+        if (saleStatus) { saleStatus.textContent="Pilih pelanggan terdaftar atau isi nama pembeli umum."; saleStatus.hidden=false; }
         return;
       }
       var submitBtn = saleForm.querySelector("[type=submit]");
@@ -421,6 +519,7 @@
   var purchaseStatus = document.getElementById("purchase-status");
   var purchaseSupplier = document.getElementById("purchase-supplier");
   var purchaseSubmit = document.getElementById("purchase-submit");
+  var purchaseUpdateDefaultPrice = document.getElementById("purchase-update-default-price");
   var purchaseSuppliers = [];
   var suppliersLoading = true;
   var suppliersLoadError = "";
@@ -620,70 +719,51 @@
         supplier_id: supplierId,
         items: items,
         no_referensi: document.getElementById("purchase-reference").value.trim(),
-        catatan: document.getElementById("purchase-note").value.trim()
+        catatan: document.getElementById("purchase-note").value.trim(),
+        update_harga_beli_default: !!(purchaseUpdateDefaultPrice && purchaseUpdateDefaultPrice.checked)
       };
-      purchaseSubmit.disabled = true;
-      SLApi.post("/api/admin/transactions/purchases", payload)
-        .then(function () {
-          purchaseSubmit.disabled = false;
-          purchaseForm.reset();
-          purchaseRowIndex = 0;
-          purchaseItems.innerHTML = "";
-          addPurchaseItemRow();
-          setPurchaseStatus("success", "Transaksi Barang Masuk tersimpan sebagai Pending. Stok bertambah setelah transaksi diselesaikan.");
-          dt.load();
-        })
-        .catch(function (error) {
-          purchaseSubmit.disabled = false;
-          var message = error && error.status === 422 && error.details
-            ? Object.values(error.details).map(function (detail) {
-                return typeof detail === "string" ? detail : Object.values(detail).join(" ");
-              }).join(" ")
-            : (error && error.message ? error.message : "Terjadi kesalahan.");
-          setPurchaseStatus("error", "Gagal membuat transaksi: " + message);
+
+      function savePurchase() {
+        purchaseSubmit.disabled = true;
+        SLApi.post("/api/admin/transactions/purchases", payload)
+          .then(function () {
+            purchaseSubmit.disabled = false;
+            purchaseForm.reset();
+            purchaseRowIndex = 0;
+            purchaseItems.innerHTML = "";
+            addPurchaseItemRow();
+            setPurchaseStatus("success", "Transaksi Barang Masuk tersimpan sebagai Pending. Stok bertambah setelah transaksi diselesaikan.");
+            dt.load();
+          })
+          .catch(function (error) {
+            purchaseSubmit.disabled = false;
+            var message = error && error.status === 422 && error.details
+              ? Object.values(error.details).map(function (detail) {
+                  return typeof detail === "string" ? detail : Object.values(detail).join(" ");
+                }).join(" ")
+              : (error && error.message ? error.message : "Terjadi kesalahan.");
+            setPurchaseStatus("error", "Gagal membuat transaksi: " + message);
+          });
+      }
+
+      if (payload.update_harga_beli_default) {
+        purchaseSubmit.disabled = true;
+        window.SLDialog.confirm({
+          title: "Ubah harga beli acuan?",
+          message: "Saat Barang Masuk ini diselesaikan, harga beli setiap produk akan diperbarui memakai harga pada transaksi ini.",
+          confirmLabel: "Ya, perbarui harga acuan"
+        }).then(function (confirmed) {
+          if (confirmed) {
+            savePurchase();
+          } else {
+            purchaseSubmit.disabled = false;
+          }
         });
+      } else {
+        savePurchase();
+      }
     });
   }
-
-  /* ═══ Kartu stok ════════════════════════════════════════════════════════ */
-  var kartuForm   = document.getElementById("kartu-stok-form");
-  var kartuSelect = document.getElementById("kartu-product-id");
-  var kartuTable  = document.querySelector("#kartu-table tbody");
-
-  fetchAllProducts(1, [])
-    .then(function (products) {
-      if (!kartuSelect) return;
-      kartuSelect.innerHTML = '<option value="">Pilih Barang</option>' +
-        products.map(function(p){
-          return '<option value="'+p.product_id+'">'+esc(p.kode_barang)+" - "+esc(p.nama_barang)+"</option>";
-        }).join("");
-    }).catch(function(err){
-      if (kartuSelect) kartuSelect.innerHTML = '<option value="">Gagal memuat daftar barang</option>';
-      console.error("[transaksi.js] Gagal memuat barang untuk kartu stok:", err);
-    });
-
-  function loadKartuStok(productId) {
-    if (!kartuTable || !productId) return;
-    kartuTable.innerHTML = '<tr><td colspan="7" class="data-table__empty-cell">Memuat…</td></tr>';
-    SLApi.get("/api/admin/reports/kartu-stok", { product_id:productId, limit:50 })
-      .then(function(res){
-        var rows = res.data || [];
-        if (!rows.length) { kartuTable.innerHTML='<tr><td colspan="7" class="data-table__empty-cell">Belum ada riwayat.</td></tr>'; return; }
-        kartuTable.innerHTML = rows.map(function(r){
-          var p = Number(r.perubahan);
-          return "<tr>"+
-            "<td>"+fmt(r.waktu)+"</td><td>"+esc(r.no_faktur)+"</td><td>"+esc(tipeLabel(r.tipe_transaksi))+"</td>"+
-            "<td>"+esc(String(r.stok_awal))+"</td>"+
-            '<td class="'+(p>0?"stok-plus":"stok-minus")+'">'+(p>0?"+":"")+p+"</td>"+
-            "<td><strong>"+esc(String(r.stok_akhir))+"</strong></td>"+
-            "<td>"+esc(r.catatan||"-")+"</td>"+
-          "</tr>";
-        }).join("");
-      })
-      .catch(function(){ kartuTable.innerHTML='<tr><td colspan="7" class="data-table__error">Gagal memuat kartu stok.</td></tr>'; });
-  }
-
-  if (kartuForm) kartuForm.addEventListener("submit", function(e){ e.preventDefault(); if(kartuSelect) loadKartuStok(kartuSelect.value); });
 
   /* ═══ Boot ══════════════════════════════════════════════════════════════ */
   attachFilters();

@@ -27,8 +27,28 @@
         <a href="wa.html"         class="nav-link" data-nav="wa">Pengaturan WA</a>
       </nav>
 
-      <!-- data-logout ditangani js/include.js (menghapus sesi bersama) -->
-      <a href="../login.html" class="btn-logout" data-logout>Log Out</a>
+      <!-- Profil admin. Panel & logout ditangani js/include.js (menghapus sesi bersama) -->
+      <div class="header-auth">
+        <span class="header-divider" aria-hidden="true"></span>
+        <div class="profile" data-profile>
+          <button type="button" class="icon-btn profile__toggle" data-profile-toggle aria-haspopup="true" aria-expanded="false" aria-controls="profile-panel" aria-label="Profil akun">
+            <img src="assets/icons/profile-white.svg" alt="" width="28" height="28" />
+          </button>
+
+          <div class="profile-panel" id="profile-panel" role="menu" aria-label="Informasi akun" hidden>
+            <div class="profile-panel__info">
+              <span class="profile-role" data-profile-role>Admin</span>
+              <dl class="profile-fields">
+                <div><dt>Nama Lengkap</dt><dd data-profile-name>-</dd></div>
+                <div><dt>Username</dt><dd data-profile-username>-</dd></div>
+                <div><dt>No. HP</dt><dd data-profile-phone>-</dd></div>
+              </dl>
+            </div>
+            <a href="../index.html" class="profile-panel__item" role="menuitem" data-profile-switch>Beralih Dashboard</a>
+            <button type="button" class="profile-panel__item profile-panel__item--logout" role="menuitem" data-logout>Log Out</button>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>

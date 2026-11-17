@@ -75,6 +75,7 @@
           var frontendRole = (u.role === "ADMIN" || u.role === "MECHANIC") ? "admin" : "client";
           try {
             localStorage.setItem(Auth.SESSION_KEY, JSON.stringify({
+              id: u.id,
               username: u.username,
               name: u.nama_lengkap || u.username,
               role: frontendRole,
@@ -118,7 +119,8 @@
   /* ---------- Register (selalu role client) ---------- */
   var registerForm = document.getElementById("register-form");
   if (registerForm) {
-    ["username", "password", "password2", "no_whatsapp"].forEach(function (name) {
+    var registerFields = ["username", "nama_lengkap", "password", "password2", "no_whatsapp", "alamat"];
+    registerFields.forEach(function (name) {
       registerForm.elements[name].addEventListener("input", function () {
         setFieldError(name, "");
       });
@@ -127,20 +129,37 @@
     registerForm.addEventListener("submit", function (event) {
       event.preventDefault();
       message.hidden = true;
-      ["username", "password", "password2", "no_whatsapp"].forEach(function (name) { setFieldError(name, ""); });
+      registerFields.forEach(function (name) { setFieldError(name, ""); });
 
       var username    = registerForm.elements.username.value.trim();
+      var nama_lengkap = registerForm.elements.nama_lengkap.value.trim();
       var password    = registerForm.elements.password.value;
       var password2   = registerForm.elements.password2.value;
       var no_whatsapp = registerForm.elements.no_whatsapp.value.trim();
+      var alamat      = registerForm.elements.alamat.value.trim();
 
       // Validasi dasar di frontend sebelum kirim
       if (username.length < 3) { setFieldError("username", "Username minimal 3 karakter."); registerForm.elements.username.focus(); return; }
+      if (username.length > 50 || !/^[A-Za-z0-9_.]+$/.test(username)) {
+        setFieldError("username", "Username hanya boleh 3-50 karakter berupa huruf, angka, titik, atau garis bawah.");
+        registerForm.elements.username.focus();
+        return;
+      }
+      if (nama_lengkap.length < 2 || nama_lengkap.length > 100) {
+        setFieldError("nama_lengkap", "Nama lengkap wajib diisi (2-100 karakter).");
+        registerForm.elements.nama_lengkap.focus();
+        return;
+      }
       if (password.length < 6) { setFieldError("password", "Password minimal 6 karakter."); registerForm.elements.password.focus(); return; }
       if (password !== password2) { setFieldError("password2", "Konfirmasi password tidak cocok."); registerForm.elements.password2.focus(); return; }
       if (!/^(08|62)\d{8,13}$/.test(no_whatsapp.replace(/[\s\-().+]/g, ""))) {
         setFieldError("no_whatsapp", "Masukkan nomor WhatsApp yang valid, contoh: 081234567890.");
         registerForm.elements.no_whatsapp.focus();
+        return;
+      }
+      if (alamat.length > 500) {
+        setFieldError("alamat", "Alamat maksimal 500 karakter.");
+        registerForm.elements.alamat.focus();
         return;
       }
 
@@ -155,8 +174,9 @@
           username:     username,
           password:     password,
           password2:    password2,
-          nama_lengkap: username,
-          no_telepon:   no_whatsapp
+          nama_lengkap: nama_lengkap,
+          no_telepon:   no_whatsapp,
+          alamat:       alamat
         })
         .then(function () {
           window.location.href = "login.html?registered=1";
@@ -173,7 +193,14 @@
       }
 
       // Fallback: simpan ke localStorage (jika backend tidak tersedia)
-      var result = Auth.registerClient({ username: username, password: password, password2: password2, no_whatsapp: no_whatsapp });
+      var result = Auth.registerClient({
+        username: username,
+        nama_lengkap: nama_lengkap,
+        password: password,
+        password2: password2,
+        no_whatsapp: no_whatsapp,
+        alamat: alamat
+      });
       if (!result.ok) {
         if (result.field) {
           setFieldError(result.field, result.error);

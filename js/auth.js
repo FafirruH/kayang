@@ -164,9 +164,11 @@
         return null;
       }
       return {
+        id: session.id || null,
         username: session.username,
         name: session.name || session.username,
-        role: session.role
+        role: session.role,
+        source: "backend"
       };
     }
     var acc = findByUsername(session.username);
@@ -177,7 +179,7 @@
     if (session.role !== acc.role) {
       writeJSON(SESSION_KEY, { username: acc.username, role: acc.role });
     }
-    return { username: acc.username, name: acc.name || acc.username, role: acc.role };
+    return { id: acc.id, username: acc.username, name: acc.name || acc.username, role: acc.role, source: "local" };
   }
 
   function isLoggedIn() {
@@ -213,29 +215,36 @@
   // Registrasi hanya untuk client: role tidak pernah diambil dari input
   function registerClient(input) {
     var username    = String((input && input.username)    || "").trim();
+    var nama_lengkap = String((input && input.nama_lengkap) || "").trim();
     var password    = String((input && input.password)    || "");
     var password2   = String((input && input.password2)   || "");
     var no_whatsapp = String((input && input.no_whatsapp) || "").trim();
+    var alamat      = String((input && input.alamat)      || "").trim();
 
     if (username.length < 3) return { ok: false, field: "username", error: "Username minimal 3 karakter." };
-    if (!/^[A-Za-z0-9._-]+$/.test(username)) {
-      return { ok: false, field: "username", error: "Username hanya boleh huruf, angka, titik, garis bawah, atau strip." };
+    if (!/^[A-Za-z0-9_.]+$/.test(username)) {
+      return { ok: false, field: "username", error: "Username hanya boleh huruf, angka, titik, atau garis bawah." };
     }
-    if (username.length > 30) return { ok: false, field: "username", error: "Username maksimal 30 karakter." };
+    if (username.length > 50) return { ok: false, field: "username", error: "Username maksimal 50 karakter." };
     if (findByUsername(username)) return { ok: false, field: "username", error: "Username sudah dipakai." };
+    if (nama_lengkap.length < 2 || nama_lengkap.length > 100) {
+      return { ok: false, field: "nama_lengkap", error: "Nama lengkap wajib diisi (2-100 karakter)." };
+    }
     if (password.length < 6) return { ok: false, field: "password", error: "Password minimal 6 karakter." };
     if (password !== password2) return { ok: false, field: "password2", error: "Konfirmasi password tidak cocok." };
     if (!/^(08|62)\d{8,13}$/.test(no_whatsapp.replace(/[\s\-().+]/g, ""))) {
       return { ok: false, field: "no_whatsapp", error: "Masukkan nomor WhatsApp yang valid, contoh: 081234567890." };
     }
+    if (alamat.length > 500) return { ok: false, field: "alamat", error: "Alamat maksimal 500 karakter." };
 
     var list = getAccounts();
     var nextId = list.reduce(function (max, a) { return Math.max(max, a.id || 0); }, 0) + 1;
     list.push({
       id: nextId,
       username: username,
-      name: username,
+      name: nama_lengkap,
       no_whatsapp: no_whatsapp,
+      alamat: alamat,
       password: password,
       role: "client",
       joined: new Date().toISOString().slice(0, 10),
@@ -274,6 +283,44 @@
     if (!acc) return { ok: false, error: "Akun tidak ditemukan." };
     if (isLockedAccount(acc)) return { ok: false, error: "Akun ini tidak dapat dihapus." };
     saveAccounts(list.filter(function (a) { return a.id !== id; }));
+    return { ok: true };
+  }
+
+  /* ---------- Profil sendiri (panel profil & halaman Pengaturan Akun) ---------- */
+  // Data profil dari akun localStorage (cadangan bila backend tidak tersedia)
+  function getProfile() {
+    var user = getCurrentUser();
+    if (!user) return null;
+    var acc = findByUsername(user.username);
+    return {
+      username: user.username,
+      nama_lengkap: (acc && acc.name) || user.name,
+      no_telepon: (acc && acc.no_whatsapp) || "",
+      role: user.role
+    };
+  }
+
+  // Ubah akun sendiri; password saat ini WAJIB cocok. Hanya untuk akun client.
+  function updateProfile(currentPassword, changes) {
+    var user = getCurrentUser();
+    if (!user) return { ok: false, error: "Sesi berakhir. Silakan login ulang." };
+    if (user.role !== "client") return { ok: false, error: "Akun admin tidak memiliki pengaturan akun." };
+    var list = getAccounts();
+    var acc = list.filter(function (a) { return norm(a.username) === norm(user.username); })[0];
+    if (!acc) return { ok: false, error: "Akun tidak ditemukan di penyimpanan lokal." };
+    if (!acc.password || acc.password !== currentPassword) {
+      return { ok: false, field: "current_password", error: "Password salah." };
+    }
+    var username = String(changes.username || acc.username).trim();
+    if (norm(username) !== norm(acc.username)) {
+      if (findByUsername(username)) return { ok: false, field: "username", error: "Username sudah dipakai." };
+      acc.username = username;
+    }
+    if (changes.nama_lengkap) acc.name = String(changes.nama_lengkap).trim();
+    if (changes.no_telepon) acc.no_whatsapp = String(changes.no_telepon).trim();
+    if (changes.password) acc.password = String(changes.password);
+    if (!saveAccounts(list)) return { ok: false, error: "Penyimpanan browser tidak tersedia." };
+    writeJSON(SESSION_KEY, { username: acc.username, role: acc.role });
     return { ok: true };
   }
 
@@ -351,6 +398,8 @@
     loginUrl: loginUrl,
     safeNext: safeNext,
     redirectAfterLogin: redirectAfterLogin,
+    getProfile: getProfile,
+    updateProfile: updateProfile,
     listAccounts: listAccounts,
     isLockedAccount: isLockedAccount,
     updateRole: updateRole,

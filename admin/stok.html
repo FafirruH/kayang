@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="css/responsive.css" />
   <link rel="stylesheet" href="css/stok.css" />
   <script src="../js/config.js"></script>
-  <script src="../js/api.js"></script>
+  <script src="../js/api.js?v=20261117"></script>
   <script src="../js/auth.js" defer></script>
   <script src="../js/include.js" defer></script>
   <script src="js/datatable.js" defer></script>
@@ -28,7 +28,7 @@
       <div class="page-head">
         <div>
           <h1 class="page-title">Stok Sparepart</h1>
-          <p class="page-subtitle">Kelola daftar barang bengkel</p>
+          <p class="page-subtitle">Kelola barang dan riwayat keluar-masuk stok</p>
         </div>
         <button id="btn-add-product" class="btn btn--primary" type="button">
           <img src="assets/icons/plus.svg" alt="" width="16" height="16" />
@@ -36,33 +36,82 @@
         </button>
       </div>
 
-      <div class="toolbar" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
-        <label class="sr-only" for="stok-search">Cari barang</label>
-        <input id="stok-search" class="search-input" type="search" placeholder="Cari barang..." autocomplete="off" />
-        <span id="stok-count" style="font-size:.8rem;color:var(--text-muted,#94a3b8)"></span>
+      <div class="segmented stok-tabs" role="tablist" aria-label="Tampilan stok">
+        <button class="segmented__btn stok-tab is-active" id="stok-list-tab" type="button"
+                role="tab" aria-selected="true" aria-controls="stok-list-panel" tabindex="0">Daftar Stok</button>
+        <button class="segmented__btn stok-tab" id="stok-card-tab" type="button"
+                role="tab" aria-selected="false" aria-controls="stok-card-panel" tabindex="-1">Kartu Stok</button>
       </div>
 
-      <div class="table-card table-card--dark">
-        <table class="data-table data-table--stack" id="stok-table">
-          <caption class="sr-only">Daftar stok sparepart</caption>
-          <thead>
-            <tr>
-              <th scope="col" data-sort="product_id">ID</th>
-              <th scope="col" data-sort="kode_barang">Kode Barang</th>
-              <th scope="col" data-sort="nama_barang">Nama Barang</th>
-              <th scope="col" data-sort="jenis_barang">Kategori</th>
-              <th scope="col" data-sort="harga_jual">Harga</th>
-              <th scope="col" data-sort="tersedia">Stok</th>
-              <th scope="col" class="data-table__actions">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="data-table__empty">
-              <td colspan="7">Memuat data...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <section class="stok-tab-panel" id="stok-list-panel" role="tabpanel"
+               aria-labelledby="stok-list-tab" tabindex="0">
+        <div class="toolbar" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+          <label class="sr-only" for="stok-search">Cari barang</label>
+          <input id="stok-search" class="search-input" type="search" placeholder="Cari barang..." autocomplete="off" />
+          <span id="stok-count" style="font-size:.8rem;color:var(--text-muted,#94a3b8)"></span>
+        </div>
+
+        <div class="table-card table-card--dark">
+          <table class="data-table data-table--stack" id="stok-table">
+            <caption class="sr-only">Daftar stok sparepart</caption>
+            <thead>
+              <tr>
+                <th scope="col" data-sort="product_id">ID</th>
+                <th scope="col" data-sort="kode_barang">Kode Barang</th>
+                <th scope="col" data-sort="nama_barang">Nama Barang</th>
+                <th scope="col" data-sort="jenis_barang">Kategori</th>
+                <th scope="col" data-sort="harga_jual">Harga</th>
+                <th scope="col" data-sort="tersedia">Stok</th>
+                <th scope="col" class="data-table__actions">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="data-table__empty">
+                <td colspan="7">Memuat data...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="kartu-section stok-tab-panel" id="stok-card-panel" role="tabpanel"
+               aria-labelledby="stok-card-tab" tabindex="0" hidden>
+        <div class="dashboard__head">
+          <h2 class="page-title" id="kartu-title">Kartu Stok</h2>
+          <p class="page-subtitle">Riwayat keluar-masuk per barang</p>
+        </div>
+
+        <form id="kartu-stok-form" class="toolbar">
+          <label class="sr-only" for="kartu-product-search">Cari barang berdasarkan kode atau nama</label>
+          <input class="search-input" id="kartu-product-search" type="search"
+                 placeholder="Cari kode atau nama barang..." autocomplete="off" />
+          <label class="sr-only" for="kartu-product-id">Pilih barang</label>
+          <select class="search-input" id="kartu-product-id" required>
+            <option value="">Memuat daftar barang...</option>
+          </select>
+          <button class="btn btn--primary btn--sm" type="submit">Tampilkan</button>
+        </form>
+
+        <div class="table-card table-card--dark">
+          <table class="data-table data-table--stack" id="kartu-table">
+            <caption class="sr-only">Kartu stok barang</caption>
+            <thead>
+              <tr>
+                <th scope="col">Tanggal</th>
+                <th scope="col">No Faktur</th>
+                <th scope="col">Tipe</th>
+                <th scope="col">Stok Awal</th>
+                <th scope="col">Perubahan</th>
+                <th scope="col">Stok Akhir</th>
+                <th scope="col">Catatan</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="7" class="data-table__empty-cell">Pilih barang untuk melihat riwayat stok.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
     </div>
   </main>

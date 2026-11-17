@@ -33,10 +33,16 @@
   var elNama      = form.elements.nama;
   var elFormat    = form.elements.format;
   var elFormatPanggil = form.elements.format_panggilan;
+  var elNomorPermission = document.getElementById("wa-nomor-permission");
   var elStatus    = document.getElementById("wa-status");
   var elPreviewTo = document.getElementById("wa-preview-to");
   var elPreviewBody        = document.getElementById("wa-preview-body");
   var elPreviewPanggilBody = document.getElementById("wa-preview-panggil-body");
+  var currentUser = window.SLAuth && window.SLAuth.getCurrentUser();
+  var canChangeNumber = !!currentUser && String(currentUser.username).toLowerCase() === "admin";
+
+  elNomor.readOnly = !canChangeNumber;
+  if (elNomorPermission) elNomorPermission.hidden = canChangeNumber;
 
   // ── Template fill ─────────────────────────────────────────────────────────
   function fillTemplate(text, sample) {

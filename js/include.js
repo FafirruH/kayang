@@ -7,7 +7,9 @@
    - Link [data-requires-login] (fitur client): belum login -> login.html,
      admin -> pemberitahuan
    - Tombol [data-logout] menghapus sesi bersama
-   - Status akun di header client ([data-auth-*]) dan [data-client-only]
+   - Header: ikon keranjang + badge jumlah ([data-cart-count]) dan panel profil
+     ([data-profile]) berisi info akun, Pengaturan Akun / Beralih Dashboard, Log Out
+   - Status akun di header client ([data-auth-login], [data-profile]) dan [data-client-only]
    - Menu hamburger admin (.nav-toggle + #site-nav)
 
    CATATAN: fetch() tidak jalan bila halaman dibuka lewat file://
@@ -41,7 +43,7 @@
   function markActiveNav() {
     var page = document.body.getAttribute("data-page");
     if (!page) return;
-    var links = document.querySelectorAll('.nav-link[data-nav="' + page + '"]');
+    var links = document.querySelectorAll('[data-nav="' + page + '"]');
     links.forEach(function (link) {
       link.classList.add("is-active");
       link.setAttribute("aria-current", "page");
@@ -52,17 +54,90 @@
     document.querySelectorAll(selector).forEach(function (el) { el.hidden = hidden; });
   }
 
-  // Header client: Login / (nama akun + Dashboard Admin + Logout)
+  // Header: tombol Login (belum login) atau ikon profil (sudah login)
   function applyAuthState() {
     var user = Auth.getCurrentUser();
     setHidden("[data-auth-login]", !!user);
-    setHidden("[data-auth-user]", !user);
-    setHidden("[data-auth-logout]", !user);
-    setHidden("[data-auth-admin]", !user || user.role !== "admin");
+    setHidden("[data-profile]", !user);
     setHidden("[data-client-only]", !!user && user.role === "admin");
 
-    var label = document.querySelector("[data-auth-user]");
-    if (label && user) label.textContent = user.name;
+    // Admin: tidak ada Pengaturan Akun, diganti Beralih Dashboard. Client: sebaliknya.
+    var isAdmin = !!user && user.role === "admin";
+    setHidden("[data-profile-config]", isAdmin);
+    setHidden("[data-profile-switch]", !isAdmin);
+
+    var roleEl = document.querySelector("[data-profile-role]");
+    if (roleEl && user) roleEl.textContent = isAdmin ? "Akun Admin" : "Akun User";
+
+    if (user) fillProfile(user);
+    updateCartBadge();
+  }
+
+  /* ---------- Panel profil ---------- */
+  var profileCache = null;
+
+  function setText(selector, value) {
+    document.querySelectorAll(selector).forEach(function (el) { el.textContent = value || "-"; });
+  }
+
+  function showProfile(data) {
+    setText("[data-profile-name]", data.nama_lengkap);
+    setText("[data-profile-username]", data.username);
+    setText("[data-profile-phone]", data.no_telepon);
+  }
+
+  // Isi cepat dari sesi, lalu lengkapi (nama lengkap & no. HP) dari backend /api/auth/me
+  function fillProfile(user) {
+    var local = Auth.getProfile && Auth.getProfile();
+    showProfile(profileCache || local || { nama_lengkap: user.name, username: user.username, no_telepon: "" });
+    if (profileCache || !window.SLApi) return;
+
+    SLApi.get("/api/auth/me").then(function (res) {
+      var data = res && res.data;
+      if (!data || !data.username) return;
+      profileCache = { nama_lengkap: data.nama_lengkap, username: data.username, no_telepon: data.no_telepon };
+      showProfile(profileCache);
+    }).catch(function () { /* tetap pakai data lokal */ });
+  }
+
+  function bindProfilePanel() {
+    var wrap = document.querySelector("[data-profile]");
+    if (!wrap) return;
+    var toggle = wrap.querySelector("[data-profile-toggle]");
+    var panel = wrap.querySelector(".profile-panel");
+    if (!toggle || !panel) return;
+
+    function setOpen(open) {
+      panel.hidden = !open;
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
+    toggle.addEventListener("click", function (event) {
+      event.stopPropagation();
+      setOpen(panel.hidden);
+    });
+    document.addEventListener("click", function (event) {
+      if (!panel.hidden && !event.target.closest("[data-profile]")) setOpen(false);
+    });
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && !panel.hidden) { setOpen(false); toggle.focus(); }
+    });
+  }
+
+  /* ---------- Badge keranjang (jumlah seluruh unit barang) ---------- */
+  function cartCount() {
+    return window.SLCart ? SLCart.count() : 0;
+  }
+
+  function updateCartBadge() {
+    var n = cartCount();
+    document.querySelectorAll("[data-cart-count]").forEach(function (badge) {
+      badge.textContent = n > 99 ? "99+" : String(n);
+      badge.hidden = n < 1;
+    });
+    document.querySelectorAll(".cart-btn").forEach(function (link) {
+      link.setAttribute("aria-label", n > 0 ? "Keranjang, " + n + " barang" : "Keranjang");
+    });
   }
 
   function bindLogout() {
@@ -154,11 +229,18 @@
       markActiveNav();
       applyAuthState();
       bindLogout();
+      bindProfilePanel();
       guardLoginLinks();
       bindNavToggle();
       Auth.showDeniedFromQuery();
       document.dispatchEvent(new CustomEvent("partials:loaded"));
     });
+  });
+
+  // Badge keranjang ikut berubah (tab yang sama maupun tab lain)
+  document.addEventListener("slCartChanged", updateCartBadge);
+  window.addEventListener("storage", function (event) {
+    if (event.key === "sl_cart_changed") updateCartBadge();
   });
 
   // Tombol Back setelah logout: halaman dari cache back/forward diperiksa ulang

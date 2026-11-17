@@ -100,7 +100,7 @@ final class TransactionController
         $items = Input::items($in->raw('items'), true);
 
         if ($cust !== null) {
-            $ok = Db::val("SELECT 1 FROM users WHERE id = :id AND role = 'CUSTOMER' AND aktif", ['id' => $cust]);
+            $ok = Db::val("SELECT 1 FROM users WHERE id = :id AND peran = 'CUSTOMER' AND aktif", ['id' => $cust]);
             if ($ok === null) {
                 throw new HttpException('Data tidak valid', 422, ['customer_id' => 'Pelanggan tidak ditemukan']);
             }
@@ -108,7 +108,7 @@ final class TransactionController
 
         $json = json_encode(array_map(
             static fn(array $i): array => array_filter(
-                ['product_id' => $i['product_id'], 'jumlah' => $i['jumlah'], 'harga' => $i['harga']],
+                ['id_barang' => $i['product_id'], 'jumlah' => $i['jumlah'], 'harga' => $i['harga']],
                 static fn($x) => $x !== null
             ),
             $items
@@ -125,7 +125,8 @@ final class TransactionController
 
     /**
      * POST /api/admin/transactions/purchases
-     * {"supplier_id":1,"no_referensi":"SJ-001","catatan":"...","items":[{"product_id":1,"jumlah":20,"harga":46000}]}
+     * {"supplier_id":1,"no_referensi":"SJ-001","catatan":"...","update_harga_beli_default":false,
+     *  "items":[{"product_id":1,"jumlah":20,"harga":46000}]}
      * Membuat pesanan ke supplier (PENDING). Stok bertambah saat diubah ke COMPLETED (barang diterima).
      */
     public static function createPurchase(array $params, ?array $user): void
@@ -134,22 +135,31 @@ final class TransactionController
         $sup = $in->int('supplier_id', 1);
         $ref = $in->str('no_referensi', 1, 50, false);
         $cat = $in->str('catatan', 1, 500, false);
+        $updateDefaultPrice = $in->bool('update_harga_beli_default') ?? false;
         $in->check();
         $items = Input::items($in->raw('items'), true);
+        usort($items, static fn(array $a, array $b): int => $a['product_id'] <=> $b['product_id']);
 
         if (Db::val('SELECT 1 FROM suppliers WHERE id = :id AND aktif', ['id' => $sup]) === null) {
             throw new HttpException('Data tidak valid', 422, ['supplier_id' => 'Supplier tidak ditemukan']);
         }
 
-        $id = (int) Db::tx(static function () use ($user, $sup, $ref, $cat, $items) {
+        $id = (int) Db::tx(static function () use ($user, $sup, $ref, $cat, $items, $updateDefaultPrice) {
             $id = (int) Db::val(
-                "INSERT INTO transactions (tipe_transaksi, supplier_id, dicatat_oleh, no_referensi, catatan)
-                 VALUES ('IN', :s, :u, :r, :c) RETURNING id",
-                ['s' => $sup, 'u' => $user['id'], 'r' => $ref, 'c' => $cat]
+                "INSERT INTO transactions (
+                    tipe_transaksi, id_supplier, dicatat_oleh, no_referensi, catatan, update_harga_beli_default
+                 ) VALUES ('IN', :s, :u, :r, :c, :update_default) RETURNING id",
+                [
+                    's' => $sup,
+                    'u' => $user['id'],
+                    'r' => $ref,
+                    'c' => $cat,
+                    'update_default' => Db::bool($updateDefaultPrice),
+                ]
             );
             foreach ($items as $i) {
                 Db::exec(
-                    'INSERT INTO transaction_details (transaction_id, product_id, jumlah, harga_satuan_real)
+                    'INSERT INTO transaction_details (id_transaksi, id_barang, jumlah, harga_satuan_real)
                      VALUES (:t, :p, :j, :h)',
                     ['t' => $id, 'p' => $i['product_id'], 'j' => $i['jumlah'], 'h' => $i['harga']]
                 );
@@ -189,9 +199,11 @@ final class TransactionController
                 SET status       = :s,
                     metode_bayar = COALESCE(CAST(:m AS varchar), metode_bayar),
                     diskon       = COALESCE(CAST(:d AS integer), diskon),
-                    catatan      = COALESCE(CAST(:c AS text), catatan)
+                    catatan      = COALESCE(CAST(:c AS text), catatan),
+                    diselesaikan_oleh = CAST(:actor AS integer)
               WHERE id = :id AND status = 'PENDING'",
-            ['s' => $status, 'm' => $metode, 'd' => $diskon, 'c' => $catatan, 'id' => $params['id']]
+            ['s' => $status, 'm' => $metode, 'd' => $diskon, 'c' => $catatan,
+             'actor' => $status === 'COMPLETED' ? $user['id'] : null, 'id' => $params['id']]
         );
         if ($n === 0) {
             throw new HttpException('Status transaksi baru saja berubah, muat ulang data', 409);
@@ -210,7 +222,7 @@ final class TransactionController
             throw new HttpException('Hanya tersedia untuk transaksi penjualan', 422);
         }
         $phone = Db::val(
-            'SELECT u.no_telepon FROM transactions t JOIN users u ON u.id = t.customer_id WHERE t.id = :id',
+            'SELECT u.no_telepon FROM transactions t JOIN users u ON u.id = t.id_pelanggan WHERE t.id = :id',
             ['id' => $params['id']]
         );
         $text   = Wa::orderText($t);

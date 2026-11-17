@@ -23,6 +23,57 @@
   max-width: none;
 }
 
+.stok-tabs {
+  margin: 20px 0;
+}
+
+.stok-tab {
+  min-width: 128px;
+  min-height: 36px;
+}
+
+.stok-tab-panel {
+  min-width: 0;
+}
+
+.kartu-section .dashboard__head {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.kartu-section .toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.kartu-section .search-input {
+  flex: 1 1 240px;
+  max-width: none;
+}
+
+.kartu-section select {
+  flex: 2 1 300px;
+  min-width: 200px;
+  padding: 0 12px;
+}
+
+.kartu-section .btn {
+  flex: 0 0 auto;
+}
+
+.stok-plus {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.stok-minus {
+  color: #ef4444;
+  font-weight: 600;
+}
+
 .search-input option {
   color: #161b20;
   background: #fff;
@@ -131,6 +182,16 @@
 
   .toolbar__field--grow {
     flex-basis: 100%;
+  }
+
+  .stok-tab {
+    min-width: 0;
+  }
+
+  .kartu-section .search-input,
+  .kartu-section select {
+    flex-basis: 100%;
+    min-width: 0;
   }
 
   .data-table--stack td[data-label="Nama Barang"] {

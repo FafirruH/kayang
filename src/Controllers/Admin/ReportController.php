@@ -22,14 +22,14 @@ final class ReportController
                 WHERE tipe_transaksi = 'OUT' AND status = 'COMPLETED'
                   AND date_trunc('month', completed_at) = date_trunc('month', now()))      AS pendapatan_bulan_ini,
               (SELECT COUNT(*) FROM transactions
-                WHERE tipe_transaksi = 'OUT' AND status = 'PENDING' AND expired_at > now()) AS pesanan_menahan_stok,
-              (SELECT COALESCE(SUM(b.remaining_quantity::bigint * b.unit_cost), 0)
+                WHERE tipe_transaksi = 'OUT' AND status = 'PENDING' AND kedaluwarsa_pada > now()) AS pesanan_menahan_stok,
+              (SELECT COALESCE(SUM(b.jumlah_sisa::bigint * b.harga_modal_satuan), 0)
                  FROM inventory_batches b
-                 JOIN products p ON p.id = b.product_id
+                 JOIN products p ON p.id = b.id_barang
                 WHERE p.aktif)                                                             AS nilai_persediaan,
               (SELECT COUNT(*) FROM v_stok_barang
                 WHERE aktif AND status_stok <> 'Tersedia')                                 AS barang_perlu_perhatian,
-              (SELECT COUNT(*) FROM users WHERE role = 'CUSTOMER')                         AS pelanggan_terdaftar
+              (SELECT COUNT(*) FROM users WHERE peran = 'CUSTOMER')                        AS pelanggan_terdaftar
             SQL);
 
         $recent = Db::all(<<<'SQL'
@@ -58,8 +58,8 @@ final class ReportController
                    GREATEST(CAST(EXTRACT(EPOCH FROM (h.expired_at - now())) AS integer), 0) AS sisa_detik,
                    string_agg(p.nama_barang || ' x' || d.jumlah, ', ' ORDER BY p.nama_barang) AS isi_pesanan
               FROM v_transaksi_header h
-              JOIN transaction_details d ON d.transaction_id = h.transaction_id
-              JOIN products p            ON p.id = d.product_id
+              JOIN transaction_details d ON d.id_transaksi = h.transaction_id
+              JOIN products p            ON p.id = d.id_barang
              WHERE h.tipe_transaksi = 'OUT' AND h.status = 'PENDING' AND h.expired_at > now()
              GROUP BY h.transaction_id, h.no_faktur, h.nama_pelanggan, h.total_bayar, h.expired_at
              ORDER BY h.expired_at
@@ -71,19 +71,19 @@ final class ReportController
     {
         Http::ok(Db::all(<<<'SQL'
             WITH penjualan_30 AS (
-              SELECT d.product_id, SUM(d.jumlah) AS terjual
+              SELECT d.id_barang AS product_id, SUM(d.jumlah) AS terjual
                 FROM transaction_details d
-                JOIN transactions t ON t.id = d.transaction_id
+                JOIN transactions t ON t.id = d.id_transaksi
                WHERE t.tipe_transaksi = 'OUT' AND t.status = 'COMPLETED'
-                 AND t.completed_at >= now() - interval '30 days'
-               GROUP BY d.product_id
+                 AND t.selesai_pada >= now() - interval '30 days'
+               GROUP BY d.id_barang
             ),
             po_masuk AS (
-              SELECT d.product_id, SUM(d.jumlah) AS dipesan
+              SELECT d.id_barang AS product_id, SUM(d.jumlah) AS dipesan
                 FROM transaction_details d
-                JOIN transactions t ON t.id = d.transaction_id
+                JOIN transactions t ON t.id = d.id_transaksi
                WHERE t.tipe_transaksi = 'IN' AND t.status = 'PENDING'
-               GROUP BY d.product_id
+               GROUP BY d.id_barang
             ),
             analisis AS (
               SELECT v.kode_barang, v.nama_barang, v.jenis_barang,
@@ -118,8 +118,8 @@ final class ReportController
                AND NOT EXISTS (
                      SELECT 1
                        FROM transaction_details d
-                       JOIN transactions t ON t.id = d.transaction_id
-                      WHERE d.product_id = v.product_id
+                       JOIN transactions t ON t.id = d.id_transaksi
+                      WHERE d.id_barang = v.product_id
                         AND t.tipe_transaksi = 'OUT' AND t.status = 'COMPLETED')
              ORDER BY nilai_modal_mengendap DESC
             SQL));
@@ -207,9 +207,9 @@ final class ReportController
                     SUM(d.jumlah)        AS unit_dibeli,
                     SUM(d.subtotal)      AS total_pembelian
                FROM suppliers s
-               JOIN transactions t        ON t.supplier_id = s.id
+               JOIN transactions t        ON t.id_supplier = s.id
                                          AND t.tipe_transaksi = 'IN' AND t.status = 'COMPLETED'
-               JOIN transaction_details d ON d.transaction_id = t.id
+               JOIN transaction_details d ON d.id_transaksi = t.id
               GROUP BY s.id
              HAVING SUM(d.subtotal) >= :min
               ORDER BY total_pembelian DESC",
@@ -227,16 +227,16 @@ final class ReportController
                     SUM(d.subtotal) AS omzet,
                     SUM(d.subtotal - COALESCE(c.modal, d.jumlah::bigint * d.harga_modal)) AS laba_kotor
                FROM transaction_details d
-               JOIN transactions t ON t.id = d.transaction_id
-               JOIN products     p ON p.id = d.product_id
+               JOIN transactions t ON t.id = d.id_transaksi
+               JOIN products     p ON p.id = d.id_barang
                LEFT JOIN LATERAL (
-                 SELECT SUM(c.quantity::bigint * c.unit_cost) AS modal
+                 SELECT SUM(c.jumlah::bigint * c.harga_modal_satuan) AS modal
                    FROM transaction_detail_costs c
-                  WHERE c.transaction_id = d.transaction_id
-                    AND c.product_id = d.product_id
+                  WHERE c.id_transaksi = d.id_transaksi
+                    AND c.id_barang = d.id_barang
                ) c ON TRUE
               WHERE t.tipe_transaksi = 'OUT' AND t.status = 'COMPLETED'
-                AND t.completed_at >= now() - make_interval(days => CAST(:hari AS integer))
+                AND t.selesai_pada >= now() - make_interval(days => CAST(:hari AS integer))
               GROUP BY p.id
              HAVING SUM(d.jumlah) >= :min
               ORDER BY terjual DESC, omzet DESC
@@ -253,8 +253,8 @@ final class ReportController
                    SUM(d.jumlah)        AS unit_terjual,
                    SUM(d.subtotal)      AS omzet
               FROM products p
-              JOIN transaction_details d ON d.product_id = p.id
-              JOIN transactions t        ON t.id = d.transaction_id
+              JOIN transaction_details d ON d.id_barang = p.id
+              JOIN transactions t        ON t.id = d.id_transaksi
              WHERE t.tipe_transaksi = 'OUT' AND t.status = 'COMPLETED'
              GROUP BY p.jenis_barang
             HAVING SUM(d.subtotal) >= 100000

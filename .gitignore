@@ -36,8 +36,9 @@ yarn-error.log*
 
 # Dump database lokal — dapat berisi data sensitif
 *.sql
-# Satu-satunya SQL setup yang dipelihara di repository.
+# SQL source and versioned migrations are maintained in the repository.
 !/sql/bengkel.sql
+!/sql/migrations/*.sql
 *.sqlite
 *.sqlite3
 *.db

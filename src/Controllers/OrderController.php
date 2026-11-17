@@ -25,7 +25,7 @@ final class OrderController
         $items = Input::items($in->raw('items'), false);
 
         $json = json_encode(array_map(
-            static fn(array $i): array => ['product_id' => $i['product_id'], 'jumlah' => $i['jumlah']],
+            static fn(array $i): array => ['id_barang' => $i['product_id'], 'jumlah' => $i['jumlah']],
             $items
         ));
 
@@ -87,7 +87,7 @@ final class OrderController
         $n = Db::exec(
             "UPDATE transactions
                 SET status = 'CANCELLED', catatan = COALESCE(catatan, 'Dibatalkan pelanggan')
-              WHERE id = :id AND customer_id = :cid AND tipe_transaksi = 'OUT' AND status = 'PENDING'",
+              WHERE id = :id AND id_pelanggan = :cid AND tipe_transaksi = 'OUT' AND status = 'PENDING'",
             ['id' => $params['id'], 'cid' => $user['id']]
         );
         if ($n === 0) {

@@ -22,6 +22,7 @@ return static function (Router $r): void {
     // ----- Publik -----
     $r->add('GET', '/api/health',     [CatalogController::class, 'health']);
     $r->add('GET', '/api/products',   [CatalogController::class, 'products']);
+    $r->add('GET', '/api/products/{id}', [CatalogController::class, 'product']);
     $r->add('GET', '/api/categories', [CatalogController::class, 'categories']);
 
     // ----- Autentikasi -----
@@ -29,6 +30,7 @@ return static function (Router $r): void {
     $r->add('POST', '/api/auth/login',    [AuthController::class, 'login']);
     $r->add('POST', '/api/auth/logout',   [AuthController::class, 'logout']);
     $r->add('GET',  '/api/auth/me',       [AuthController::class, 'me'], []);
+    $r->add('PATCH', '/api/auth/me',      [AuthController::class, 'updateMe'], $customer);
 
     // ----- Pelanggan -----
     $r->add('POST', '/api/orders',               [OrderController::class, 'create'], $customer);

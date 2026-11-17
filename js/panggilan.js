@@ -9,7 +9,6 @@
   "use strict";
 
   var WA_NUMBER  = (window.SL_CONFIG && window.SL_CONFIG.WA_NUMBER) || "6281234567890";
-  var CONFIG_API = "/kayang/api/config.php";
 
   var form    = document.querySelector(".call-form");
   var btnSend = form ? form.querySelector(".btn-send") : null;
@@ -17,9 +16,8 @@
 
   var config = null;
 
-  fetch(CONFIG_API)
-    .then(function (res) { return res.json(); })
-    .then(function (json) { if (json.ok) config = json.data; })
+  SLApi.getAppConfig()
+    .then(function (data) { config = data; })
     .catch(function () { config = { wa_number: WA_NUMBER, format_panggilan: null }; });
 
   // ── Error helpers ─────────────────────────────────────────────────────────

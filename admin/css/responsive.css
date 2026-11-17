@@ -1,26 +1,122 @@
 /* ==========================================================================
-   Sumber Lancar — Admin Responsive Styles
-   Aturan responsif dipisahkan dari admin.css agar struktur CSS konsisten
-   dengan client: stylesheet dasar untuk desain, stylesheet ini untuk breakpoint.
+   admin/css/responsive.css - Responsif panel admin Sumber Lancar
+   Dimuat SETELAH css/admin.css (dan sebelum stok.css di halaman stok).
 
-   Breakpoint yang digunakan: 1024px (tablet/menu), 900px, 768px, 480px, 360px.
-   File dimuat setelah admin.css agar aturan responsif dapat menimpa nilai dasar.
+   File ini khusus admin. Sebelumnya isinya salinan responsive.css milik
+   halaman client, sehingga aturan client (mis. .page-head min-height 180px)
+   ikut mengacak tampilan admin. Sekarang diganti penuh.
+
+   Titik patah (sama dengan komentar di admin.css):
+     <= 1024px : menu jadi hamburger, grid dashboard disederhanakan
+     <= 768px  : tabel .data-table--stack berubah jadi kartu per baris
+     <= 480px  : ponsel kecil, tombol & form memenuhi lebar layar
    ========================================================================== */
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
+/* ---------- Dasar: cegah layar bergeser ke samping ---------- */
+html {
+  overflow-x: clip;
+  scrollbar-gutter: stable;
 }
 
+body {
+  overflow-x: clip;
+}
+
+main,
+.container,
+.page-head > *,
+.dashboard__cols > * {
+  min-width: 0;
+}
+
+/* ---------- Komponen bersama (semua lebar layar) ---------- */
+
+/* Tabel yang kolomnya tidak muat boleh digeser di dalam kartunya sendiri */
+.table-card {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Kolom Aksi menyusut sesuai isi, tidak membungkus tombol ke baris baru */
+.data-table td.data-table__actions,
+.data-table th.data-table__actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+/* Tombol di kolom aksi: ukuran seragam (Detail / Selesai / Batal / Edit / dst.) */
+.data-table td.data-table__actions .btn,
+.row-actions .btn {
+  box-sizing: border-box;
+  width: 96px;
+  min-width: 96px;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* Celah spasi antar tombol (+ margin ini) kira-kira 8px */
+.data-table td.data-table__actions > .btn + .btn {
+  margin-left: 4px;
+}
+
+.row-actions {
+  flex-wrap: nowrap;
+}
+
+/* Tombol ikon (stok) lebih nyaman disentuh */
+.icon-btn {
+  width: 36px;
+  height: 36px;
+}
+
+/* Filter bar dipakai halaman Transaksi dan Akun */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.filter-bar > * {
+  min-width: 0;
+}
+
+.segmented {
+  max-width: 100%;
+}
+
+/* Header halaman dengan kelompok tombol di kanan (Transaksi) */
+.page-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Tombol halaman (pagination) */
+.pagination {
+  justify-content: center;
+}
+
+.page-btn {
+  min-width: 36px;
+  min-height: 36px;
+}
+
+/* ==========================================================================
+   <= 1024px : header hamburger + dashboard
+   ========================================================================== */
 @media (max-width: 1024px) {
   .nav-toggle {
     display: flex;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    padding: 0 11px;
   }
 
   .site-nav {
@@ -29,14 +125,19 @@
     top: 100%;
     left: 0;
     right: 0;
+    z-index: 60;
     flex-direction: column;
     align-items: stretch;
-    gap: 8px;
-    margin-left: 0;
-    padding: 8px var(--container-padding) 16px;
+    gap: 12px;
+    margin: 0;
+    padding: 12px var(--container-padding) 18px;
+    max-height: calc(100vh - var(--header-height));
+    max-height: calc(100dvh - var(--header-height));
+    overflow-y: auto;
+    overscroll-behavior: contain;
     background: var(--color-dark);
     border-top: 1px solid var(--color-border-dark);
-    box-shadow: 0 16px 24px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 16px 24px rgba(0, 0, 0, 0.35);
   }
 
   .site-nav.is-open {
@@ -46,41 +147,251 @@
   .nav-links {
     flex-direction: column;
     align-items: stretch;
+    gap: 2px;
   }
 
   .nav-link {
+    height: 46px;
+    padding: 0 14px;
+    font-size: 15px;
+  }
+
+  .nav-link.is-active {
+    background: rgba(247, 100, 0, 0.14);
+  }
+
+  .btn-logout {
+    width: 100%;
+    height: 46px;
+    font-size: 15px;
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard__cols {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+    margin-top: 32px;
+  }
+
+  .wa-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ==========================================================================
+   <= 768px : tablet portrait / ponsel
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* ---------- Tata letak halaman ---------- */
+  .page-section {
+    padding-top: 24px;
+    padding-bottom: 32px;
+  }
+
+  .page-title {
+    font-size: 26px;
+    line-height: 32px;
+  }
+
+  .page-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .page-head--spaced {
+    margin-bottom: 18px;
+  }
+
+  .page-head > .btn {
+    width: 100%;
+    height: 44px;
+  }
+
+  .page-head__actions {
+    width: 100%;
+  }
+
+  .page-head__actions .btn {
+    flex: 1 1 calc(50% - 4px);
     height: 44px;
     padding: 0 12px;
   }
 
-  .btn-logout {
+  .toolbar {
+    margin: 16px 0;
+  }
+
+  .toolbar > .search-input {
+    max-width: none;
+    flex: 1 1 100%;
+  }
+
+  /* Isian: 16px mencegah iOS memperbesar layar saat fokus */
+  .form-input,
+  .search-input,
+  .filter-bar select,
+  .filter-bar input,
+  .kartu-section select {
+    font-size: 16px;
+  }
+
+  .search-input,
+  .form-input:not(textarea) {
     height: 44px;
   }
-}
 
-@media (max-width: 480px) {
-  .brand__tagline {
-    display: none;
-  }
-}
-
-@media (max-width: 1024px) {
-  .stat-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
+  /* ---------- Hero & dashboard ---------- */
   .admin-hero {
-    padding: 40px 0;
+    padding: 36px 0;
   }
 
-  .data-table--stack thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
+  .admin-hero__desc {
+    margin-top: 16px;
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  .admin-hero__actions {
+    margin-top: 22px;
+  }
+
+  .dashboard {
+    padding: 24px 0 40px;
+  }
+
+  .stat-grid {
+    gap: 10px;
+  }
+
+  .stat-card {
+    min-height: 0;
+    padding: 14px;
+  }
+
+  .stat-card__value {
+    margin-top: 10px;
+    font-size: 22px;
+    line-height: 28px;
+    overflow-wrap: anywhere;
+  }
+
+  .stat-card__label {
+    font-size: 11px;
+    line-height: 14px;
+    letter-spacing: 0.4px;
+  }
+
+  .dashboard__head {
+    flex-wrap: wrap;
+  }
+
+  .dashboard__head .page-title {
+    font-size: 20px;
+    line-height: 26px;
+  }
+
+  .top-item {
+    padding: 10px 14px;
+  }
+
+  .top-item__name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .top-item__meta {
+    white-space: normal;
+    text-align: right;
+  }
+
+  .cat-item__value {
+    min-width: 64px;
+  }
+
+  /* ---------- Filter bar (Transaksi / Akun) ---------- */
+  .filter-bar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .filter-bar label {
+    min-width: 0;
+  }
+
+  .filter-bar select,
+  .filter-bar input {
+    width: 100%;
+    min-width: 0;
+    height: 44px;
+  }
+
+  .filter-bar label:has(#filter-q),
+  .filter-bar > .segmented,
+  .filter-bar > .search-input,
+  .filter-bar > span {
+    grid-column: 1 / -1;
+  }
+
+  .filter-bar > .search-input {
+    flex: none;
+    min-width: 0 !important;
+  }
+
+  .filter-bar #filter-q {
+    min-width: 0 !important;
+  }
+
+  .filter-bar > .btn {
+    height: 44px;
+  }
+
+  .filter-bar > span {
+    align-self: center !important;
+  }
+
+  .segmented {
+    display: flex;
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .segmented__btn {
+    flex: 1 1 auto;
+    height: 34px;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+
+  .kartu-section {
+    margin-top: 32px !important;
+  }
+
+  .kartu-section .toolbar {
+    gap: 10px !important;
+  }
+
+  .kartu-section select {
+    height: 44px;
+    min-width: 0 !important;
+    flex: 1 1 100% !important;
+  }
+
+  .kartu-section .toolbar .btn {
+    width: 100%;
+    height: 44px;
+  }
+
+  /* ---------- Tabel -> kartu per baris ---------- */
+  .table-card:has(> .data-table--stack) {
+    overflow: visible;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
   }
 
   .data-table--stack,
@@ -88,154 +399,453 @@
   .data-table--stack tr,
   .data-table--stack td {
     display: block;
+    width: 100%;
   }
 
-  .data-table--stack tr {
-    padding: 8px 16px;
-    border-bottom: 1px solid var(--tbl-border);
+  /* Kepala tabel: disembunyikan, kecuali kolom yang bisa diurutkan.
+     Kolom tersebut tampil sebagai deretan chip "Urutkan" supaya sort tetap bisa dipakai. */
+  .data-table--stack thead {
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  .data-table--stack thead:not(:has(th[data-sort])) {
+    display: none;
+  }
+
+  .data-table--stack thead tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 12px;
+    background: var(--tbl-head-bg);
+    border: 1px solid var(--tbl-border);
+    border-radius: var(--radius-md);
+  }
+
+  .data-table--stack thead tr::before {
+    content: "Urutkan";
+    flex: 0 0 100%;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 14px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--tbl-head-text);
+    opacity: 0.8;
+  }
+
+  .data-table--stack thead th {
+    display: none;
+    width: auto;
+    padding: 0;
+  }
+
+  .data-table--stack thead th[data-sort] {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 0 12px;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+    color: var(--tbl-text);
+    background: rgba(255, 128, 0, 0.08);
+    border: 1px solid var(--tbl-border);
+    border-radius: var(--radius-pill);
+  }
+
+  .data-table--stack thead th.is-sorted {
+    color: var(--color-white);
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  /* Satu baris = satu kartu */
+  .data-table--stack tbody tr {
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    background: var(--tbl-bg);
+    border: 1px solid var(--tbl-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
   }
 
   .data-table--stack tbody tr:last-child {
-    border-bottom: 0;
+    margin-bottom: 0;
   }
 
-  .data-table--stack td {
+  /* Satu sel = satu baris "label  ......  nilai" */
+  .data-table--stack tbody td {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 8px 0;
+    min-width: 0;
+    padding: 7px 0;
+    text-align: right;
+    overflow-wrap: anywhere;
+    border-bottom: 1px dashed var(--tbl-row-border);
+  }
+
+  .data-table--stack tbody td:last-child,
+  .data-table--stack tbody tr:last-child td:last-child {
     border-bottom: 0;
   }
 
-  .data-table--stack td::before {
+  .data-table--stack tbody td[data-label]::before {
     content: attr(data-label);
-    flex: none;
-    font-size: 12px;
+    flex: 0 0 auto;
+    max-width: 45%;
+    font-size: 11px;
+    font-weight: 600;
     line-height: 16px;
+    letter-spacing: 0.6px;
+    text-align: left;
+    text-transform: uppercase;
+    color: var(--tbl-text-muted);
+  }
+
+  /* Baris kosong / memuat / error */
+  .data-table--stack tbody td[colspan] {
+    display: block;
+    padding: 20px 8px;
+    text-align: center;
+    border-bottom: 0;
+  }
+
+  .data-table--stack tbody tr:has(> td[colspan]) {
+    padding: 4px 8px;
+  }
+
+  /* Sel judul kartu: nama barang / invoice / nama akun / nama supplier */
+  .data-table--stack tbody td[data-label="Nama Barang"],
+  .data-table--stack tbody td[data-label="Nama"],
+  .data-table--stack tbody td[data-label="Nama Supplier"],
+  .data-table--stack tbody td[data-label="Invoice"] {
+    display: block;
+    padding: 0 0 10px;
+    margin-bottom: 4px;
+    font-size: 15px;
+    line-height: 22px;
+    text-align: left;
+    border-bottom: 1px solid var(--tbl-row-border);
+  }
+
+  .data-table--stack tbody td[data-label="Nama Barang"]::before,
+  .data-table--stack tbody td[data-label="Nama"]::before,
+  .data-table--stack tbody td[data-label="Nama Supplier"]::before,
+  .data-table--stack tbody td[data-label="Invoice"]::before {
+    display: none;
+  }
+
+  .data-table--stack td .item-name {
+    gap: 12px;
+  }
+
+  .item-name__thumb {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Sel aksi: lebar penuh, tombol sama besar */
+  .data-table--stack tbody td[data-label="Aksi"],
+  .data-table--stack tbody td.data-table__actions {
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
+    gap: 8px;
+    width: 100%;
+    margin-top: 6px;
+    padding: 12px 0 0;
+    font-size: 12px;
+    text-align: center;
+    border-top: 1px solid var(--tbl-row-border);
+    border-bottom: 0;
+  }
+
+  .data-table--stack tbody td[data-label="Aksi"]::before,
+  .data-table--stack tbody td.data-table__actions::before {
+    display: none;
+  }
+
+  .data-table--stack td.data-table__actions > .btn + .btn {
+    margin-left: 0;
+  }
+
+  .data-table--stack td[data-label="Aksi"] .btn,
+  .data-table--stack td.data-table__actions .btn {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    height: 42px;
+    font-size: 13px;
+  }
+
+  .data-table--stack td[data-label="Aksi"] .row-actions {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .data-table--stack td[data-label="Aksi"] .row-actions .btn {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    height: 42px;
+    font-size: 13px;
+  }
+
+  /* Tombol ikon (stok): kanan, 44px */
+  .data-table--stack td[data-label="Aksi"] .row-actions:has(.icon-btn) {
+    justify-content: flex-end;
+  }
+
+  .data-table--stack .icon-btn {
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--tbl-border);
+  }
+
+  .data-table--stack td[data-label="Aksi"] > .data-table__muted {
+    flex: 1 1 auto;
+    text-align: right;
+  }
+
+  /* Label untuk tabel yang barisnya dibuat JS tanpa atribut data-label */
+  #profit-table tbody td:not([colspan])::before,
+  #kartu-table tbody td:not([colspan])::before {
+    flex: 0 0 auto;
+    max-width: 45%;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 16px;
+    letter-spacing: 0.6px;
+    text-align: left;
+    text-transform: uppercase;
+    color: var(--tbl-text-muted);
+  }
+
+  #profit-table td:nth-child(1):not([colspan])::before { content: "Bulan"; }
+  #profit-table td:nth-child(2):not([colspan])::before { content: "Penjualan Kotor"; }
+  #profit-table td:nth-child(3):not([colspan])::before { content: "Total Diskon"; }
+  #profit-table td:nth-child(4):not([colspan])::before { content: "Laba Kotor"; }
+
+  #kartu-table td:nth-child(1):not([colspan])::before { content: "Tanggal"; }
+  #kartu-table td:nth-child(2):not([colspan])::before { content: "No Faktur"; }
+  #kartu-table td:nth-child(3):not([colspan])::before { content: "Tipe"; }
+  #kartu-table td:nth-child(4):not([colspan])::before { content: "Stok Awal"; }
+  #kartu-table td:nth-child(5):not([colspan])::before { content: "Perubahan"; }
+  #kartu-table td:nth-child(6):not([colspan])::before { content: "Stok Akhir"; }
+  #kartu-table td:nth-child(7):not([colspan])::before { content: "Catatan"; }
+
+  /* Pagination */
+  .pagination {
+    gap: 6px;
+  }
+
+  .page-btn {
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  /* ---------- Form & kartu ---------- */
+  .form-page {
+    padding: 28px var(--container-padding) 48px;
+  }
+
+  .form-card {
+    padding: 20px 16px 22px;
+  }
+
+  .panel {
+    padding: 18px 16px;
+  }
+
+  .wa-layout,
+  .wa-previews {
+    gap: 16px;
+  }
+
+  .wa-bubble {
+    min-height: 0;
+  }
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop,
+  .product-form-backdrop,
+  .supplier-modal-backdrop,
+  .admin-dialog-backdrop {
+    padding: 12px;
+  }
+
+  .modal-backdrop .modal,
+  .product-form-backdrop .product-form-modal,
+  .supplier-modal-backdrop .supplier-modal {
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+
+  .modal-backdrop .modal:not(.modal--sale):not(.modal--purchase):not(.modal--account) {
+    padding: 18px 16px;
+  }
+
+  .modal__title {
+    padding-right: 36px;
+  }
+
+  .modal-backdrop .modal-close-btn {
+    width: 40px;
+    height: 40px;
+    top: 6px;
+    right: 6px;
+  }
+
+  .modal-row {
+    gap: 16px;
+  }
+
+  .modal-row > span:last-child {
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  .form-actions .btn {
+    flex: 1 1 auto;
+    height: 44px;
+  }
+
+  /* Tabel di dalam modal detail: jadi daftar bertumpuk */
+  .modal-table,
+  .modal-table tbody,
+  .modal-table tr,
+  .modal-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .modal-table thead {
+    display: none;
+  }
+
+  .modal-table tr {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .modal-table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 2px 0;
+    text-align: right;
+    border: 0;
+  }
+
+  .modal-table td:first-child {
+    justify-content: flex-start;
+    padding-bottom: 4px;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .modal-table td:not(:first-child)::before {
+    flex: none;
+    font-size: 11px;
+    font-weight: 600;
     letter-spacing: 0.6px;
     text-transform: uppercase;
     color: var(--color-text-muted);
   }
 
-  .data-table--stack .data-table__empty td::before {
-    display: none;
-  }
+  .modal-table td:nth-child(2)::before { content: "Jumlah"; }
+  .modal-table td:nth-child(3)::before { content: "Harga"; }
+  .modal-table td:nth-child(4)::before { content: "Subtotal"; }
 }
 
+/* ==========================================================================
+   <= 480px : ponsel
+   ========================================================================== */
 @media (max-width: 480px) {
-  .admin-hero__actions .btn {
-    width: 100%;
+  :root {
+    --container-padding: 14px;
   }
 
-  .stat-card {
-    padding: 16px;
+  .brand__name {
+    font-size: 16px;
+  }
+
+  .brand__tagline {
+    font-size: 9px;
+    letter-spacing: 0.6px;
+  }
+
+  .admin-hero__title {
+    font-size: clamp(32px, 10vw, 40px);
+  }
+
+  .admin-hero__actions {
+    flex-direction: column;
+  }
+
+  .admin-hero__actions .btn {
+    width: 100%;
+    height: 44px;
+  }
+
+  .page-head__actions .btn {
+    flex-basis: 100%;
+  }
+
+  .stat-grid {
+    gap: 8px;
   }
 
   .stat-card__value {
-    font-size: 26px;
-    line-height: 32px;
-    white-space: nowrap;
+    font-size: 20px;
   }
-}
 
-@media (max-width: 360px) {
-  .stat-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .page-head {
-    flex-direction: column;
+  .form-actions {
+    flex-direction: column-reverse;
     align-items: stretch;
-  }
-
-  .page-head .btn {
-    align-self: flex-start;
-  }
-
-  .search-input {
-    max-width: none;
-  }
-
-  .data-table__actions {
-    width: auto;
-  }
-
-  /* Di kartu mobile, foto barang disembunyikan agar nama tidak sempit */
-  .item-name__thumb {
-    display: none;
-  }
-
-  .form-page {
-    padding-top: 32px;
-    padding-bottom: 48px;
-  }
-}
-
-@media (max-width: 480px) {
-  .form-card {
-    padding: 20px 16px 24px;
   }
 
   .form-actions .btn {
     width: 100%;
   }
-}
 
-@media (max-width: 768px) {
-  .order-grid {
-    grid-template-columns: 1fr;
+  .form-actions__cancel {
+    text-align: center;
+  }
+
+  .modal__actions {
+    flex-direction: column-reverse;
+  }
+
+  .modal__actions .btn {
+    width: 100%;
+    height: 44px;
+  }
+
+  body .toast {
+    left: 16px;
+    right: 16px;
+    max-width: none;
+    text-align: center;
+    transform: none;
   }
 }
 
-@media (max-width: 480px) {
-  .order-card {
-    padding: 16px;
-  }
-
-  .order-card__foot {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .status-group {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
-  }
-
-  .status-btn {
-    height: 36px;
+@media (max-width: 360px) {
+  .filter-bar {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
-@media (max-width: 768px) {
-  .segmented {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .segmented__btn {
-    height: 32px;
-  }
-}
-
-@media (max-width: 900px) {
-  .wa-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 480px) {
-  .panel {
-    padding: 20px 16px;
-  }
-}
-
-@media (max-width: 900px) {
-  .wa-previews {
-    flex-direction: column;
+@media (prefers-reduced-motion: reduce) {
+  .nav-toggle__bar,
+  .cat-item__bar {
+    transition: none;
   }
 }

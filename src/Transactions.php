@@ -18,10 +18,11 @@ final class Transactions
     public static function items(int $id): array
     {
         return Db::all(
-            'SELECT d.product_id, p.kode_barang, p.nama_barang, d.jumlah, d.harga_satuan_real, d.subtotal
+            'SELECT d.id_barang AS product_id, p.kode_barang, p.nama_barang,
+                    d.jumlah, d.harga_satuan_real, d.subtotal
                FROM transaction_details d
-               JOIN products p ON p.id = d.product_id
-              WHERE d.transaction_id = :id
+               JOIN products p ON p.id = d.id_barang
+              WHERE d.id_transaksi = :id
               ORDER BY p.nama_barang',
             ['id' => $id]
         );

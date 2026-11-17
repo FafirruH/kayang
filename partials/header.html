@@ -22,16 +22,39 @@
         <a href="index.html"    class="nav-link" data-nav="beranda">Beranda</a>
         <a href="katalog.html"  class="nav-link" data-nav="katalog">Katalog</a>
         <a href="panggilan.html" class="nav-link" data-nav="panggilan">Panggil Montir</a>
-        <!-- Keranjang butuh login: diarahkan ke halaman login oleh js/include.js -->
-        <a href="keranjang.html" class="nav-link" data-nav="keranjang" data-requires-login data-client-only>Keranjang</a>
       </nav>
 
-      <!-- Status akun diatur js/include.js -->
+      <!-- Keranjang + profil. Status akun diatur js/include.js -->
       <div class="header-auth">
+        <span class="header-divider" aria-hidden="true"></span>
+
+        <!-- Keranjang butuh login: diarahkan ke halaman login oleh js/include.js -->
+        <a href="keranjang.html" class="icon-btn cart-btn" data-nav="keranjang" data-requires-login data-client-only aria-label="Keranjang">
+          <img src="assets/icons/cart-white.svg" alt="" width="28" height="28" />
+          <span class="cart-badge" data-cart-count hidden>0</span>
+        </a>
+
         <a href="login.html" class="btn-login" data-auth-login>Login</a>
-        <span class="header-user" data-auth-user hidden></span>
-        <a href="admin/index.html" class="btn-login" data-auth-admin hidden>Dashboard Admin</a>
-        <button type="button" class="btn-login" data-logout data-auth-logout hidden>Logout</button>
+
+        <div class="profile" data-profile hidden>
+          <button type="button" class="icon-btn profile__toggle" data-profile-toggle aria-haspopup="true" aria-expanded="false" aria-controls="profile-panel" aria-label="Profil akun">
+            <img src="assets/icons/profile-white.svg" alt="" width="28" height="28" />
+          </button>
+
+          <div class="profile-panel" id="profile-panel" role="menu" aria-label="Informasi akun" hidden>
+            <div class="profile-panel__info">
+              <span class="profile-role" data-profile-role>User</span>
+              <dl class="profile-fields">
+                <div><dt>Nama Lengkap</dt><dd data-profile-name>-</dd></div>
+                <div><dt>Username</dt><dd data-profile-username>-</dd></div>
+                <div><dt>No. HP</dt><dd data-profile-phone>-</dd></div>
+              </dl>
+            </div>
+            <a href="pengaturan-akun.html" class="profile-panel__item" role="menuitem" data-profile-config>Pengaturan Akun</a>
+            <a href="admin/index.html" class="profile-panel__item" role="menuitem" data-profile-switch>Beralih Dashboard</a>
+            <button type="button" class="profile-panel__item profile-panel__item--logout" role="menuitem" data-logout>Log Out</button>
+          </div>
+        </div>
       </div>
     </div>
 

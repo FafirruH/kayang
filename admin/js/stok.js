@@ -1,5 +1,5 @@
 /* ==========================================================================
-   admin/js/stok.js — Stok Sparepart (SLDataTable)
+   admin/js/stok.js — Daftar stok dan kartu stok (SLDataTable)
    ========================================================================== */
 
 (function () {
@@ -85,6 +85,140 @@
             });
           });
       });
+    });
+  }
+
+  var stokTabs = Array.prototype.slice.call(document.querySelectorAll(".stok-tab"));
+  stokTabs.forEach(function (tab, index) {
+    tab.addEventListener("click", function () { activateStokTab(tab); });
+    tab.addEventListener("keydown", function (event) {
+      var nextIndex = index;
+      if (event.key === "ArrowRight") nextIndex = (index + 1) % stokTabs.length;
+      else if (event.key === "ArrowLeft") nextIndex = (index + stokTabs.length - 1) % stokTabs.length;
+      else if (event.key === "Home") nextIndex = 0;
+      else if (event.key === "End") nextIndex = stokTabs.length - 1;
+      else return;
+      event.preventDefault();
+      stokTabs[nextIndex].focus();
+      activateStokTab(stokTabs[nextIndex]);
+    });
+  });
+
+  function activateStokTab(activeTab) {
+    stokTabs.forEach(function (tab) {
+      var selected = tab === activeTab;
+      tab.classList.toggle("is-active", selected);
+      tab.setAttribute("aria-selected", selected ? "true" : "false");
+      tab.tabIndex = selected ? 0 : -1;
+      document.getElementById(tab.getAttribute("aria-controls")).hidden = !selected;
+    });
+  }
+
+  var kartuForm = document.getElementById("kartu-stok-form");
+  var kartuSearch = document.getElementById("kartu-product-search");
+  var kartuSelect = document.getElementById("kartu-product-id");
+  var kartuTable = document.querySelector("#kartu-table tbody");
+  var kartuProducts = [];
+  var kartuProductsLoadFailed = false;
+
+  function fetchAllProducts(page, products) {
+    return SLApi.get("/api/admin/products", { page: page, per_page: 50, aktif: "all" })
+      .then(function (res) {
+        var rows = res.data || [];
+        products = products.concat(rows);
+        var totalPages = Number(res.meta && res.meta.total_pages) || 1;
+        if (page < totalPages) return fetchAllProducts(page + 1, products);
+        return products;
+      });
+  }
+
+  function renderKartuProductOptions() {
+    if (!kartuSelect) return;
+    if (kartuProductsLoadFailed) {
+      kartuSelect.innerHTML = '<option value="">Gagal memuat daftar barang</option>';
+      return;
+    }
+
+    var query = kartuSearch ? kartuSearch.value.trim().toLocaleLowerCase() : "";
+    var matchingProducts = kartuProducts.filter(function (product) {
+      var code = String(product.kode_barang || "").toLocaleLowerCase();
+      var name = String(product.nama_barang || "").toLocaleLowerCase();
+      return !query || code.indexOf(query) !== -1 || name.indexOf(query) !== -1;
+    });
+    var placeholder = matchingProducts.length
+      ? "Pilih Barang"
+      : (query ? "Barang tidak ditemukan" : "Belum ada barang");
+    kartuSelect.innerHTML = '<option value="">' + placeholder + "</option>" +
+      matchingProducts.map(function (product) {
+        return '<option value="' + esc(product.product_id) + '">' +
+          esc(product.kode_barang) + " - " + esc(product.nama_barang) + "</option>";
+      }).join("");
+  }
+
+  fetchAllProducts(1, [])
+    .then(function (products) {
+      kartuProducts = products;
+      renderKartuProductOptions();
+    })
+    .catch(function (error) {
+      kartuProductsLoadFailed = true;
+      renderKartuProductOptions();
+      console.error("[stok.js] Gagal memuat barang untuk kartu stok:", error);
+    });
+
+  if (kartuSearch) {
+    kartuSearch.addEventListener("input", function () {
+      if (kartuSelect) kartuSelect.value = "";
+      renderKartuProductOptions();
+      if (kartuTable) {
+        kartuTable.innerHTML = '<tr><td colspan="7" class="data-table__empty-cell">Pilih barang untuk melihat riwayat stok.</td></tr>';
+      }
+    });
+  }
+
+  function loadKartuStok(productId) {
+    if (!kartuTable || !productId) return;
+    kartuTable.innerHTML = '<tr><td colspan="7" class="data-table__empty-cell">Memuat...</td></tr>';
+    SLApi.get("/api/admin/reports/kartu-stok", { product_id: productId, limit: 50 })
+      .then(function (res) {
+        var rows = res.data || [];
+        if (!rows.length) {
+          kartuTable.innerHTML = '<tr><td colspan="7" class="data-table__empty-cell">Belum ada riwayat.</td></tr>';
+          return;
+        }
+        kartuTable.innerHTML = rows.map(function (row) {
+          var change = Number(row.perubahan);
+          var typeLabel = {
+            OUT: "Penjualan",
+            IN: "Pembelian",
+            ADJ_IN: "Koreksi +",
+            ADJ_OUT: "Koreksi -"
+          }[row.tipe_transaksi] || row.tipe_transaksi;
+          var date = row.waktu
+            ? new Date(row.waktu).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
+            : "-";
+          return "<tr>" +
+            "<td>" + esc(date) + "</td>" +
+            "<td>" + esc(row.no_faktur) + "</td>" +
+            "<td>" + esc(typeLabel) + "</td>" +
+            "<td>" + esc(String(row.stok_awal)) + "</td>" +
+            '<td class="' + (change > 0 ? "stok-plus" : "stok-minus") + '">' +
+              (change > 0 ? "+" : "") + change + "</td>" +
+            "<td><strong>" + esc(String(row.stok_akhir)) + "</strong></td>" +
+            "<td>" + esc(row.catatan || "-") + "</td>" +
+          "</tr>";
+        }).join("");
+      })
+      .catch(function (error) {
+        kartuTable.innerHTML = '<tr><td colspan="7" class="data-table__error">Gagal memuat kartu stok.</td></tr>';
+        console.error("[stok.js] Gagal memuat kartu stok:", error);
+      });
+  }
+
+  if (kartuForm) {
+    kartuForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      if (kartuSelect && kartuSelect.value) loadKartuStok(kartuSelect.value);
     });
   }
 

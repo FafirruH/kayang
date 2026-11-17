@@ -38,7 +38,7 @@ final class ProductController
     public static function show(array $params, ?array $user): void
     {
         $row = Db::one(
-            'SELECT v.*, p.updated_at
+            'SELECT v.*, p.diperbarui_pada AS updated_at
                FROM v_stok_barang v JOIN products p ON p.id = v.product_id
               WHERE v.product_id = :id',
             ['id' => $params['id']]
@@ -128,7 +128,7 @@ final class ProductController
         }
         // Nama kolom berasal dari daftar tetap di atas (bukan input pengguna).
         $set = implode(', ', array_map(static fn(string $k): string => "$k = :$k", array_keys($f)));
-        $n = Db::exec("UPDATE products SET $set, updated_at = now() WHERE id = :id", $f + ['id' => $params['id']]);
+        $n = Db::exec("UPDATE products SET $set, diperbarui_pada = now() WHERE id = :id", $f + ['id' => $params['id']]);
         if ($n === 0) {
             throw new HttpException('Barang tidak ditemukan', 404);
         }
@@ -138,7 +138,7 @@ final class ProductController
     /** DELETE /api/admin/products/{id} - hapus lunak (aktif = false); riwayat transaksi tetap utuh. */
     public static function destroy(array $params, ?array $user): void
     {
-        $n = Db::exec('UPDATE products SET aktif = false, updated_at = now() WHERE id = :id', ['id' => $params['id']]);
+        $n = Db::exec('UPDATE products SET aktif = false, diperbarui_pada = now() WHERE id = :id', ['id' => $params['id']]);
         if ($n === 0) {
             throw new HttpException('Barang tidak ditemukan', 404);
         }
@@ -187,10 +187,13 @@ final class ProductController
             ['t' => $tipe, 'u' => $staffId, 'c' => $catatan]
         );
         Db::exec(
-            'INSERT INTO transaction_details (transaction_id, product_id, jumlah) VALUES (:t, :p, :j)',
+            'INSERT INTO transaction_details (id_transaksi, id_barang, jumlah) VALUES (:t, :p, :j)',
             ['t' => $tid, 'p' => $productId, 'j' => $qty]
         );
-        Db::exec("UPDATE transactions SET status = 'COMPLETED' WHERE id = :t", ['t' => $tid]);
+        Db::exec(
+            "UPDATE transactions SET status = 'COMPLETED', diselesaikan_oleh = :u WHERE id = :t",
+            ['u' => $staffId, 't' => $tid]
+        );
         return $tid;
     }
 }

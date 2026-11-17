@@ -6,11 +6,11 @@ return [
         'host' => '127.0.0.1',
         'port' => '5432',
         'name' => 'bengkel2',
-        'user' => 'postgres',
-        'pass' => '',
+        'user' => 'bengkel_app',
+        'pass' => 'GANTI_DENGAN_PASSWORD_UNIK',
     ],
     'app' => [
-        'debug' => true,
+        'debug' => false,
         'wa_number' => '6281234567890',
     ],
 ];

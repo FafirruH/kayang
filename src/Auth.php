@@ -53,7 +53,8 @@ final class Auth
             return null;
         }
         $u = Db::one(
-            'SELECT id, username, nama_lengkap, no_telepon, role FROM users WHERE id = :id AND aktif',
+            'SELECT id, nama_pengguna AS username, nama_lengkap, no_telepon, peran AS role
+               FROM users WHERE id = :id AND aktif',
             ['id' => $uid]
         );
         if ($u !== null) {

@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
-# Uji alur utama lewat curl. Jalankan setelah server PHP & database aktif:
-#   BASE=http://localhost:8000 bash tests/smoke.sh
-# Catatan: skrip ini MEMBUAT dan MENYELESAIKAN satu pesanan. Muat ulang SQL untuk mereset data.
+# Uji alur utama lewat curl. Jalankan hanya pada database test disposable:
+#   BASE=http://localhost:8000 ADMIN_PASSWORD='<password admin>' bash tests/smoke.sh
+# Skrip ini membuat dan menyelesaikan satu pesanan; jangan jalankan pada database aktif.
+if [ -z "${ADMIN_PASSWORD:-}" ]; then
+  printf 'ADMIN_PASSWORD wajib diisi.\n' >&2
+  exit 2
+fi
+
 BASE="${BASE:-http://localhost:8000}"
 J='Content-Type: application/json'
 C=$(mktemp); A=$(mktemp)
@@ -16,10 +21,10 @@ say "pesan 2x OLI-001 (menahan stok)"
 ORDER=$(curl -s -b "$C" -H "$J" -d '{"items":[{"product_id":1,"jumlah":2}]}' "$BASE/api/orders")
 echo "$ORDER"
 ID=$(echo "$ORDER" | sed -n 's/.*"transaction_id":\([0-9]*\).*/\1/p' | head -1)
-say "pesan barang habis (OLI-006) -> 422"
-curl -s -b "$C" -H "$J" -d '{"items":[{"product_id":6,"jumlah":1}]}' "$BASE/api/orders"
+say "pesan barang tanpa stok (BUS-001) -> 422"
+curl -s -b "$C" -H "$J" -d '{"items":[{"product_id":3,"jumlah":1}]}' "$BASE/api/orders"
 
-say "login admin";                 curl -s -c "$A" -H "$J" -d '{"username":"admin","password":"admin123"}' "$BASE/api/auth/login"
+say "login admin";                 curl -s -c "$A" -H "$J" -d "{\"username\":\"admin\",\"password\":\"$ADMIN_PASSWORD\"}" "$BASE/api/auth/login"
 say "stok OLI-001 (tertahan naik, stok fisik tetap)"
 curl -s -b "$A" "$BASE/api/admin/products/1"
 say "pesanan yang menahan stok";   curl -s -b "$A" "$BASE/api/admin/reports/holds"

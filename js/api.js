@@ -15,6 +15,7 @@
 
   var CFG = global.SL_CONFIG || {};
   var BASE = String(CFG.API_BASE || "").replace(/\/+$/, "");
+  var APP_ROOT = BASE.replace(/\/public$/, "");
   var STOCK_KEY = "sl_stock_changed";
   var unauthorizedHandlers = [];
 
@@ -72,6 +73,23 @@
     });
   }
 
+  function getAppConfig() {
+    return global.fetch(APP_ROOT + "/api/config.php", {
+      credentials: "include",
+      headers: { Accept: "application/json" }
+    }).then(function (res) {
+      return res.json().then(function (json) {
+        if (!res.ok || !json || !json.ok || !json.data) {
+          throw new ApiError(
+            json && json.message ? json.message : "Gagal memuat konfigurasi aplikasi.",
+            res.status || 500
+          );
+        }
+        return json.data;
+      });
+    });
+  }
+
   /* ---------- Utilitas ---------- */
   function money(value) {
     var n = Math.round(Number(value) || 0);
@@ -109,6 +127,7 @@
   global.SLApi = {
     ApiError: ApiError,
     base: BASE,
+    getAppConfig: getAppConfig,
     get: function (path, query, options) { return request("GET", path, query, null, options); },
     post: function (path, body, options) { return request("POST", path, null, body, options); },
     put: function (path, body, options) { return request("PUT", path, null, body, options); },

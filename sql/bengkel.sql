@@ -1,15 +1,16 @@
--- Bootstrap lengkap untuk database baru; mencakup skema kategori bebas dan FIFO.
--- Jangan jalankan pada database berisi data karena skrip ini mereset tabel.
--- Skrip ini memuat skema, data demo, query laporan, dan demo transaksi.
+-- Fresh install / clean database: skrip ini menghapus objek lama lalu membuat skema lengkap
+-- tanpa data dummy, hanya berisi 1 akun ADMIN awal.
 SET TIME ZONE 'Asia/Jakarta';
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-DROP VIEW     IF EXISTS v_laporan_laba_rugi, v_kartu_stok, v_transaksi_header, v_stok_barang CASCADE;
+DROP VIEW     IF EXISTS v_laporan_laba_rugi, v_laporan_adj_out, v_kartu_stok, v_transaksi_header, v_stok_barang CASCADE;
 DROP TABLE    IF EXISTS transaction_detail_costs, inventory_batches, transaction_details, transactions, products, suppliers, users CASCADE;
 DROP SEQUENCE IF EXISTS seq_faktur_out, seq_faktur_in, seq_faktur_adj;
 DROP FUNCTION IF EXISTS buat_penjualan(integer, jsonb, integer, text, integer, integer);
 DROP FUNCTION IF EXISTS expire_pending();
 DROP FUNCTION IF EXISTS fn_transaksi_awal();
+DROP FUNCTION IF EXISTS fn_transaksi_pencatat_valid();
+DROP FUNCTION IF EXISTS fn_transaksi_immutable();
 DROP FUNCTION IF EXISTS fn_transaksi_ubah_status();
 DROP FUNCTION IF EXISTS fn_detail_sebelum_insert();
 DROP FUNCTION IF EXISTS fn_detail_terkunci();
@@ -18,18 +19,22 @@ CREATE SEQUENCE seq_faktur_out START 1;
 CREATE SEQUENCE seq_faktur_in  START 1;
 CREATE SEQUENCE seq_faktur_adj START 1;
 
+-- =============================================================================
+-- TABLES & INDEXES
+-- =============================================================================
+
 CREATE TABLE users (
-  id            SERIAL       PRIMARY KEY,
-  username      VARCHAR(50)  NOT NULL UNIQUE
-                  CHECK (char_length(username) >= 3 AND username = lower(username)),
-  password_hash TEXT         NOT NULL,
-  nama_lengkap  VARCHAR(100) NOT NULL,
-  no_telepon    VARCHAR(20)  NOT NULL,
-  alamat        TEXT,
-  role          VARCHAR(20)  NOT NULL DEFAULT 'CUSTOMER'
-                  CHECK (role IN ('ADMIN', 'MECHANIC', 'CUSTOMER')),
-  aktif         BOOLEAN      NOT NULL DEFAULT TRUE,
-  created_at    TIMESTAMPTZ  NOT NULL DEFAULT now()
+  id              SERIAL       PRIMARY KEY,
+  nama_pengguna   VARCHAR(50)  NOT NULL UNIQUE
+                    CHECK (char_length(nama_pengguna) >= 3 AND nama_pengguna = lower(nama_pengguna)),
+  kata_sandi_hash TEXT         NOT NULL,
+  nama_lengkap    VARCHAR(100) NOT NULL,
+  no_telepon      VARCHAR(20)  NOT NULL,
+  alamat          TEXT,
+  peran           VARCHAR(20)  NOT NULL DEFAULT 'CUSTOMER'
+                    CHECK (peran IN ('ADMIN', 'MECHANIC', 'CUSTOMER')),
+  aktif           BOOLEAN      NOT NULL DEFAULT TRUE,
+  dibuat_pada     TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
 
 CREATE TABLE suppliers (
@@ -38,7 +43,7 @@ CREATE TABLE suppliers (
   no_telepon    VARCHAR(20)  NOT NULL,
   alamat        TEXT,
   aktif         BOOLEAN      NOT NULL DEFAULT TRUE,
-  created_at    TIMESTAMPTZ  NOT NULL DEFAULT now()
+  dibuat_pada   TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
 
 CREATE TABLE products (
@@ -53,81 +58,91 @@ CREATE TABLE products (
   stok               INTEGER      NOT NULL DEFAULT 0 CHECK (stok >= 0),
   stok_minimal       INTEGER      NOT NULL DEFAULT 5 CHECK (stok_minimal >= 0),
   aktif              BOOLEAN      NOT NULL DEFAULT TRUE,
-  updated_at         TIMESTAMPTZ  NOT NULL DEFAULT now()
+  diperbarui_pada    TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_products_jenis ON products (jenis_barang);
 
 CREATE TABLE transactions (
-  id             SERIAL       PRIMARY KEY,
-  no_faktur      VARCHAR(30)  NOT NULL UNIQUE,
-  tipe_transaksi VARCHAR(10)  NOT NULL
-                   CHECK (tipe_transaksi IN ('IN', 'OUT', 'ADJ_IN', 'ADJ_OUT')),
-  status         VARCHAR(10)  NOT NULL DEFAULT 'PENDING'
-                   CHECK (status IN ('PENDING', 'COMPLETED', 'CANCELLED', 'EXPIRED')),
-  customer_id    INTEGER      REFERENCES users (id) ON DELETE RESTRICT,
-  nama_pelanggan VARCHAR(100),
-  supplier_id    INTEGER      REFERENCES suppliers (id) ON DELETE RESTRICT,
-  dicatat_oleh   INTEGER      NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
-  diskon         INTEGER      NOT NULL DEFAULT 0 CHECK (diskon >= 0),
-  metode_bayar   VARCHAR(10)  CHECK (metode_bayar IN ('TUNAI', 'TRANSFER', 'QRIS')),
-  no_referensi   VARCHAR(50),
-  catatan        TEXT,
-  created_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
-  expired_at     TIMESTAMPTZ,
-  completed_at   TIMESTAMPTZ,
+  id                        SERIAL       PRIMARY KEY,
+  no_faktur                 VARCHAR(30)  NOT NULL UNIQUE,
+  tipe_transaksi            VARCHAR(10)  NOT NULL
+                              CHECK (tipe_transaksi IN ('IN', 'OUT', 'ADJ_IN', 'ADJ_OUT')),
+  status                    VARCHAR(10)  NOT NULL DEFAULT 'PENDING'
+                              CHECK (status IN ('PENDING', 'COMPLETED', 'CANCELLED', 'EXPIRED')),
+  id_pelanggan              INTEGER      REFERENCES users (id) ON DELETE RESTRICT,
+  nama_pelanggan            VARCHAR(100),
+  id_supplier               INTEGER      REFERENCES suppliers (id) ON DELETE RESTRICT,
+  dicatat_oleh              INTEGER      NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  diselesaikan_oleh         INTEGER      REFERENCES users (id) ON DELETE RESTRICT,
+  diskon                    INTEGER      NOT NULL DEFAULT 0 CHECK (diskon >= 0),
+  metode_bayar              VARCHAR(10)  CHECK (metode_bayar IN ('TUNAI', 'TRANSFER', 'QRIS')),
+  no_referensi              VARCHAR(50),
+  catatan                   TEXT,
+  update_harga_beli_default BOOLEAN      NOT NULL DEFAULT FALSE,
+  dibuat_pada               TIMESTAMPTZ  NOT NULL DEFAULT now(),
+  kedaluwarsa_pada          TIMESTAMPTZ,
+  selesai_pada              TIMESTAMPTZ,
 
-  CONSTRAINT ck_supplier       CHECK ((tipe_transaksi = 'IN') = (supplier_id IS NOT NULL)),
-  CONSTRAINT ck_pelanggan_out  CHECK (tipe_transaksi <> 'OUT' OR customer_id IS NOT NULL OR nama_pelanggan IS NOT NULL),
-  CONSTRAINT ck_pelanggan_satu CHECK (customer_id IS NULL OR nama_pelanggan IS NULL),
-  CONSTRAINT ck_pelanggan_tipe CHECK (tipe_transaksi = 'OUT' OR (customer_id IS NULL AND nama_pelanggan IS NULL)),
-  CONSTRAINT ck_expired        CHECK (expired_at IS NULL OR expired_at > created_at),
-  CONSTRAINT ck_expired_out    CHECK (tipe_transaksi <> 'OUT' OR expired_at IS NOT NULL),
-  CONSTRAINT ck_catatan_adj    CHECK (tipe_transaksi NOT IN ('ADJ_IN', 'ADJ_OUT') OR catatan IS NOT NULL),
-  CONSTRAINT ck_bayar          CHECK (status <> 'COMPLETED' OR tipe_transaksi IN ('ADJ_IN', 'ADJ_OUT') OR metode_bayar IS NOT NULL),
-  CONSTRAINT ck_selesai        CHECK ((status = 'COMPLETED') = (completed_at IS NOT NULL))
+  CONSTRAINT ck_supplier               CHECK ((tipe_transaksi = 'IN') = (id_supplier IS NOT NULL)),
+  CONSTRAINT ck_pelanggan_out          CHECK (tipe_transaksi <> 'OUT' OR id_pelanggan IS NOT NULL OR nama_pelanggan IS NOT NULL),
+  CONSTRAINT ck_pelanggan_satu         CHECK (id_pelanggan IS NULL OR nama_pelanggan IS NULL),
+  CONSTRAINT ck_pelanggan_tipe         CHECK (tipe_transaksi = 'OUT' OR (id_pelanggan IS NULL AND nama_pelanggan IS NULL)),
+  CONSTRAINT ck_expired                CHECK (kedaluwarsa_pada IS NULL OR kedaluwarsa_pada > dibuat_pada),
+  CONSTRAINT ck_expired_out            CHECK (tipe_transaksi <> 'OUT' OR kedaluwarsa_pada IS NOT NULL),
+  CONSTRAINT ck_catatan_adj            CHECK (tipe_transaksi NOT IN ('ADJ_IN', 'ADJ_OUT') OR catatan IS NOT NULL),
+  CONSTRAINT ck_bayar                  CHECK (status <> 'COMPLETED' OR tipe_transaksi IN ('ADJ_IN', 'ADJ_OUT') OR metode_bayar IS NOT NULL),
+  CONSTRAINT ck_selesai                CHECK ((status = 'COMPLETED') = (selesai_pada IS NOT NULL)),
+  CONSTRAINT ck_diselesaikan           CHECK (status = 'COMPLETED' OR diselesaikan_oleh IS NULL),
+  CONSTRAINT ck_selesai_setelah_dibuat CHECK (selesai_pada IS NULL OR selesai_pada >= dibuat_pada)
 );
-CREATE INDEX idx_transactions_created   ON transactions (created_at);
-CREATE INDEX idx_transactions_completed ON transactions (completed_at) WHERE status = 'COMPLETED';
-CREATE INDEX idx_transactions_pending   ON transactions (expired_at)   WHERE status = 'PENDING';
-CREATE INDEX idx_transactions_customer  ON transactions (customer_id)  WHERE customer_id IS NOT NULL;
-CREATE INDEX idx_transactions_supplier  ON transactions (supplier_id)  WHERE supplier_id IS NOT NULL;
+CREATE INDEX idx_transactions_created   ON transactions (dibuat_pada);
+CREATE INDEX idx_transactions_completed ON transactions (selesai_pada) WHERE status = 'COMPLETED';
+CREATE INDEX idx_transactions_pending   ON transactions (kedaluwarsa_pada) WHERE status = 'PENDING';
+CREATE INDEX idx_transactions_customer  ON transactions (id_pelanggan) WHERE id_pelanggan IS NOT NULL;
+CREATE INDEX idx_transactions_supplier  ON transactions (id_supplier)  WHERE id_supplier IS NOT NULL;
 
 CREATE TABLE transaction_details (
-  transaction_id    INTEGER NOT NULL REFERENCES transactions (id) ON DELETE RESTRICT,
-  product_id        INTEGER NOT NULL REFERENCES products (id)     ON DELETE RESTRICT,
+  id_transaksi      INTEGER NOT NULL REFERENCES transactions (id) ON DELETE RESTRICT,
+  id_barang         INTEGER NOT NULL REFERENCES products (id)     ON DELETE RESTRICT,
   jumlah            INTEGER NOT NULL CHECK (jumlah > 0),
   harga_satuan_real INTEGER NOT NULL CHECK (harga_satuan_real >= 0),
   harga_modal       INTEGER CHECK (harga_modal >= 0),
   subtotal          INTEGER GENERATED ALWAYS AS (jumlah * harga_satuan_real) STORED,
-  PRIMARY KEY (transaction_id, product_id)
+  PRIMARY KEY (id_transaksi, id_barang)
 );
-CREATE INDEX idx_details_product ON transaction_details (product_id);
+CREATE INDEX idx_details_product ON transaction_details (id_barang);
 
 CREATE TABLE inventory_batches (
-  id                    BIGSERIAL PRIMARY KEY,
-  product_id            INTEGER NOT NULL REFERENCES products (id) ON DELETE RESTRICT,
-  source_transaction_id INTEGER REFERENCES transactions (id) ON DELETE RESTRICT,
-  received_quantity     INTEGER NOT NULL CHECK (received_quantity > 0),
-  remaining_quantity    INTEGER NOT NULL CHECK (remaining_quantity >= 0 AND remaining_quantity <= received_quantity),
-  unit_cost             INTEGER NOT NULL CHECK (unit_cost >= 0),
-  created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (source_transaction_id, product_id)
+  id                  BIGSERIAL PRIMARY KEY,
+  id_barang           INTEGER NOT NULL REFERENCES products (id) ON DELETE RESTRICT,
+  id_transaksi_sumber INTEGER REFERENCES transactions (id) ON DELETE RESTRICT,
+  jumlah_diterima     INTEGER NOT NULL CHECK (jumlah_diterima > 0),
+  jumlah_sisa         INTEGER NOT NULL CHECK (jumlah_sisa >= 0 AND jumlah_sisa <= jumlah_diterima),
+  harga_modal_satuan  INTEGER NOT NULL CHECK (harga_modal_satuan >= 0),
+  dibuat_pada         TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (id_transaksi_sumber, id_barang)
 );
 CREATE INDEX idx_inventory_batches_fifo
-  ON inventory_batches (product_id, created_at, id)
-  WHERE remaining_quantity > 0;
+  ON inventory_batches (id_barang, dibuat_pada, id)
+  WHERE jumlah_sisa > 0;
+CREATE INDEX idx_inventory_batches_chronology
+  ON inventory_batches (id_barang, dibuat_pada);
 
 CREATE TABLE transaction_detail_costs (
-  transaction_id INTEGER NOT NULL,
-  product_id     INTEGER NOT NULL,
-  batch_id       BIGINT NOT NULL REFERENCES inventory_batches (id) ON DELETE RESTRICT,
-  quantity       INTEGER NOT NULL CHECK (quantity > 0),
-  unit_cost      INTEGER NOT NULL CHECK (unit_cost >= 0),
-  PRIMARY KEY (transaction_id, product_id, batch_id),
-  FOREIGN KEY (transaction_id, product_id)
-    REFERENCES transaction_details (transaction_id, product_id) ON DELETE RESTRICT
+  id_transaksi       INTEGER NOT NULL,
+  id_barang          INTEGER NOT NULL,
+  id_batch           BIGINT NOT NULL REFERENCES inventory_batches (id) ON DELETE RESTRICT,
+  jumlah             INTEGER NOT NULL CHECK (jumlah > 0),
+  harga_modal_satuan INTEGER NOT NULL CHECK (harga_modal_satuan >= 0),
+  PRIMARY KEY (id_transaksi, id_barang, id_batch),
+  FOREIGN KEY (id_transaksi, id_barang)
+    REFERENCES transaction_details (id_transaksi, id_barang) ON DELETE RESTRICT
 );
-CREATE INDEX idx_transaction_detail_costs_batch ON transaction_detail_costs (batch_id);
+CREATE INDEX idx_transaction_detail_costs_batch ON transaction_detail_costs (id_batch);
+
+-- =============================================================================
+-- TRIGGERS & FUNCTIONS
+-- =============================================================================
 
 CREATE FUNCTION fn_transaksi_awal() RETURNS trigger
 LANGUAGE plpgsql AS $$
@@ -140,7 +155,7 @@ BEGIN
   IF NEW.no_faktur IS NULL THEN
     NEW.no_faktur :=
       (CASE NEW.tipe_transaksi WHEN 'OUT' THEN 'FJ' WHEN 'IN' THEN 'PB' ELSE 'KS' END)
-      || '-' || to_char(NEW.created_at, 'YYMM') || '-'
+      || '-' || to_char(NEW.dibuat_pada, 'YYMM') || '-'
       || lpad((CASE NEW.tipe_transaksi
                  WHEN 'OUT' THEN nextval('seq_faktur_out')
                  WHEN 'IN'  THEN nextval('seq_faktur_in')
@@ -148,8 +163,8 @@ BEGIN
                END)::text, 4, '0');
   END IF;
 
-  IF NEW.tipe_transaksi = 'OUT' AND NEW.expired_at IS NULL THEN
-    NEW.expired_at := NEW.created_at + interval '24 hours';
+  IF NEW.tipe_transaksi = 'OUT' AND NEW.kedaluwarsa_pada IS NULL THEN
+    NEW.kedaluwarsa_pada := NEW.dibuat_pada + interval '24 hours';
   END IF;
 
   RETURN NEW;
@@ -159,18 +174,91 @@ CREATE TRIGGER trg_transaksi_awal
   BEFORE INSERT ON transactions
   FOR EACH ROW EXECUTE FUNCTION fn_transaksi_awal();
 
+CREATE FUNCTION fn_transaksi_pencatat_valid() RETURNS trigger
+LANGUAGE plpgsql AS $$
+DECLARE
+  v_peran             users.peran%TYPE;
+  v_aktif             users.aktif%TYPE;
+  v_validasi_pencatat BOOLEAN := TRUE;
+BEGIN
+  IF TG_OP = 'UPDATE' THEN
+    v_validasi_pencatat :=
+      NEW.dicatat_oleh IS DISTINCT FROM OLD.dicatat_oleh
+      OR NEW.tipe_transaksi IS DISTINCT FROM OLD.tipe_transaksi
+      OR NEW.id_pelanggan IS DISTINCT FROM OLD.id_pelanggan;
+  END IF;
+
+  SELECT peran, aktif INTO v_peran, v_aktif
+    FROM users WHERE id = NEW.dicatat_oleh FOR SHARE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Pencatat transaksi tidak ditemukan'
+      USING ERRCODE = 'foreign_key_violation';
+  END IF;
+  IF v_validasi_pencatat AND (
+    NOT v_aktif OR (
+      v_peran NOT IN ('ADMIN', 'MECHANIC')
+      AND (v_peran <> 'CUSTOMER' OR NEW.tipe_transaksi <> 'OUT'
+           OR NEW.id_pelanggan IS DISTINCT FROM NEW.dicatat_oleh)
+    )
+  ) THEN
+    RAISE EXCEPTION 'Pencatat harus staf aktif atau pelanggan aktif yang membuat pesanan sendiri'
+      USING ERRCODE = 'check_violation';
+  END IF;
+  IF v_peran = 'CUSTOMER' AND NEW.diskon <> 0 THEN
+    IF TG_OP = 'INSERT' THEN
+      RAISE EXCEPTION 'Diskon pesanan pelanggan hanya dapat ditetapkan saat diselesaikan staf'
+        USING ERRCODE = 'check_violation';
+    ELSIF OLD.status <> 'PENDING' OR NEW.status <> 'COMPLETED'
+          OR NEW.diselesaikan_oleh IS NULL THEN
+      RAISE EXCEPTION 'Diskon pesanan pelanggan hanya dapat ditetapkan saat diselesaikan staf'
+        USING ERRCODE = 'check_violation';
+    END IF;
+  END IF;
+  RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_transaksi_pencatat_valid
+  BEFORE INSERT ON transactions
+  FOR EACH ROW EXECUTE FUNCTION fn_transaksi_pencatat_valid();
+
+CREATE TRIGGER trg_transaksi_pencatat_update_valid
+  BEFORE UPDATE OF dicatat_oleh, tipe_transaksi, id_pelanggan, diskon, diselesaikan_oleh ON transactions
+  FOR EACH ROW EXECUTE FUNCTION fn_transaksi_pencatat_valid();
+
+CREATE FUNCTION fn_transaksi_immutable() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+  IF OLD.status <> 'PENDING' THEN
+    RAISE EXCEPTION 'Transaksi berstatus % tidak dapat diubah', OLD.status
+      USING ERRCODE = 'check_violation';
+  END IF;
+  IF NEW.tipe_transaksi IS DISTINCT FROM OLD.tipe_transaksi THEN
+    RAISE EXCEPTION 'Tipe transaksi tidak dapat diubah setelah dibuat'
+      USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_transaksi_immutable
+  BEFORE UPDATE ON transactions
+  FOR EACH ROW EXECUTE FUNCTION fn_transaksi_immutable();
+
 CREATE FUNCTION fn_detail_sebelum_insert() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
   v_tipe     transactions.tipe_transaksi%TYPE;
   v_status   transactions.status%TYPE;
+  v_peran    users.peran%TYPE;
   v_p        products%ROWTYPE;
   v_tertahan BIGINT;
 BEGIN
-  SELECT tipe_transaksi, status INTO v_tipe, v_status
-    FROM transactions WHERE id = NEW.transaction_id FOR SHARE;
+  SELECT t.tipe_transaksi, t.status, u.peran INTO v_tipe, v_status, v_peran
+    FROM transactions t
+    JOIN users u ON u.id = t.dicatat_oleh
+   WHERE t.id = NEW.id_transaksi
+   FOR SHARE OF t;
   IF NOT FOUND THEN
-    RAISE EXCEPTION 'Transaksi % tidak ditemukan', NEW.transaction_id
+    RAISE EXCEPTION 'Transaksi % tidak ditemukan', NEW.id_transaksi
       USING ERRCODE = 'foreign_key_violation';
   END IF;
   IF v_status <> 'PENDING' THEN
@@ -178,9 +266,9 @@ BEGIN
       USING ERRCODE = 'check_violation';
   END IF;
 
-  SELECT * INTO v_p FROM products WHERE id = NEW.product_id FOR UPDATE;
+  SELECT * INTO v_p FROM products WHERE id = NEW.id_barang FOR UPDATE;
   IF NOT FOUND THEN
-    RAISE EXCEPTION 'Barang dengan id % tidak ditemukan', NEW.product_id
+    RAISE EXCEPTION 'Barang dengan id % tidak ditemukan', NEW.id_barang
       USING ERRCODE = 'foreign_key_violation';
   END IF;
   IF NOT v_p.aktif THEN
@@ -188,7 +276,15 @@ BEGIN
       USING ERRCODE = 'check_violation';
   END IF;
 
-  IF NEW.harga_satuan_real IS NULL THEN
+  IF v_tipe = 'OUT' AND v_peran = 'CUSTOMER' THEN
+    NEW.harga_satuan_real := v_p.harga_jual_default;
+  ELSIF v_tipe = 'ADJ_IN' THEN
+    IF v_p.harga_beli_default <= 0 THEN
+      RAISE EXCEPTION 'Harga beli acuan "%" harus diisi sebelum koreksi stok masuk', v_p.nama_barang
+        USING ERRCODE = 'check_violation';
+    END IF;
+    NEW.harga_satuan_real := v_p.harga_beli_default;
+  ELSIF NEW.harga_satuan_real IS NULL THEN
     NEW.harga_satuan_real := CASE WHEN v_tipe = 'OUT'
                                   THEN v_p.harga_jual_default
                                   ELSE v_p.harga_beli_default END;
@@ -199,11 +295,11 @@ BEGIN
 
     SELECT COALESCE(SUM(d.jumlah), 0) INTO v_tertahan
       FROM transaction_details d
-      JOIN transactions t ON t.id = d.transaction_id
-     WHERE d.product_id = NEW.product_id
+      JOIN transactions t ON t.id = d.id_transaksi
+     WHERE d.id_barang = NEW.id_barang
        AND t.tipe_transaksi = 'OUT'
        AND t.status = 'PENDING'
-       AND t.expired_at > now();
+       AND t.kedaluwarsa_pada > now();
 
     IF NEW.jumlah > (v_p.stok - v_tertahan) THEN
       RAISE EXCEPTION 'Stok tersedia "%" tidak cukup (stok %, tertahan %, diminta %)',
@@ -226,7 +322,7 @@ BEGIN
     RAISE EXCEPTION 'Baris detail tidak bisa diubah; hapus lalu tambahkan ulang selagi transaksi PENDING'
       USING ERRCODE = 'check_violation';
   END IF;
-  IF (SELECT status FROM transactions WHERE id = OLD.transaction_id) <> 'PENDING' THEN
+  IF (SELECT status FROM transactions WHERE id = OLD.id_transaksi) <> 'PENDING' THEN
     RAISE EXCEPTION 'Detail transaksi yang sudah selesai/batal tidak boleh dihapus'
       USING ERRCODE = 'check_violation';
   END IF;
@@ -240,14 +336,16 @@ CREATE TRIGGER trg_detail_terkunci
 CREATE FUNCTION fn_transaksi_ubah_status() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
-  r          RECORD;
-  b          RECORD;
-  v_stok     products.stok%TYPE;
-  v_nama     products.nama_barang%TYPE;
-  v_delta    INTEGER;
-  v_subtotal BIGINT;
-  v_left     INTEGER;
-  v_take     INTEGER;
+  r                  RECORD;
+  b                  RECORD;
+  v_stok             products.stok%TYPE;
+  v_nama             products.nama_barang%TYPE;
+  v_delta            INTEGER;
+  v_subtotal         BIGINT;
+  v_left             INTEGER;
+  v_take             INTEGER;
+  v_penyelesai       users.peran%TYPE;
+  v_penyelesai_aktif users.aktif%TYPE;
 BEGIN
   IF OLD.status <> 'PENDING' THEN
     RAISE EXCEPTION 'Transaksi % sudah % dan tidak bisa diubah lagi', OLD.no_faktur, OLD.status
@@ -255,15 +353,26 @@ BEGIN
   END IF;
 
   IF NEW.status = 'COMPLETED' THEN
-    NEW.completed_at := COALESCE(NEW.completed_at, now());
+    IF NEW.diselesaikan_oleh IS NULL THEN
+      RAISE EXCEPTION 'Penyelesai transaksi wajib diisi'
+        USING ERRCODE = 'check_violation';
+    END IF;
+    SELECT peran, aktif INTO v_penyelesai, v_penyelesai_aktif
+      FROM users WHERE id = NEW.diselesaikan_oleh FOR SHARE;
+    IF NOT FOUND OR NOT v_penyelesai_aktif OR v_penyelesai NOT IN ('ADMIN', 'MECHANIC') THEN
+      RAISE EXCEPTION 'Penyelesai transaksi harus staf aktif'
+        USING ERRCODE = 'check_violation';
+    END IF;
 
-    IF NEW.expired_at IS NOT NULL AND NEW.completed_at > NEW.expired_at THEN
-      RAISE EXCEPTION 'Transaksi % melewati batas penahanan stok (%)', NEW.no_faktur, NEW.expired_at
+    NEW.selesai_pada := COALESCE(NEW.selesai_pada, now());
+
+    IF NEW.kedaluwarsa_pada IS NOT NULL AND NEW.selesai_pada > NEW.kedaluwarsa_pada THEN
+      RAISE EXCEPTION 'Transaksi % melewati batas penahanan stok (%)', NEW.no_faktur, NEW.kedaluwarsa_pada
         USING ERRCODE = 'check_violation';
     END IF;
 
     SELECT SUM(subtotal) INTO v_subtotal
-      FROM transaction_details WHERE transaction_id = NEW.id;
+      FROM transaction_details WHERE id_transaksi = NEW.id;
     IF v_subtotal IS NULL THEN
       RAISE EXCEPTION 'Transaksi % belum memiliki barang', NEW.no_faktur
         USING ERRCODE = 'check_violation';
@@ -274,13 +383,13 @@ BEGIN
     END IF;
 
     FOR r IN
-      SELECT product_id, jumlah, harga_satuan_real
+      SELECT id_barang, jumlah, harga_satuan_real
         FROM transaction_details
-       WHERE transaction_id = NEW.id
-       ORDER BY product_id
+       WHERE id_transaksi = NEW.id
+       ORDER BY id_barang
     LOOP
       SELECT stok, nama_barang INTO v_stok, v_nama
-        FROM products WHERE id = r.product_id FOR UPDATE;
+        FROM products WHERE id = r.id_barang FOR UPDATE;
 
       v_delta := CASE WHEN NEW.tipe_transaksi IN ('IN', 'ADJ_IN') THEN r.jumlah ELSE -r.jumlah END;
 
@@ -290,26 +399,37 @@ BEGIN
       END IF;
 
       IF NEW.tipe_transaksi IN ('IN', 'ADJ_IN') THEN
+        IF EXISTS (
+          SELECT 1
+            FROM inventory_batches
+           WHERE id_barang = r.id_barang
+             AND dibuat_pada > NEW.selesai_pada
+        ) THEN
+          RAISE EXCEPTION 'Penerimaan barang "%" tidak boleh lebih lama dari batch yang sudah tercatat', v_nama
+            USING ERRCODE = 'check_violation';
+        END IF;
         INSERT INTO inventory_batches (
-          product_id, source_transaction_id, received_quantity, remaining_quantity, unit_cost, created_at
-        ) VALUES (r.product_id, NEW.id, r.jumlah, r.jumlah, r.harga_satuan_real, NEW.completed_at);
+          id_barang, id_transaksi_sumber, jumlah_diterima, jumlah_sisa, harga_modal_satuan, dibuat_pada
+        ) VALUES (r.id_barang, NEW.id, r.jumlah, r.jumlah, r.harga_satuan_real, NEW.selesai_pada);
       ELSE
         v_left := r.jumlah;
         FOR b IN
-          SELECT id, remaining_quantity, unit_cost
+          SELECT id, jumlah_sisa, harga_modal_satuan
             FROM inventory_batches
-           WHERE product_id = r.product_id AND remaining_quantity > 0
-           ORDER BY created_at, id
+           WHERE id_barang = r.id_barang
+             AND jumlah_sisa > 0
+             AND dibuat_pada <= NEW.selesai_pada
+           ORDER BY dibuat_pada, id
            FOR UPDATE
         LOOP
           EXIT WHEN v_left = 0;
-          v_take := LEAST(v_left, b.remaining_quantity);
+          v_take := LEAST(v_left, b.jumlah_sisa);
           UPDATE inventory_batches
-             SET remaining_quantity = remaining_quantity - v_take
+             SET jumlah_sisa = jumlah_sisa - v_take
            WHERE id = b.id;
           INSERT INTO transaction_detail_costs (
-            transaction_id, product_id, batch_id, quantity, unit_cost
-          ) VALUES (NEW.id, r.product_id, b.id, v_take, b.unit_cost);
+            id_transaksi, id_barang, id_batch, jumlah, harga_modal_satuan
+          ) VALUES (NEW.id, r.id_barang, b.id, v_take, b.harga_modal_satuan);
           v_left := v_left - v_take;
         END LOOP;
 
@@ -320,12 +440,13 @@ BEGIN
       END IF;
 
       UPDATE products
-         SET stok       = stok + v_delta,
-             updated_at = now(),
+         SET stok               = stok + v_delta,
+             diperbarui_pada    = now(),
              harga_beli_default = CASE WHEN NEW.tipe_transaksi = 'IN'
+                                            AND NEW.update_harga_beli_default
                                        THEN r.harga_satuan_real
                                        ELSE harga_beli_default END
-       WHERE id = r.product_id;
+       WHERE id = r.id_barang;
     END LOOP;
   END IF;
 
@@ -338,6 +459,10 @@ CREATE TRIGGER trg_transaksi_ubah_status
   WHEN (OLD.status IS DISTINCT FROM NEW.status)
   EXECUTE FUNCTION fn_transaksi_ubah_status();
 
+-- =============================================================================
+-- VIEWS
+-- =============================================================================
+
 CREATE VIEW v_stok_barang AS
 SELECT x.*,
        CASE
@@ -346,28 +471,28 @@ SELECT x.*,
          ELSE 'Tersedia'
        END AS status_stok
 FROM (
-  SELECT p.id                          AS product_id,
+  SELECT p.id                           AS product_id,
          p.kode_barang,
          p.nama_barang,
          p.jenis_barang,
          p.merk,
-         p.harga_jual_default          AS harga_jual,
-         p.harga_beli_default          AS harga_beli,
+         p.harga_jual_default           AS harga_jual,
+         p.harga_beli_default           AS harga_beli,
          p.stok,
          p.stok_minimal,
          p.aktif,
-         COALESCE(h.tertahan, 0)       AS tertahan,
+         COALESCE(h.tertahan, 0)        AS tertahan,
          p.stok - COALESCE(h.tertahan, 0) AS tersedia
   FROM products p
   LEFT JOIN (
-    SELECT d.product_id, SUM(d.jumlah) AS tertahan
+    SELECT d.id_barang, SUM(d.jumlah) AS tertahan
     FROM transaction_details d
-    JOIN transactions t ON t.id = d.transaction_id
+    JOIN transactions t ON t.id = d.id_transaksi
     WHERE t.tipe_transaksi = 'OUT'
       AND t.status = 'PENDING'
-      AND t.expired_at > now()
-    GROUP BY d.product_id
-  ) h ON h.product_id = p.id
+      AND t.kedaluwarsa_pada > now()
+    GROUP BY d.id_barang
+  ) h ON h.id_barang = p.id
 ) x;
 
 CREATE VIEW v_transaksi_header AS
@@ -375,73 +500,101 @@ SELECT t.id                                           AS transaction_id,
        t.no_faktur,
        t.tipe_transaksi,
        t.status,
-       t.created_at                                   AS tgl_transaksi,
-       t.expired_at,
-       t.completed_at,
-       t.customer_id,
+       t.dibuat_pada                                  AS tgl_transaksi,
+       t.kedaluwarsa_pada                             AS expired_at,
+       t.selesai_pada                                 AS completed_at,
+       t.id_pelanggan                                 AS customer_id,
        COALESCE(c.nama_lengkap, t.nama_pelanggan)     AS nama_pelanggan,
        s.nama_supplier,
        a.nama_lengkap                                 AS dicatat_oleh,
-       COUNT(td.product_id)                           AS jumlah_jenis,
+       COUNT(td.id_barang)                            AS jumlah_jenis,
        COALESCE(SUM(td.jumlah), 0)                    AS jumlah_item,
        COALESCE(SUM(td.subtotal), 0)                  AS subtotal,
        t.diskon,
        COALESCE(SUM(td.subtotal), 0) - t.diskon       AS total_bayar
 FROM transactions t
 JOIN users a                    ON a.id = t.dicatat_oleh
-LEFT JOIN users c               ON c.id = t.customer_id
-LEFT JOIN suppliers s           ON s.id = t.supplier_id
-LEFT JOIN transaction_details td ON td.transaction_id = t.id
+LEFT JOIN users c               ON c.id = t.id_pelanggan
+LEFT JOIN suppliers s           ON s.id = t.id_supplier
+LEFT JOIN transaction_details td ON td.id_transaksi = t.id
 GROUP BY t.id, a.id, c.id, s.id;
 
 CREATE VIEW v_kartu_stok AS
 SELECT k.*, k.stok_akhir - k.perubahan AS stok_awal
 FROM (
-  SELECT d.product_id,
+  SELECT d.id_barang                                  AS product_id,
          p.kode_barang,
          p.nama_barang,
-         t.completed_at AS waktu,
+         t.selesai_pada                               AS waktu,
          t.no_faktur,
          t.tipe_transaksi,
          t.catatan,
          CASE WHEN t.tipe_transaksi IN ('IN', 'ADJ_IN') THEN d.jumlah ELSE -d.jumlah END AS perubahan,
          SUM(CASE WHEN t.tipe_transaksi IN ('IN', 'ADJ_IN') THEN d.jumlah ELSE -d.jumlah END)
-           OVER (PARTITION BY d.product_id
-                 ORDER BY t.completed_at, t.id
+           OVER (PARTITION BY d.id_barang
+                 ORDER BY t.selesai_pada, t.id
                  ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS stok_akhir
   FROM transaction_details d
-  JOIN transactions t ON t.id = d.transaction_id
-  JOIN products p     ON p.id = d.product_id
+  JOIN transactions t ON t.id = d.id_transaksi
+  JOIN products p     ON p.id = d.id_barang
   WHERE t.status = 'COMPLETED'
 ) k;
 
 CREATE VIEW v_laporan_laba_rugi AS
 WITH per_transaksi AS (
   SELECT t.id,
-         date_trunc('month', t.completed_at) AS bulan,
+         date_trunc('month', t.selesai_pada) AS bulan,
          t.diskon,
          SUM(td.subtotal)                    AS penjualan,
          SUM(COALESCE(c.modal, td.jumlah * td.harga_modal)) AS modal
   FROM transactions t
-  JOIN transaction_details td ON td.transaction_id = t.id
+  JOIN transaction_details td ON td.id_transaksi = t.id
   LEFT JOIN LATERAL (
-    SELECT SUM(c.quantity::bigint * c.unit_cost) AS modal
+    SELECT SUM(c.jumlah::bigint * c.harga_modal_satuan) AS modal
       FROM transaction_detail_costs c
-     WHERE c.transaction_id = td.transaction_id
-       AND c.product_id = td.product_id
+     WHERE c.id_transaksi = td.id_transaksi
+       AND c.id_barang = td.id_barang
   ) c ON TRUE
   WHERE t.status = 'COMPLETED' AND t.tipe_transaksi = 'OUT'
   GROUP BY t.id
 )
 SELECT bulan,
-       COUNT(*)                                       AS total_transaksi,
-       SUM(penjualan)                                 AS penjualan_kotor,
-       SUM(diskon)                                    AS total_diskon,
-       SUM(penjualan) - SUM(diskon)                   AS pendapatan_bersih,
-       SUM(modal)                                     AS total_modal,
-       SUM(penjualan) - SUM(diskon) - SUM(modal)      AS laba_kotor
+       COUNT(*)                                  AS total_transaksi,
+       SUM(penjualan)                            AS penjualan_kotor,
+       SUM(diskon)                               AS total_diskon,
+       SUM(penjualan) - SUM(diskon)              AS pendapatan_bersih,
+       SUM(modal)                                AS total_modal,
+       SUM(penjualan) - SUM(diskon) - SUM(modal) AS laba_kotor
 FROM per_transaksi
 GROUP BY bulan;
+
+CREATE VIEW v_laporan_adj_out AS
+WITH detail AS (
+  SELECT id_transaksi, SUM(jumlah) AS jumlah_barang
+    FROM transaction_details
+   GROUP BY id_transaksi
+),
+biaya AS (
+  SELECT id_transaksi,
+         SUM(jumlah::bigint * harga_modal_satuan) AS nilai_biaya_fifo
+    FROM transaction_detail_costs
+   GROUP BY id_transaksi
+)
+SELECT t.id                            AS transaction_id,
+       t.no_faktur,
+       t.selesai_pada                  AS completed_at,
+       t.catatan,
+       COALESCE(d.jumlah_barang, 0)    AS jumlah_barang,
+       COALESCE(b.nilai_biaya_fifo, 0) AS nilai_biaya_fifo
+FROM transactions t
+LEFT JOIN detail d ON d.id_transaksi = t.id
+LEFT JOIN biaya b  ON b.id_transaksi = t.id
+WHERE t.tipe_transaksi = 'ADJ_OUT'
+  AND t.status = 'COMPLETED';
+
+-- =============================================================================
+-- HELPER FUNCTIONS
+-- =============================================================================
 
 CREATE FUNCTION expire_pending() RETURNS INTEGER
 LANGUAGE plpgsql AS $$
@@ -452,7 +605,7 @@ BEGIN
      SET status = 'EXPIRED'
    WHERE status = 'PENDING'
      AND tipe_transaksi = 'OUT'
-     AND expired_at < now();
+     AND kedaluwarsa_pada < now();
   GET DIAGNOSTICS v_n = ROW_COUNT;
   RETURN v_n;
 END $$;
@@ -460,11 +613,11 @@ END $$;
 CREATE FUNCTION buat_penjualan(
   p_dicatat_oleh   INTEGER,
   p_items          JSONB,
-  p_customer_id    INTEGER DEFAULT NULL,
+  p_id_pelanggan   INTEGER DEFAULT NULL,
   p_nama_pelanggan TEXT    DEFAULT NULL,
   p_diskon         INTEGER DEFAULT 0,
   p_jam_tahan      INTEGER DEFAULT 24
-) RETURNS TABLE (o_id INTEGER, o_no_faktur TEXT, o_expired_at TIMESTAMPTZ, o_total BIGINT)
+) RETURNS TABLE (o_id INTEGER, o_no_faktur TEXT, o_kedaluwarsa_pada TIMESTAMPTZ, o_total BIGINT)
 LANGUAGE plpgsql AS $$
 DECLARE
   v_id       INTEGER;
@@ -476,22 +629,22 @@ BEGIN
     RAISE EXCEPTION 'Keranjang kosong' USING ERRCODE = 'invalid_parameter_value';
   END IF;
 
-  INSERT INTO transactions (tipe_transaksi, customer_id, nama_pelanggan, dicatat_oleh, diskon, expired_at)
-  VALUES ('OUT', p_customer_id, p_nama_pelanggan, p_dicatat_oleh, p_diskon,
+  INSERT INTO transactions (tipe_transaksi, id_pelanggan, nama_pelanggan, dicatat_oleh, diskon, kedaluwarsa_pada)
+  VALUES ('OUT', p_id_pelanggan, p_nama_pelanggan, p_dicatat_oleh, p_diskon,
           now() + make_interval(hours => p_jam_tahan))
-  RETURNING id, no_faktur, expired_at INTO v_id, v_no, v_exp;
+  RETURNING id, no_faktur, kedaluwarsa_pada INTO v_id, v_no, v_exp;
 
-  INSERT INTO transaction_details (transaction_id, product_id, jumlah, harga_satuan_real)
+  INSERT INTO transaction_details (id_transaksi, id_barang, jumlah, harga_satuan_real)
   SELECT v_id,
-         (e ->> 'product_id')::integer,
+         (e ->> 'id_barang')::integer,
          SUM((e ->> 'jumlah')::integer),
          MAX((e ->> 'harga')::integer)
     FROM jsonb_array_elements(p_items) AS e
-   GROUP BY (e ->> 'product_id')::integer
-   ORDER BY (e ->> 'product_id')::integer;
+   GROUP BY (e ->> 'id_barang')::integer
+   ORDER BY (e ->> 'id_barang')::integer;
 
   SELECT SUM(subtotal) INTO v_subtotal
-    FROM transaction_details WHERE transaction_id = v_id;
+    FROM transaction_details WHERE id_transaksi = v_id;
 
   IF p_diskon > v_subtotal THEN
     RAISE EXCEPTION 'Diskon (%) melebihi subtotal (%)', p_diskon, v_subtotal
@@ -502,489 +655,25 @@ BEGIN
 END $$;
 
 -- =============================================================================
--- SEEDING DUMMY DATA (FIFO INTEGRATED)
+-- INITIAL ADMIN ACCOUNT ONLY
 -- =============================================================================
 
--- 1. Users
-INSERT INTO users (id, username, password_hash, nama_lengkap, no_telepon, alamat, role, created_at)
-SELECT t.id, t.uname, crypt(t.pw, gen_salt('bf', 8)), t.nama, t.telp, t.alamat, t.role, now() - make_interval(days => t.umur)
-FROM (VALUES
-  (1, 'admin', 'admin123', 'Admin Utama', '081234567890', 'Jl. Raya Contoh No. 1', 'ADMIN', 200),
-  (2, 'slamet', 'montir123', 'Slamet Riyadi', '081230010002', 'Jl. Bengkel No. 3', 'MECHANIC', 180),
-  (3, 'wahyu', 'montir123', 'Wahyu Hidayat', '081230010003', 'Jl. Bengkel No. 5', 'MECHANIC', 150),
-  (4, 'budi', 'client123', 'Budi Santoso', '081330010004', 'Jl. Melati No. 5', 'CUSTOMER', 120),
-  (5, 'siti', 'client123', 'Siti Rahayu', '081330010005', 'Jl. Mawar No. 12', 'CUSTOMER', 110),
-  (6, 'rudi', 'client123', 'Rudi Hartono', '081330010006', 'Jl. Kenanga No. 7', 'CUSTOMER', 105),
-  (7, 'dewi', 'client123', 'Dewi Lestari', '085230010007', 'Jl. Anggrek No. 20', 'CUSTOMER', 98),
-  (8, 'agus', 'client123', 'Agus Prasetyo', '085230010008', NULL, 'CUSTOMER', 90),
-  (9, 'rina', 'client123', 'Rina Wulandari', '085230010009', 'Jl. Cempaka No. 9', 'CUSTOMER', 84),
-  (10, 'hendra', 'client123', 'Hendra Gunawan', '087830010010', 'Jl. Dahlia No. 14', 'CUSTOMER', 77),
-  (11, 'maya', 'client123', 'Maya Kusuma', '087830010011', NULL, 'CUSTOMER', 70),
-  (12, 'eko', 'client123', 'Eko Saputra', '087830010012', 'Jl. Flamboyan No. 2', 'CUSTOMER', 61),
-  (13, 'nuraini', 'client123', 'Nur Aini', '081930010013', 'Jl. Teratai No. 18', 'CUSTOMER', 50),
-  (14, 'joko', 'client123', 'Joko Purnomo', '081930010014', 'Jl. Seruni No. 6', 'CUSTOMER', 12),
-  (15, 'fitri', 'client123', 'Fitri Handayani', '081930010015', 'Jl. Kamboja No. 4', 'CUSTOMER', 6)
-) AS t(id, uname, pw, nama, telp, alamat, role, umur);
-
--- 2. Suppliers
-INSERT INTO suppliers (id, nama_supplier, no_telepon, alamat) VALUES
-  (1, 'CV Mitra Oli Nusantara', '081211110001', 'Jl. Industri No. 12'),
-  (2, 'UD Rem Prima Motor', '081211110002', 'Jl. Pasar Besar No. 45'),
-  (3, 'PT Sentra Ban dan Aki', '081211110003', 'Jl. Raya Kawasan Blok C-7'),
-  (4, 'Toko Grosir Busi Makmur', '081211110004', 'Jl. Veteran No. 8'),
-  (5, 'CV Filter Jaya Abadi', '081211110005', 'Jl. Gudang No. 21');
-
--- 3. Products
-INSERT INTO products (id, kode_barang, nama_barang, jenis_barang, merk, harga_beli_default, harga_jual_default, stok_minimal, aktif) VALUES
-  (1, 'OLI-001', 'Oli Mesin Yamalube 1L', 'Oli', 'Yamalube', 46000, 55000, 10, TRUE),
-  (2, 'OLI-002', 'Oli Mesin Federal Matic 0.8L', 'Oli', 'Federal', 37500, 45000, 10, TRUE),
-  (3, 'OLI-003', 'Oli Mesin Shell Advance AX7 0.8L', 'Oli', 'Shell', 43000, 52000, 10, TRUE),
-  (4, 'OLI-004', 'Oli Gardan Yamalube 120ml', 'Oli', 'Yamalube', 11500, 15000, 10, TRUE),
-  (5, 'OLI-005', 'Oli Mesin Honda MPX2 0.8L', 'Oli', 'Honda', 39000, 47000, 10, TRUE),
-  (6, 'OLI-006', 'Oli Mesin AHM MPX1 1L', 'Oli', 'Honda', 47000, 56000, 10, TRUE),
-  (7, 'REM-001', 'Kampas Rem Depan Honda Beat', 'Rem', 'Honda', 30000, 38000, 5, TRUE),
-  (8, 'REM-002', 'Kampas Rem Belakang Honda Beat', 'Rem', 'Honda', 27500, 35000, 5, TRUE),
-  (9, 'REM-003', 'Kampas Rem Depan Yamaha Mio', 'Rem', 'Yamaha', 28000, 36000, 5, TRUE),
-  (10, 'REM-004', 'Minyak Rem DOT 3 100ml', 'Rem', 'Nissin', 10500, 14000, 5, TRUE),
-  (11, 'REM-005', 'Cakram Rem Honda Vario 125', 'Rem', 'Honda', 98000, 120000, 5, TRUE),
-  (12, 'BUS-001', 'Busi NGK CPR9EA', 'Busi', 'NGK', 19500, 25000, 10, TRUE),
-  (13, 'BUS-002', 'Busi NGK Iridium CR7HIX', 'Busi', 'NGK', 70000, 85000, 5, TRUE),
-  (14, 'BUS-003', 'Busi Denso U20EPR9', 'Busi', 'Denso', 17500, 22000, 5, TRUE),
-  (15, 'BUS-004', 'Busi NGK C7HSA', 'Busi', 'NGK', 14000, 18000, 5, TRUE),
-  (16, 'BAN-001', 'Ban Luar IRC 80/90-14', 'Ban', 'IRC', 152000, 185000, 4, TRUE),
-  (17, 'BAN-002', 'Ban Luar FDR Sport XR 90/80-14', 'Ban', 'FDR', 142000, 175000, 4, TRUE),
-  (18, 'BAN-003', 'Ban Dalam IRC 80/90-14', 'Ban', 'IRC', 35000, 45000, 5, TRUE),
-  (19, 'BAN-004', 'Ban Luar Michelin City Grip 100/80-14', 'Ban', 'Michelin', 245000, 290000, 3, TRUE),
-  (20, 'AKI-001', 'Aki Yuasa YTZ5S', 'Aki', 'Yuasa', 195000, 235000, 3, TRUE),
-  (21, 'AKI-002', 'Aki GS Astra GTZ5S', 'Aki', 'GS Astra', 205000, 245000, 3, TRUE),
-  (22, 'AKI-003', 'Aki Kering Motobatt MBTZ6V', 'Aki', 'Motobatt', 172000, 210000, 3, TRUE),
-  (23, 'RAN-001', 'Gear Set Honda Beat (Rantai + Gir)', 'Rantai', 'Honda', 135000, 165000, 3, TRUE),
-  (24, 'RAN-002', 'Rantai Keteng 428H-118L', 'Rantai', 'DID', 76000, 95000, 3, TRUE),
-  (25, 'RAN-003', 'Gear Set Yamaha Mio', 'Rantai', 'Yamaha', 122000, 150000, 3, TRUE),
-  (26, 'FIL-001', 'Filter Udara Honda Vario 125', 'Filter', 'Honda', 32000, 42000, 5, TRUE),
-  (27, 'FIL-002', 'Filter Udara Yamaha Mio', 'Filter', 'Yamaha', 29000, 38000, 5, TRUE),
-  (28, 'FIL-003', 'Filter Oli Honda', 'Filter', 'Honda', 15000, 20000, 5, TRUE),
-  (29, 'FIL-004', 'Filter Bensin Universal', 'Filter', 'Universal', 19000, 25000, 5, TRUE),
-  (30, 'REM-006', 'Kampas Rem Depan Honda Supra X (discontinue)', 'Rem', 'Honda', 28000, 36000, 5, FALSE);
-
--- 4. Transactions Pembelian (IN)
-INSERT INTO transactions (id, tipe_transaksi, supplier_id, dicatat_oleh, created_at, no_referensi) VALUES
-  (1, 'IN', 1, 1, CURRENT_DATE - 95 + TIME '10:00', 'SJ/1/001'),
-  (2, 'IN', 2, 1, CURRENT_DATE - 95 + TIME '10:00', 'SJ/2/002'),
-  (3, 'IN', 4, 1, CURRENT_DATE - 95 + TIME '10:00', 'SJ/4/003'),
-  (4, 'IN', 3, 1, CURRENT_DATE - 95 + TIME '10:00', 'SJ/3/004'),
-  (5, 'IN', 5, 1, CURRENT_DATE - 95 + TIME '10:00', 'SJ/5/005'),
-  (14, 'IN', 1, 1, CURRENT_DATE - 50 + TIME '10:00', 'SJ/1/014'),
-  (15, 'IN', 2, 1, CURRENT_DATE - 50 + TIME '10:00', 'SJ/2/015'),
-  (16, 'IN', 4, 1, CURRENT_DATE - 50 + TIME '10:00', 'SJ/4/016'),
-  (31, 'IN', 1, 1, CURRENT_DATE - 14 + TIME '10:00', 'SJ/1/031'),
-  (32, 'IN', 3, 1, CURRENT_DATE - 14 + TIME '10:00', 'SJ/3/032'),
-  (33, 'IN', 5, 1, CURRENT_DATE - 14 + TIME '10:00', 'SJ/5/033');
-
-INSERT INTO transaction_details (transaction_id, product_id, jumlah)
-SELECT t.trx, p.id, t.qty FROM (VALUES
-  (1, 'OLI-001', 32), (1, 'OLI-002', 22), (1, 'OLI-003', 7), (1, 'OLI-004', 22), (1, 'OLI-005', 16), (1, 'OLI-006', 3),
-  (2, 'REM-001', 15), (2, 'REM-002', 11), (2, 'REM-003', 5), (2, 'REM-004', 23), (2, 'REM-005', 3), (2, 'RAN-001', 6), (2, 'RAN-002', 9), (2, 'RAN-003', 2),
-  (3, 'BUS-001', 17), (3, 'BUS-002', 7), (3, 'BUS-003', 4), (3, 'BUS-004', 19),
-  (4, 'BAN-001', 8), (4, 'BAN-002', 5), (4, 'BAN-003', 14), (4, 'BAN-004', 2), (4, 'AKI-001', 4), (4, 'AKI-002', 1), (4, 'AKI-003', 5),
-  (5, 'FIL-001', 11), (5, 'FIL-002', 6), (5, 'FIL-003', 13), (5, 'FIL-004', 3),
-  (14, 'OLI-001', 10), (14, 'OLI-002', 7), (14, 'OLI-003', 2), (14, 'OLI-004', 9), (14, 'OLI-005', 7),
-  (15, 'REM-001', 12), (15, 'REM-002', 9), (15, 'REM-003', 2), (15, 'REM-004', 20), (15, 'REM-005', 3), (15, 'RAN-001', 5), (15, 'RAN-002', 7), (15, 'RAN-003', 2),
-  (16, 'BUS-001', 11), (16, 'BUS-002', 4), (16, 'BUS-003', 1), (16, 'BUS-004', 15),
-  (31, 'OLI-001', 11), (31, 'OLI-002', 8), (31, 'OLI-003', 2), (31, 'OLI-004', 9), (31, 'OLI-005', 7),
-  (32, 'BAN-001', 6), (32, 'BAN-002', 3), (32, 'BAN-003', 10), (32, 'BAN-004', 1), (32, 'AKI-001', 2), (32, 'AKI-003', 4),
-  (33, 'FIL-001', 7), (33, 'FIL-002', 5), (33, 'FIL-003', 12), (33, 'FIL-004', 1)
-) AS t(trx, kode, qty) JOIN products p ON p.kode_barang = t.kode;
-
--- Selesaikan transaksi IN agar trigger membuat Batch FIFO otomatis
-UPDATE transactions SET status = 'COMPLETED', completed_at = created_at + interval '90 minutes', metode_bayar = 'TRANSFER'
- WHERE id IN (1,2,3,4,5,14,15,16,31,32,33);
-
--- 5. Transaksi IN Pending
-INSERT INTO transactions (id, tipe_transaksi, supplier_id, dicatat_oleh, created_at, no_referensi, catatan) VALUES
-  (42, 'IN', 1, 1, (now() - interval '48 hours'), NULL, 'Menunggu pengiriman supplier'),
-  (43, 'IN', 3, 1, (now() - interval '24 hours'), NULL, 'Menunggu pengiriman supplier');
-
-INSERT INTO transaction_details (transaction_id, product_id, jumlah)
-SELECT t.trx, p.id, t.qty FROM (VALUES
-  (42, 'OLI-001', 20), (42, 'OLI-003', 12), (43, 'AKI-002', 6), (43, 'AKI-001', 4)
-) AS t(trx, kode, qty) JOIN products p ON p.kode_barang = t.kode;
-
--- 6. Transaksi Adjustments (ADJ)
-INSERT INTO transactions (id, tipe_transaksi, dicatat_oleh, created_at, catatan) VALUES
-  (23, 'ADJ_OUT', 1, CURRENT_DATE - 30 + TIME '13:00', 'Ban dalam bocor saat pengecekan, dikeluarkan dari stok'),
-  (28, 'ADJ_IN', 1, CURRENT_DATE - 20 + TIME '13:00', 'Selisih stock opname: stok fisik lebih 2 dari catatan'),
-  (37, 'ADJ_OUT', 1, CURRENT_DATE - 8 + TIME '13:00', 'Kemasan oli gardan bocor, tidak layak jual');
-
-INSERT INTO transaction_details (transaction_id, product_id, jumlah)
-SELECT t.trx, p.id, t.qty FROM (VALUES
-  (23, 'BAN-003', 1), (28, 'OLI-002', 2), (37, 'OLI-004', 1)
-) AS t(trx, kode, qty) JOIN products p ON p.kode_barang = t.kode;
-
-UPDATE transactions SET status = 'COMPLETED', completed_at = created_at + interval '60 minutes'
- WHERE id IN (23,28,37);
-
--- 7. Transaksi Penjualan (OUT)
-INSERT INTO transactions (id, tipe_transaksi, customer_id, nama_pelanggan, dicatat_oleh, diskon, created_at) VALUES
-  (6, 'OUT', 4, NULL, 1, 0, CURRENT_DATE - 70 + TIME '09:47'),
-  (7, 'OUT', 5, NULL, 2, 0, CURRENT_DATE - 68 + TIME '10:54'),
-  (8, 'OUT', 6, NULL, 1, 5000, CURRENT_DATE - 65 + TIME '11:01'),
-  (9, 'OUT', NULL, 'Pak Haryanto (umum)', 1, 0, CURRENT_DATE - 62 + TIME '12:08'),
-  (10, 'OUT', 4, NULL, 2, 0, CURRENT_DATE - 59 + TIME '13:15'),
-  (11, 'OUT', 8, NULL, 1, 0, CURRENT_DATE - 56 + TIME '14:22'),
-  (12, 'OUT', 9, NULL, 1, 0, CURRENT_DATE - 53 + TIME '15:29'),
-  (13, 'OUT', 5, NULL, 2, 10000, CURRENT_DATE - 50 + TIME '08:36'),
-  (17, 'OUT', NULL, 'Bu Lastri (umum)', 1, 0, CURRENT_DATE - 47 + TIME '09:43'),
-  (18, 'OUT', 6, NULL, 1, 0, CURRENT_DATE - 44 + TIME '10:50'),
-  (19, 'OUT', 11, NULL, 2, 0, CURRENT_DATE - 41 + TIME '11:57'),
-  (20, 'OUT', NULL, 'Mas Danu (umum)', 1, 0, CURRENT_DATE - 38 + TIME '12:04'),
-  (21, 'OUT', 7, NULL, 1, 5000, CURRENT_DATE - 35 + TIME '13:11'),
-  (22, 'OUT', 12, NULL, 2, 0, CURRENT_DATE - 32 + TIME '14:18'),
-  (24, 'OUT', 8, NULL, 1, 0, CURRENT_DATE - 29 + TIME '15:25'),
-  (25, 'OUT', NULL, 'Pak Tono (umum)', 1, 0, CURRENT_DATE - 26 + TIME '08:32'),
-  (26, 'OUT', 9, NULL, 2, 0, CURRENT_DATE - 24 + TIME '09:39'),
-  (27, 'OUT', 13, NULL, 1, 0, CURRENT_DATE - 21 + TIME '10:46'),
-  (29, 'OUT', 6, NULL, 1, 0, CURRENT_DATE - 19 + TIME '11:53'),
-  (30, 'OUT', 4, NULL, 2, 10000, CURRENT_DATE - 16 + TIME '12:00'),
-  (34, 'OUT', 10, NULL, 1, 0, CURRENT_DATE - 13 + TIME '13:07'),
-  (35, 'OUT', NULL, 'Bu Endang (umum)', 1, 0, CURRENT_DATE - 11 + TIME '14:14'),
-  (36, 'OUT', 11, NULL, 2, 0, CURRENT_DATE - 9 + TIME '15:21'),
-  (38, 'OUT', 5, NULL, 1, 0, CURRENT_DATE - 7 + TIME '08:28'),
-  (39, 'OUT', NULL, 'Mas Rizal (umum)', 1, 0, CURRENT_DATE - 5 + TIME '09:35'),
-  (40, 'OUT', 4, NULL, 2, 5000, CURRENT_DATE - 4 + TIME '10:42'),
-  (41, 'OUT', 12, NULL, 1, 0, CURRENT_DATE - 3 + TIME '11:49'),
-  (44, 'OUT', 6, NULL, 1, 0, (now() - interval '5 hours')),
-  (45, 'OUT', 9, NULL, 2, 0, (now() - interval '2 hours')),
-  (46, 'OUT', 14, NULL, 1, 0, (now() - interval '1 hours'));
-
-INSERT INTO transaction_details (transaction_id, product_id, jumlah, harga_satuan_real)
-SELECT t.trx, p.id, t.qty, t.harga FROM (VALUES
-  (6, 'OLI-001', 2, 52000), (6, 'BUS-001', 1, 23000),
-  (7, 'RAN-001', 1, 160000), (7, 'OLI-002', 1, NULL),
-  (8, 'BAN-001', 1, 180000), (8, 'BAN-003', 1, NULL), (8, 'OLI-005', 1, NULL),
-  (9, 'REM-001', 1, NULL), (9, 'REM-002', 1, NULL),
-  (10, 'OLI-002', 2, 43000), (10, 'FIL-001', 1, NULL), (10, 'BUS-001', 1, 23000),
-  (11, 'AKI-001', 1, NULL),
-  (12, 'BAN-004', 1, NULL), (12, 'BAN-003', 1, NULL),
-  (13, 'OLI-001', 3, 52000), (13, 'FIL-003', 1, NULL), (13, 'REM-004', 1, NULL),
-  (17, 'BUS-002', 1, NULL), (17, 'OLI-003', 1, NULL),
-  (18, 'REM-003', 2, NULL), (18, 'REM-004', 1, NULL),
-  (19, 'BAN-002', 1, NULL), (19, 'BAN-003', 1, NULL),
-  (20, 'OLI-002', 2, NULL), (20, 'OLI-004', 1, NULL),
-  (21, 'AKI-003', 1, NULL), (21, 'BUS-004', 2, NULL),
-  (22, 'RAN-002', 1, NULL), (22, 'OLI-004', 2, NULL),
-  (24, 'OLI-001', 2, NULL), (24, 'BUS-001', 2, NULL), (24, 'FIL-001', 1, NULL),
-  (25, 'REM-001', 1, NULL), (25, 'REM-002', 1, NULL), (25, 'REM-004', 1, NULL),
-  (26, 'OLI-005', 2, NULL), (26, 'FIL-003', 1, NULL),
-  (27, 'AKI-002', 1, NULL),
-  (29, 'BAN-001', 1, NULL), (29, 'BAN-003', 1, NULL), (29, 'OLI-001', 1, NULL),
-  (30, 'OLI-002', 3, NULL), (30, 'BUS-001', 1, NULL), (30, 'FIL-001', 1, NULL),
-  (34, 'REM-005', 1, NULL), (34, 'REM-004', 1, NULL),
-  (35, 'OLI-006', 3, NULL), (35, 'OLI-001', 1, NULL),
-  (36, 'BUS-003', 2, NULL), (36, 'BUS-004', 1, NULL),
-  (38, 'OLI-001', 2, NULL), (38, 'BUS-001', 1, NULL),
-  (39, 'OLI-003', 2, NULL), (39, 'FIL-004', 2, NULL), (39, 'REM-003', 1, NULL),
-  (40, 'RAN-002', 1, NULL), (40, 'OLI-005', 1, NULL), (40, 'BUS-002', 1, NULL),
-  (41, 'BAN-004', 1, NULL), (41, 'OLI-002', 1, NULL),
-  (44, 'OLI-001', 2, NULL), (44, 'OLI-002', 2, NULL),
-  (45, 'AKI-001', 1, NULL), (45, 'REM-005', 1, NULL),
-  (46, 'BUS-001', 2, NULL), (46, 'OLI-004', 1, NULL), (46, 'FIL-001', 1, NULL)
-) AS t(trx, kode, qty, harga) JOIN products p ON p.kode_barang = t.kode;
-
--- Transaksi OUT diselesaikan agar trigger FIFO memotong stok inventory_batches dan mencatat ke transaction_detail_costs
-UPDATE transactions
-   SET status = 'COMPLETED',
-       completed_at = created_at + make_interval(mins => 15 + (id % 4) * 20),
-       metode_bayar = (ARRAY['TUNAI','TRANSFER','QRIS','TUNAI'])[1 + (id % 4)]
- WHERE id IN (6,7,8,9,10,11,13,17,18,19,20,21,22,24,25,27,29,30,35,36,38,39,40,41);
-
-UPDATE transactions SET status = 'CANCELLED', catatan = 'Pelanggan batal, tidak jadi mengambil barang'
- WHERE id IN (12,26);
-
-SELECT expire_pending();
+DO $$
+DECLARE
+  v_admin_password TEXT := encode(gen_random_bytes(24), 'hex');
+BEGIN
+  INSERT INTO users (id, nama_pengguna, kata_sandi_hash, nama_lengkap, no_telepon, alamat, peran)
+  VALUES (
+    1,
+    'admin',
+    crypt(v_admin_password, gen_salt('bf', 12)),
+    'Admin Utama',
+    '081234567890',
+    'Jl. Raya Contoh No. 1',
+    'ADMIN'
+  );
+  RAISE NOTICE 'Initial admin password (save it now): %', v_admin_password;
+END $$;
 
 SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT MAX(id) FROM users));
-SELECT setval(pg_get_serial_sequence('suppliers', 'id'), (SELECT MAX(id) FROM suppliers));
-SELECT setval(pg_get_serial_sequence('products', 'id'), (SELECT MAX(id) FROM products));
-SELECT setval(pg_get_serial_sequence('transactions', 'id'), (SELECT MAX(id) FROM transactions));
-SELECT setval(pg_get_serial_sequence('inventory_batches', 'id'), (SELECT MAX(id) FROM inventory_batches));
 ANALYZE;
-
--- =============================================================================
--- QUERY LAPORAN & DEMO
--- Query berikut memakai skema dan data demo di atas.
--- =============================================================================
-
--- Q1. Daftar stok dan pencarian barang.
-SELECT product_id, kode_barang, nama_barang, jenis_barang, harga_jual,
-       stok, tertahan, tersedia, status_stok
-FROM v_stok_barang
-WHERE aktif
-  AND (nama_barang ILIKE '%oli%' OR jenis_barang ILIKE '%oli%')
-ORDER BY nama_barang
-LIMIT 12 OFFSET 0;
-
--- Q2. Katalog berdasarkan kategori.
-SELECT nama_barang, jenis_barang, harga_jual, status_stok
-FROM v_stok_barang
-WHERE aktif AND jenis_barang = 'Oli'
-ORDER BY (status_stok = 'Habis'), nama_barang
-LIMIT 12;
-
--- Q3. Ringkasan dashboard; nilai persediaan menggunakan biaya batch FIFO tersisa.
-SELECT
-  (SELECT COALESCE(SUM(total_bayar), 0)
-     FROM v_transaksi_header
-    WHERE tipe_transaksi = 'OUT' AND status = 'COMPLETED'
-      AND date_trunc('month', completed_at) = date_trunc('month', now())) AS pendapatan_bulan_ini,
-  (SELECT COUNT(*) FROM transactions
-    WHERE tipe_transaksi = 'OUT' AND status = 'PENDING' AND expired_at > now()) AS pesanan_menahan_stok,
-  (SELECT COALESCE(SUM(remaining_quantity::bigint * unit_cost), 0)
-     FROM inventory_batches WHERE remaining_quantity > 0) AS nilai_persediaan,
-  (SELECT COUNT(*) FROM v_stok_barang
-    WHERE aktif AND status_stok <> 'Tersedia') AS barang_perlu_perhatian,
-  (SELECT COUNT(*) FROM users WHERE role = 'CUSTOMER') AS pelanggan_terdaftar;
-
--- Q4. Lima transaksi terbaru.
-SELECT no_faktur, tipe_transaksi, COALESCE(nama_pelanggan, nama_supplier) AS pihak,
-       tgl_transaksi::date AS tanggal, total_bayar, status
-FROM v_transaksi_header
-ORDER BY tgl_transaksi DESC
-LIMIT 5;
-
--- Q5. Pesanan yang masih menahan stok.
-SELECT h.no_faktur, h.nama_pelanggan, h.total_bayar, h.expired_at,
-       h.expired_at - now() AS sisa_waktu,
-       string_agg(p.nama_barang || ' x' || d.jumlah, ', ' ORDER BY p.nama_barang) AS isi_pesanan
-FROM v_transaksi_header h
-JOIN transaction_details d ON d.transaction_id = h.transaction_id
-JOIN products p ON p.id = d.product_id
-WHERE h.tipe_transaksi = 'OUT'
-  AND h.status = 'PENDING'
-  AND h.expired_at > now()
-GROUP BY h.transaction_id, h.no_faktur, h.nama_pelanggan, h.total_bayar, h.expired_at
-ORDER BY h.expired_at;
-
--- Q6. Rincian pesanan terbaru untuk pesan WhatsApp.
-SELECT h.no_faktur AS invoice,
-       'Rp ' || to_char(h.total_bayar, 'FM999G999G999') AS total,
-       string_agg('- ' || p.nama_barang || ' x' || d.jumlah, E'\n' ORDER BY p.nama_barang) AS items
-FROM v_transaksi_header h
-JOIN transaction_details d ON d.transaction_id = h.transaction_id
-JOIN products p ON p.id = d.product_id
-WHERE h.transaction_id = (
-  SELECT MAX(id) FROM transactions WHERE tipe_transaksi = 'OUT' AND status = 'PENDING'
-)
-GROUP BY h.transaction_id, h.no_faktur, h.total_bayar;
-
--- Q7. Lima barang terlaris dalam 30 hari terakhir, dengan laba modal FIFO.
-SELECT p.kode_barang, p.nama_barang, p.jenis_barang,
-       SUM(d.jumlah) AS terjual,
-       SUM(d.subtotal) AS omzet,
-       SUM(d.subtotal - COALESCE(c.modal, 0)) AS laba_kotor
-FROM transaction_details d
-JOIN transactions t ON t.id = d.transaction_id
-JOIN products p ON p.id = d.product_id
-LEFT JOIN LATERAL (
-  SELECT SUM(quantity::bigint * unit_cost) AS modal
-  FROM transaction_detail_costs
-  WHERE transaction_id = d.transaction_id AND product_id = d.product_id
-) c ON TRUE
-WHERE t.tipe_transaksi = 'OUT'
-  AND t.status = 'COMPLETED'
-  AND t.completed_at >= now() - interval '30 days'
-GROUP BY p.id
-HAVING SUM(d.jumlah) >= 3
-ORDER BY terjual DESC, omzet DESC
-LIMIT 5;
-
--- Q8. Penjualan per kategori.
-SELECT p.jenis_barang,
-       COUNT(DISTINCT t.id) AS jumlah_transaksi,
-       SUM(d.jumlah) AS unit_terjual,
-       SUM(d.subtotal) AS omzet
-FROM products p
-JOIN transaction_details d ON d.product_id = p.id
-JOIN transactions t ON t.id = d.transaction_id
-WHERE t.tipe_transaksi = 'OUT' AND t.status = 'COMPLETED'
-GROUP BY p.jenis_barang
-HAVING SUM(d.subtotal) >= 100000
-ORDER BY omzet DESC;
-
--- Q9. Saran restock dengan memperhitungkan pesanan ke supplier yang belum datang.
-WITH penjualan_30 AS (
-  SELECT d.product_id, SUM(d.jumlah) AS terjual
-  FROM transaction_details d
-  JOIN transactions t ON t.id = d.transaction_id
-  WHERE t.tipe_transaksi = 'OUT'
-    AND t.status = 'COMPLETED'
-    AND t.completed_at >= now() - interval '30 days'
-  GROUP BY d.product_id
-),
-po_masuk AS (
-  SELECT d.product_id, SUM(d.jumlah) AS dipesan
-  FROM transaction_details d
-  JOIN transactions t ON t.id = d.transaction_id
-  WHERE t.tipe_transaksi = 'IN' AND t.status = 'PENDING'
-  GROUP BY d.product_id
-),
-analisis AS (
-  SELECT v.kode_barang, v.nama_barang, v.jenis_barang,
-         v.stok, v.tertahan, v.tersedia, v.stok_minimal, v.status_stok,
-         COALESCE(s.terjual, 0) AS terjual_30_hari,
-         COALESCE(s.terjual, 0) / 30.0 AS rata_per_hari,
-         COALESCE(po.dipesan, 0) AS sudah_dipesan,
-         CASE WHEN COALESCE(s.terjual, 0) = 0 THEN NULL
-              ELSE ROUND(v.tersedia / (s.terjual / 30.0), 1)
-          END AS hari_tersisa
-  FROM v_stok_barang v
-  LEFT JOIN penjualan_30 s ON s.product_id = v.product_id
-  LEFT JOIN po_masuk po ON po.product_id = v.product_id
-  WHERE v.aktif
-)
-SELECT kode_barang, nama_barang, jenis_barang,
-       stok, tertahan, tersedia, status_stok,
-       terjual_30_hari, hari_tersisa, sudah_dipesan,
-       GREATEST(CEIL(rata_per_hari * 30)::integer + stok_minimal - tersedia - sudah_dipesan, 0) AS saran_beli
-FROM analisis
-WHERE status_stok <> 'Tersedia' OR hari_tersisa < 14
-ORDER BY (status_stok = 'Habis') DESC, hari_tersisa NULLS LAST, nama_barang;
-
--- Q10. Barang yang belum pernah terjual; nilai modal memakai batch FIFO tersisa.
-SELECT v.kode_barang, v.nama_barang, v.stok,
-       COALESCE(SUM(b.remaining_quantity::bigint * b.unit_cost), 0) AS nilai_modal_mengendap
-FROM v_stok_barang v
-LEFT JOIN inventory_batches b
-  ON b.product_id = v.product_id AND b.remaining_quantity > 0
-WHERE v.aktif
-  AND v.stok > 0
-  AND NOT EXISTS (
-    SELECT 1
-    FROM transaction_details d
-    JOIN transactions t ON t.id = d.transaction_id
-    WHERE d.product_id = v.product_id
-      AND t.tipe_transaksi = 'OUT'
-      AND t.status = 'COMPLETED'
-  )
-GROUP BY v.product_id, v.kode_barang, v.nama_barang, v.stok
-ORDER BY nilai_modal_mengendap DESC;
-
--- Q11a. Riwayat stok untuk satu barang.
-SELECT waktu::date AS tanggal, no_faktur, tipe_transaksi,
-       stok_awal, perubahan, stok_akhir, catatan
-FROM v_kartu_stok
-WHERE kode_barang = 'OLI-001'
-ORDER BY waktu DESC
-LIMIT 10;
-
--- Q11b. Audit konsistensi stok; hasil yang benar adalah 0 baris.
-SELECT p.kode_barang, p.stok AS stok_tercatat,
-       COALESCE(SUM(k.perubahan), 0) AS stok_dari_riwayat,
-       p.stok - COALESCE(SUM(k.perubahan), 0) AS selisih
-FROM products p
-LEFT JOIN v_kartu_stok k ON k.product_id = p.id
-GROUP BY p.id
-HAVING p.stok <> COALESCE(SUM(k.perubahan), 0);
-
--- Q12. Laporan laba rugi bulanan dengan modal FIFO.
-SELECT to_char(bulan, 'YYYY-MM') AS bulan, total_transaksi,
-       penjualan_kotor, total_diskon, pendapatan_bersih, total_modal, laba_kotor
-FROM v_laporan_laba_rugi
-ORDER BY bulan DESC;
-
--- Q13. Pelanggan terdaftar dengan belanja di atas rata-rata.
-WITH belanja AS (
-  SELECT customer_id, nama_pelanggan,
-         COUNT(*) AS jumlah_transaksi,
-         SUM(total_bayar) AS total_belanja
-  FROM v_transaksi_header
-  WHERE tipe_transaksi = 'OUT'
-    AND status = 'COMPLETED'
-    AND customer_id IS NOT NULL
-  GROUP BY customer_id, nama_pelanggan
-)
-SELECT nama_pelanggan, jumlah_transaksi, total_belanja
-FROM belanja
-WHERE total_belanja > (SELECT AVG(total_belanja) FROM belanja)
-ORDER BY total_belanja DESC;
-
--- Q14. Rekap pembelian per supplier.
-SELECT s.nama_supplier,
-       COUNT(DISTINCT t.id) AS jumlah_pembelian,
-       SUM(d.jumlah) AS unit_dibeli,
-       SUM(d.subtotal) AS total_pembelian
-FROM suppliers s
-JOIN transactions t
-  ON t.supplier_id = s.id
- AND t.tipe_transaksi = 'IN'
- AND t.status = 'COMPLETED'
-JOIN transaction_details d ON d.transaction_id = t.id
-GROUP BY s.id
-HAVING SUM(d.subtotal) >= 1000000
-ORDER BY total_pembelian DESC;
-
--- Demo transaksi; seluruh perubahan dibatalkan agar data seed tetap utuh.
-BEGIN;
-SELECT kode_barang, stok, tertahan, tersedia
-FROM v_stok_barang
-WHERE kode_barang IN ('OLI-001', 'BUS-001');
-
-SELECT * FROM buat_penjualan(
-  1,
-  '[{"product_id":1,"jumlah":2},{"product_id":12,"jumlah":1,"harga":24000}]'::jsonb,
-  NULL, 'Pak Darmo (umum)', 0, 24
-);
-SELECT kode_barang, stok, tertahan, tersedia
-FROM v_stok_barang
-WHERE kode_barang IN ('OLI-001', 'BUS-001');
-
-UPDATE transactions
-SET status = 'COMPLETED', metode_bayar = 'TUNAI'
-WHERE id = (SELECT MAX(id) FROM transactions);
-SELECT kode_barang, stok, tertahan, tersedia
-FROM v_stok_barang
-WHERE kode_barang IN ('OLI-001', 'BUS-001');
-SELECT waktu::date AS tanggal, no_faktur, tipe_transaksi,
-       stok_awal, perubahan, stok_akhir
-FROM v_kartu_stok
-WHERE kode_barang = 'OLI-001'
-ORDER BY waktu DESC
-LIMIT 3;
-
-UPDATE transactions
-SET status = 'CANCELLED'
-WHERE id = (
-  SELECT MIN(id)
-  FROM transactions
-  WHERE tipe_transaksi = 'OUT' AND status = 'PENDING' AND expired_at > now()
-);
-SELECT COUNT(*) AS pesanan_menahan_stok
-FROM transactions
-WHERE tipe_transaksi = 'OUT' AND status = 'PENDING' AND expired_at > now();
-
-UPDATE transactions
-SET expired_at = now() - interval '1 minute'
-WHERE id = (
-  SELECT MIN(id)
-  FROM transactions
-  WHERE tipe_transaksi = 'OUT' AND status = 'PENDING' AND expired_at > now()
-);
-SELECT expire_pending() AS jumlah_kedaluwarsa;
-ROLLBACK;
-
--- Uji penolakan berikut dijalankan satu per satu dan memang harus gagal:
--- Dua pesanan berebut barang terakhir:
--- SELECT * FROM buat_penjualan(1, '[{"product_id":20,"jumlah":5}]'::jsonb, NULL, 'Uji');
--- Menyelesaikan pesanan yang sudah kedaluwarsa:
--- UPDATE transactions SET status = 'COMPLETED', metode_bayar = 'TUNAI'
--- WHERE id = <id_transaksi_OUT_yang_sudah_kedaluwarsa>;
--- SELECT * FROM buat_penjualan(1, '[{"product_id":6,"jumlah":1}]'::jsonb, NULL, 'Uji');
--- UPDATE transactions SET status = 'CANCELLED' WHERE id = 6;
--- INSERT INTO transactions (tipe_transaksi, dicatat_oleh, catatan) VALUES ('ADJ_OUT', 1, 'Uji');
--- INSERT INTO transactions (tipe_transaksi, dicatat_oleh) VALUES ('IN', 1);
--- INSERT INTO transactions (tipe_transaksi, dicatat_oleh) VALUES ('OUT', 1);
--- UPDATE products SET stok = -1 WHERE id = 1;
--- INSERT INTO users (username, password_hash, nama_lengkap, no_telepon, role)
--- VALUES ('zzz', 'x', 'Z', '0', 'OWNER');
--- INSERT INTO products (kode_barang, nama_barang, jenis_barang) VALUES ('X','X','X');
--- DELETE FROM products WHERE id = 1;

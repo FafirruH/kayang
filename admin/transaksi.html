@@ -9,15 +9,13 @@
   <link rel="stylesheet" href="css/admin.css" />
   <link rel="stylesheet" href="css/responsive.css" />
   <script src="../js/config.js"></script>
-  <script src="../js/api.js"></script>
+  <script src="../js/api.js?v=20261117"></script>
   <script src="../js/auth.js" defer></script>
   <script src="../js/include.js" defer></script>
+  <script src="js/dialog.js" defer></script>
   <script src="js/datatable.js" defer></script>
   <script src="js/transaksi.js" defer></script>
   <style>
-    /* ── Kartu stok mini ── */
-    .stok-plus  { color: #22c55e; font-weight: 600; }
-    .stok-minus { color: #ef4444; font-weight: 600; }
     .profit-neg { color: #ef4444; }
 
     /* ── Filter bar ── */
@@ -98,6 +96,49 @@
       .sale-item-row .sale-item-harga-field { grid-column: 1 / 3; }
     }
 
+    /* ── Kolom Aksi tabel transaksi: tombol rata tengah (desktop) ── */
+    @media (min-width: 769px) {
+      #transaksi-table th.data-table__actions,
+      #transaksi-table td.data-table__actions { text-align: center; }
+    }
+
+    /* ── Tombol buka/tutup filter: hanya tampil di mobile ── */
+    .filter-toggle { display: none; }
+
+    @media (max-width: 768px) {
+      .filter-toggle {
+        display: flex; align-items: center; justify-content: space-between;
+        width: 100%; height: 44px; margin-bottom: 10px; padding: 0 14px;
+        font-size: 14px;
+      }
+      .filter-toggle__chevron {
+        width: 8px; height: 8px; margin-left: 8px;
+        border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+        transform: rotate(45deg) translateY(-2px); transition: transform .2s ease;
+      }
+      .filter-toggle[aria-expanded="true"] .filter-toggle__chevron {
+        transform: rotate(-135deg) translateY(-2px);
+      }
+
+      /* Tersembunyi dulu; muncul saat tombol diklik */
+      .filter-bar--collapsible { display: none; }
+      .filter-bar--collapsible.is-open {
+        display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      /* Semua kotak sama lebar & sama tinggi */
+      .filter-bar--collapsible label,
+      .filter-bar--collapsible label:has(#filter-q) { grid-column: auto; width: 100%; }
+      .filter-bar--collapsible select,
+      .filter-bar--collapsible input,
+      .filter-bar--collapsible #filter-q {
+        box-sizing: border-box; width: 100%; min-width: 0 !important; height: 44px;
+      }
+      .filter-bar--collapsible > .btn { width: 100%; height: 44px; }
+      .filter-bar--collapsible > span { grid-column: auto; }
+    }
+
     /* ── Pagination ── */
     .pagination { display: flex; gap: .375rem; flex-wrap: wrap; margin-top: 1rem; }
     .page-btn   { padding: .35rem .7rem; border-radius: .375rem; border: 1px solid var(--border, #334155);
@@ -105,12 +146,6 @@
     .page-btn--active { background: var(--accent, #f97316); border-color: var(--accent, #f97316);
                         color: #fff; font-weight: 700; }
 
-    /* ── Kartu stok section ── */
-    .kartu-section { margin-top: 2.5rem; }
-    .kartu-section .toolbar { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
-    .kartu-section select { padding: .4rem .6rem; border: 1px solid var(--border, #334155);
-                            border-radius: .375rem; background: var(--surface, #1e293b);
-                            color: inherit; font-size: .875rem; flex: 1; min-width: 200px; }
   </style>
 </head>
 <body data-auth="admin" class="page-dark" data-page="transaksi">
@@ -126,7 +161,7 @@
           <h1 class="page-title">Manajemen Transaksi</h1>
           <p class="page-subtitle">Penjualan, pembelian, dan koreksi stok</p>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:.5rem">
+        <div class="page-head__actions">
           <button id="btn-new-purchase" class="btn btn--ghost" type="button">
             <img src="assets/icons/plus.svg" alt="" width="16" height="16" />
             <span>Barang Masuk</span>
@@ -138,8 +173,14 @@
         </div>
       </div>
 
-      <!-- ── Filter bar ── -->
-      <div class="filter-bar">
+      <!-- ── Filter bar ── (mobile: tersembunyi, dibuka lewat tombol) -->
+      <button id="filter-toggle" class="btn btn--ghost filter-toggle" type="button"
+              aria-expanded="false" aria-controls="filter-panel">
+        <span class="filter-toggle__label">Filter &amp; Pencarian</span>
+        <span class="filter-toggle__chevron" aria-hidden="true"></span>
+      </button>
+
+      <div class="filter-bar filter-bar--collapsible" id="filter-panel">
         <label>
           Tipe
           <select id="filter-tipe">
@@ -197,42 +238,6 @@
         </table>
       </div>
 
-      <!-- ── Kartu Stok ── -->
-      <section class="kartu-section" aria-labelledby="kartu-title">
-        <div class="dashboard__head">
-          <h2 class="page-title" id="kartu-title">Kartu Stok</h2>
-          <p class="page-subtitle">Riwayat keluar-masuk per barang</p>
-        </div>
-
-        <form id="kartu-stok-form" class="toolbar">
-          <label class="sr-only" for="kartu-product-id">Pilih barang</label>
-          <select id="kartu-product-id">
-            <option value="">Pilih Barang</option>
-          </select>
-          <button class="btn btn--primary btn--sm" type="submit">Tampilkan</button>
-        </form>
-
-        <div class="table-card table-card--dark">
-          <table class="data-table data-table--stack" id="kartu-table">
-            <caption class="sr-only">Kartu stok barang</caption>
-            <thead>
-              <tr>
-                <th scope="col">Tanggal</th>
-                <th scope="col">No Faktur</th>
-                <th scope="col">Tipe</th>
-                <th scope="col">Stok Awal</th>
-                <th scope="col">Perubahan</th>
-                <th scope="col">Stok Akhir</th>
-                <th scope="col">Catatan</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="7" class="data-table__empty-cell">Pilih barang untuk melihat riwayat stok.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
     </div>
   </main>
 
@@ -255,11 +260,18 @@
       <form id="sale-form" class="form-card" novalidate>
         <h2 class="form-card__title" id="sale-modal-title">Penjualan Baru</h2>
 
-        <!-- Identitas pelanggan: isi salah satu -->
+        <!-- Pilih pelanggan terdaftar atau isi nama pembeli umum -->
         <div class="form-field">
-          <label class="form-field__label" for="sale-customer-id">ID Pelanggan <span style="font-weight:400">(opsional)</span></label>
-          <input class="form-input" id="sale-customer-id" type="number" min="1"
-                 placeholder="Contoh: 4 (kosongkan jika pembeli umum)" />
+          <label class="form-field__label" for="sale-customer-search">Cari Pelanggan</label>
+          <input class="form-input" id="sale-customer-search" type="search"
+                 placeholder="Cari berdasarkan username atau nama..." autocomplete="off" />
+          <label class="form-field__label sale-product-select-label" for="sale-customer-id">Pilih Pelanggan</label>
+          <select class="form-input" id="sale-customer-id">
+            <option value="">Ketik username atau nama untuk mencari</option>
+          </select>
+          <p class="form-field__hint" id="sale-customer-search-status" role="status" aria-live="polite">
+            Masukkan minimal 2 karakter untuk mencari pelanggan terdaftar.
+          </p>
         </div>
         <div class="form-field">
           <label class="form-field__label" for="sale-customer-nama">Nama Pembeli <span style="font-weight:400">(opsional)</span></label>
@@ -317,6 +329,13 @@
           <textarea class="form-input" id="purchase-note" maxlength="500" rows="2"
                     style="height:auto;min-height:64px;padding-top:8px;padding-bottom:8px;resize:vertical"></textarea>
         </div>
+        <div class="form-field">
+          <label class="form-field__label">
+            <input id="purchase-update-default-price" type="checkbox" />
+            Perbarui harga beli acuan produk saat transaksi selesai
+          </label>
+          <p class="modal-note">Tidak dicentang berarti harga acuan tidak berubah. Harga aktual tetap dicatat untuk batch FIFO.</p>
+        </div>
         <p id="purchase-status" class="form-status" role="status" hidden></p>
         <div class="form-actions">
           <button class="btn btn--primary" type="submit" id="purchase-submit">Buat Transaksi Barang Masuk</button>
@@ -352,6 +371,12 @@
   <script>
     // Tombol Batal di footer form = sama dengan tutup modal
     document.addEventListener("DOMContentLoaded", function () {
+      var ft = document.getElementById("filter-toggle");
+      var fp = document.getElementById("filter-panel");
+      if (ft && fp) ft.addEventListener("click", function () {
+        var open = fp.classList.toggle("is-open");
+        ft.setAttribute("aria-expanded", open ? "true" : "false");
+      });
       var btn = document.getElementById("sale-modal-close-footer");
       if (btn) btn.addEventListener("click", function () {
         var m = document.getElementById("sale-modal");

@@ -5,8 +5,8 @@
 (function () {
   "use strict";
 
-  // Pakai SLApi (api.js) agar lewat backend utama, bukan file PHP lama
-  var WA_NUMBER = (window.SL_CONFIG && window.SL_CONFIG.WA_NUMBER) || "6281234567890";
+  var WA_NUMBER = "";
+  var waConfigError = false;
 
   var grid    = document.querySelector(".product-grid");
   var search  = document.querySelector(".search__input");
@@ -15,6 +15,7 @@
   if (!grid) return;
 
   var state = { q: "", jenis: "semua", loading: false };
+  var products = null;
 
   // ── Render ─────────────────────────────────────────────────────────────────
   function waLink(nama) {
@@ -45,11 +46,16 @@
           '<img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />' +
           "<span>Stok Habis</span>" +
         "</button>"
-      : '<a href="' + waLink(p.nama_barang) + '" class="btn-wa"' +
+      : WA_NUMBER
+      ? '<a href="' + waLink(p.nama_barang) + '" class="btn-wa"' +
           ' target="_blank" rel="noopener" data-requires-login>' +
           '<img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />' +
           "<span>Tanya / Beli via WA</span>" +
-        "</a>";
+        "</a>"
+      : '<button class="btn-wa btn-wa--disabled" type="button" disabled>' +
+          '<img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />' +
+          "<span>" + (waConfigError ? "WhatsApp tidak tersedia" : "Memuat WhatsApp...") + "</span>" +
+        "</button>";
 
     var cartBtn = habis ? "" :
       '<button class="btn-cart" type="button"' +
@@ -64,18 +70,58 @@
     return (
       '<article class="product-card" data-category="' +
         escHtml(p.jenis_barang.toLowerCase()) + '">' +
-        '<div class="product-card__media">' +
+        '<a class="product-card__media" href="produk.html?id=' + p.product_id + '"' +
+          ' aria-label="Lihat detail ' + escHtml(p.nama_barang) + '">' +
           '<span class="product-card__tag">' + escHtml(p.jenis_barang) + "</span>" +
           '<img src="assets/icons/package-gray.svg" alt="" width="48" height="48" />' +
-        "</div>" +
+        "</a>" +
         '<div class="product-card__body">' +
-          '<h3 class="product-card__name">' + escHtml(p.nama_barang) + "</h3>" +
+          '<h3 class="product-card__name"><a href="produk.html?id=' + p.product_id + '">' + escHtml(p.nama_barang) + "</a></h3>" +
           '<p class="product-card__price">' + formatRupiah(p.harga_jual) + "</p>" +
           stockBadge(p.status_stok) +
           '<div class="product-card__actions">' + waBtn + cartBtn + "</div>" +
         "</div>" +
       "</article>"
     );
+  }
+
+  function renderProducts() {
+    if (!products) return;
+    if (!products.length) {
+      grid.innerHTML = '<p class="catalog-empty">Produk tidak ditemukan.</p>';
+      return;
+    }
+
+    grid.innerHTML = products.map(cardHTML).join("");
+    grid.querySelectorAll("[data-requires-login]").forEach(function (el) {
+      el.addEventListener("click", function (event) {
+        var user = window.SLAuth && SLAuth.getCurrentUser();
+        if (user && user.role === "client") return;
+        event.preventDefault();
+        if (user) {
+          SLAuth.showNotice("Akun admin tidak dapat memakai fitur belanja.");
+          return;
+        }
+        window.location.href = SLAuth.loginUrl(SLAuth.currentPath());
+      });
+    });
+  }
+
+  function loadWhatsAppConfig() {
+    SLApi.getAppConfig()
+      .then(function (config) {
+        var number = config && String(config.wa_number || "").replace(/[\s\-().+]/g, "");
+        if (!number || !/^(08|62)\d{8,13}$/.test(number)) {
+          throw new Error("Nomor WhatsApp tidak tersedia pada konfigurasi.");
+        }
+        WA_NUMBER = number;
+        renderProducts();
+      })
+      .catch(function (error) {
+        waConfigError = true;
+        renderProducts();
+        console.error("[katalog.js] Gagal memuat konfigurasi WhatsApp.", error);
+      });
   }
 
   function escHtml(str) {
@@ -129,27 +175,8 @@
         state.loading = false;
 
         // Backend baru: { data: [...], meta: {...} }
-        var items = Array.isArray(json.data) ? json.data : (json.data && json.data.items) || [];
-        if (items.length === 0) {
-          grid.innerHTML = '<p class="catalog-empty">Produk tidak ditemukan.</p>';
-          return;
-        }
-
-        grid.innerHTML = items.map(cardHTML).join("");
-
-        // Terapkan proteksi login pada link/tombol yang baru dibuat
-        grid.querySelectorAll("[data-requires-login]").forEach(function (el) {
-          el.addEventListener("click", function (event) {
-            var user = window.SLAuth && SLAuth.getCurrentUser();
-            if (user && user.role === "client") return;
-            event.preventDefault();
-            if (user) {
-              SLAuth.showNotice("Akun admin tidak dapat memakai fitur belanja.");
-              return;
-            }
-            window.location.href = SLAuth.loginUrl(SLAuth.currentPath());
-          });
-        });
+        products = Array.isArray(json.data) ? json.data : (json.data && json.data.items) || [];
+        renderProducts();
       })
       .catch(function (err) {
         state.loading = false;
@@ -192,6 +219,21 @@
     if (!btn) return;
     if (!window.SLCart) return;
 
+    var auth = window.SLAuth;
+    if (!auth) {
+      console.error("[katalog.js] Modul autentikasi belum dimuat.");
+      return;
+    }
+    var user = auth.getCurrentUser();
+    if (!user) {
+      window.location.href = auth.loginUrl(auth.currentPath());
+      return;
+    }
+    if (user.role !== "client") {
+      auth.showNotice("Akun admin tidak dapat memakai fitur belanja. Masuk dengan akun client.");
+      return;
+    }
+
     SLCart.add({
       product_id:   Number(btn.dataset.productId),
       nama_barang:  btn.dataset.nama,
@@ -212,5 +254,6 @@
 
   // ── Muat pertama kali ─────────────────────────────────────────────────────
   loadCategories();
+  loadWhatsAppConfig();
   load();
 })();

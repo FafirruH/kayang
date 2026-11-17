@@ -5,6 +5,7 @@ namespace App\Controllers;
 
 use App\Db;
 use App\Http;
+use App\HttpException;
 use App\ProductFilter;
 
 /** Endpoint publik: katalog sparepart. */
@@ -41,6 +42,21 @@ final class CatalogController
             $args + ['lim' => $per, 'off' => $off]
         );
         Http::ok($rows, Http::meta($page, $per, $total));
+    }
+
+    /** GET /api/products/{id} - detail satu barang aktif (halaman detail produk). */
+    public static function product(array $params, ?array $user): void
+    {
+        $row = Db::one(
+            'SELECT product_id, kode_barang, nama_barang, jenis_barang, merk, harga_jual, tersedia, status_stok
+               FROM v_stok_barang
+              WHERE product_id = :id AND aktif',
+            ['id' => $params['id']]
+        );
+        if ($row === null) {
+            throw new HttpException('Produk tidak ditemukan', 404);
+        }
+        Http::ok($row);
     }
 
     /** GET /api/categories - untuk chip filter katalog. */

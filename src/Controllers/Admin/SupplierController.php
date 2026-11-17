@@ -10,7 +10,7 @@ use App\Input;
 
 final class SupplierController
 {
-    private const COLS = 'id, nama_supplier, no_telepon, alamat, aktif, created_at';
+    private const COLS = 'id, nama_supplier, no_telepon, alamat, aktif, dibuat_pada AS created_at';
 
     /** GET /api/admin/suppliers?q=&aktif=true|false|all */
     public static function index(array $params, ?array $user): void
