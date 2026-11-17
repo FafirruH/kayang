@@ -1,4 +1,5 @@
 # Apache: arahkan semua permintaan yang bukan file ke index.php
 RewriteEngine On
+RewriteRule ^uploads/.*\.(?:php[0-9]?|phtml|phar)$ - [F,NC,L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^ index.php [QSA,L]

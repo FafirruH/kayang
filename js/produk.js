@@ -81,6 +81,19 @@
     document.getElementById("pdp-name").textContent = p.nama_barang;
     document.getElementById("pdp-price").textContent = money(p.harga_jual);
 
+    var productImage = document.getElementById("pdp-image");
+    var imageUrl = SLApi.productImageUrl(p.gambar);
+    if (imageUrl) {
+      productImage.src = imageUrl;
+      productImage.alt = p.nama_barang;
+      productImage.classList.add("pdp__photo");
+      productImage.addEventListener("error", function () {
+        productImage.src = "assets/icons/package-gray.svg";
+        productImage.alt = "";
+        productImage.classList.remove("pdp__photo");
+      }, { once: true });
+    }
+
     var summary = p.nama_barang + " dari kategori " + p.jenis_barang +
       (p.merk ? ", merek " + p.merk : "") + ".";
     document.getElementById("pdp-summary").textContent = summary;

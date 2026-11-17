@@ -38,13 +38,18 @@
     return parts.length ? "?" + parts.join("&") : "";
   }
 
-  function request(method, path, query, body, options) {
+  function request(method, path, query, body, options, isFormData) {
     var init = { method: method, credentials: "include", headers: { Accept: "application/json" } };
     if (options && options.signal) init.signal = options.signal;
     // GET tanpa Content-Type = "simple request" (tanpa preflight CORS, lebih cepat)
     if (method !== "GET") {
-      init.headers["Content-Type"] = "application/json";
-      init.body = JSON.stringify(body || {});
+      if (isFormData) {
+        init.headers["X-Requested-With"] = "XMLHttpRequest";
+        init.body = body;
+      } else {
+        init.headers["Content-Type"] = "application/json";
+        init.body = JSON.stringify(body || {});
+      }
     }
 
     return fetch(BASE + path + queryString(query), init).then(function (res) {
@@ -130,9 +135,15 @@
     getAppConfig: getAppConfig,
     get: function (path, query, options) { return request("GET", path, query, null, options); },
     post: function (path, body, options) { return request("POST", path, null, body, options); },
+    upload: function (path, body, options) { return request("POST", path, null, body, options, true); },
     put: function (path, body, options) { return request("PUT", path, null, body, options); },
     patch: function (path, body, options) { return request("PATCH", path, null, body, options); },
     del: function (path, options) { return request("DELETE", path, null, {}, options); },
+    productImageUrl: function (filename) {
+      return typeof filename === "string" && /^[a-f0-9]{32}\.(?:jpg|png|webp)$/.test(filename)
+        ? BASE + "/uploads/products/" + filename
+        : "";
+    },
     onUnauthorized: function (fn) { unauthorizedHandlers.push(fn); },
     money: money,
     debounce: debounce,

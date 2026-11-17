@@ -3,6 +3,7 @@ RewriteEngine On
 RewriteRule (^|/)\. - [F,L]
 RewriteRule ^(?:sql|tests|src|~)(?:/|$) - [F,NC,L]
 RewriteRule ^(?:config\.php|config\.local(?:\.example)?\.php|README\.md|api/config\.json)$ - [F,NC,L]
+RewriteRule ^(?:public/)?uploads/.*\.(?:php[0-9]?|phtml|phar)$ - [F,NC,L]
 
 <IfModule mod_headers.c>
   <FilesMatch "\.(?:html|js|css)$">

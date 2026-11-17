@@ -53,6 +53,7 @@ CREATE TABLE products (
   jenis_barang       VARCHAR(30)  NOT NULL
                        CHECK (length(trim(jenis_barang)) >= 2 AND length(jenis_barang) <= 30),
   merk               VARCHAR(50),
+  gambar             VARCHAR(255),
   harga_beli_default INTEGER      NOT NULL DEFAULT 0 CHECK (harga_beli_default >= 0),
   harga_jual_default INTEGER      NOT NULL DEFAULT 0 CHECK (harga_jual_default >= 0),
   stok               INTEGER      NOT NULL DEFAULT 0 CHECK (stok >= 0),
@@ -677,3 +678,9 @@ END $$;
 
 SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT MAX(id) FROM users));
 ANALYZE;
+
+-- kalau ingin mengubah kata sandi admin, jalankan perintah berikut di psql (ganti PASSWORD_BARU_YANG_KUAT dengan kata sandi baru yang kuat):
+
+--UPDATE users
+--SET kata_sandi_hash = crypt('PASSWORD_BARU_YANG_KUAT', gen_salt('bf', 12))
+--WHERE nama_pengguna = 'admin';

@@ -43,6 +43,8 @@ return static function (Router $r): void {
     $r->add('GET',    '/api/admin/products/{id}',   [ProductController::class, 'show'],    $staff);
     $r->add('POST',   '/api/admin/products',        [ProductController::class, 'create'],  $admin);
     $r->add('PUT',    '/api/admin/products/{id}',   [ProductController::class, 'update'],  $admin);
+    $r->add('POST',   '/api/admin/products/{id}/image', [ProductController::class, 'uploadImage'], $admin);
+    $r->add('DELETE', '/api/admin/products/{id}/image', [ProductController::class, 'deleteImage'], $admin);
     $r->add('DELETE', '/api/admin/products/{id}',   [ProductController::class, 'destroy'], $admin);
     $r->add('POST',   '/api/admin/stock-adjustments', [ProductController::class, 'adjust'], $admin);
 

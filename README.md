@@ -24,7 +24,7 @@ Aplikasi web untuk toko sparepart dan bengkel motor. Pelanggan bisa cek katalog,
 ## Fitur
 
 **Client (Pelanggan)**
-- Katalog sparepart dengan filter kategori dan pencarian
+- Katalog sparepart dengan gambar, filter kategori, dan pencarian
 - Tambah ke keranjang (localStorage), atur jumlah, hapus item
 - Voucher diskon (kode `DISKON5000`)
 - Checkout → pesanan tersimpan ke database → pesan otomatis dikirim ke WhatsApp admin
@@ -32,7 +32,7 @@ Aplikasi web untuk toko sparepart dan bengkel motor. Pelanggan bisa cek katalog,
 
 **Admin**
 - Dashboard: statistik pendapatan, pesanan pending, stok kritis, pelanggan
-- Manajemen stok: tambah, edit, nonaktifkan barang
+- Manajemen stok: tambah, edit, nonaktifkan barang, unggah, crop persegi 1:1, dan hapus gambar
 - Manajemen transaksi: filter, sort, selesaikan/batalkan, buat penjualan baru
 - Kartu stok: riwayat keluar-masuk per barang
 - Manajemen akun: tambah, edit WA/nama, aktifkan/nonaktifkan; hanya Admin Utama yang dapat menentukan atau mengubah role
@@ -97,7 +97,8 @@ kayang/
 │   └── footer.html
 │
 ├── public/
-│   └── index.php           # API entry point
+│   ├── index.php           # API entry point
+│   └── uploads/products/   # Gambar barang yang diunggah (tidak masuk Git)
 │
 ├── src/                    # Kode backend PHP
 │   ├── Controllers/
@@ -109,7 +110,8 @@ kayang/
 │   └── ...                 # Auth, database, HTTP, routing, transaksi
 │
 ├── sql/
-│   └── bengkel.sql         # SQL tunggal: skema, data demo, query, dan demo
+│   ├── migrations/         # Migrasi database tanpa reset
+│   └── bengkel.sql         # Bootstrap skema lengkap untuk database baru
 ├── tests/                  # Smoke test
 │
 ├── index.html              # Beranda
@@ -124,11 +126,10 @@ kayang/
 └── .gitignore
 ```
 
-`config.local.php`, `api/config.json`, `.venv/`, dan direktori konfigurasi agen
-tidak masuk Git. Dump SQL lokal juga diabaikan; `sql/bengkel.sql` adalah satu-
-satunya SQL setup yang dipelihara di repository. File tersebut berisi perintah
-`DROP`, jadi jalankan hanya pada database baru/kosong, jangan pada database yang
-sudah berisi data.
+`config.local.php`, `api/config.json`, `.venv/`, direktori konfigurasi agen, dan
+`public/uploads/` tidak masuk Git. Dump SQL lokal juga diabaikan. File
+`sql/bengkel.sql` berisi perintah `DROP`, jadi jalankan hanya pada database
+baru/kosong, jangan pada database yang sudah berisi data.
 Hindari memindahkan halaman atau aset web tanpa memperbarui tautan relatifnya—
 struktur saat ini menjaga URL yang digunakan di Laragon.
 
@@ -166,6 +167,10 @@ instalasi baru atau database test kosong, jangan jalankan pada database yang
 sudah berisi data. Untuk database yang sudah ada, tinjau dan backup database
 sebelum menjalankan migrasi non-reset
 `sql/migrations/2026_11_17_transaction_integrity.sql`.
+Untuk menambahkan kolom gambar pada database yang sudah berjalan, jalankan
+`sql/migrations/2026_11_17_01_product_images.sql`. Gambar dapat di-crop 1:1 sebelum diunggah;
+hasil JPG dibatasi 2 MB.
+direktori `public/uploads/products/` harus dapat ditulis oleh web server.
 
 **3. Salin file konfigurasi**
 
@@ -201,7 +206,8 @@ Arahkan `/kayang/public` sebagai document root untuk path `/api/*`, atau gunakan
 Jadikan folder `public/` sebagai web root bila memungkinkan. Aturan keamanan di
 `.htaccess` hanya berlaku pada Apache; untuk Nginx, pasang aturan deny yang
 setara agar `.git`, `sql/`, `tests/`, `src/`, dan file konfigurasi tidak dapat
-diakses melalui HTTP.
+diakses melalui HTTP, serta pastikan skrip di `public/uploads/` tidak dapat
+dieksekusi.
 
 Contoh `.htaccess` di folder `public/`:
 

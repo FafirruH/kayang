@@ -34,7 +34,8 @@ final class CatalogController
 
         $total = (int) Db::val("SELECT COUNT(*) FROM v_stok_barang WHERE $where", $args);
         $rows  = Db::all(
-            "SELECT product_id, kode_barang, nama_barang, jenis_barang, merk, harga_jual, tersedia, status_stok
+            "SELECT product_id, kode_barang, nama_barang, jenis_barang, merk, harga_jual, tersedia, status_stok,
+                    (SELECT p.gambar FROM products p WHERE p.id = v_stok_barang.product_id) AS gambar
                FROM v_stok_barang
               WHERE $where
               ORDER BY (status_stok = 'Habis'), nama_barang
@@ -48,7 +49,8 @@ final class CatalogController
     public static function product(array $params, ?array $user): void
     {
         $row = Db::one(
-            'SELECT product_id, kode_barang, nama_barang, jenis_barang, merk, harga_jual, tersedia, status_stok
+            'SELECT product_id, kode_barang, nama_barang, jenis_barang, merk, harga_jual, tersedia, status_stok,
+                    (SELECT p.gambar FROM products p WHERE p.id = v_stok_barang.product_id) AS gambar
                FROM v_stok_barang
               WHERE product_id = :id AND aktif',
             ['id' => $params['id']]

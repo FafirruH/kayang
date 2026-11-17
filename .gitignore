@@ -28,6 +28,7 @@ yarn-error.log*
 
 # Upload & storage (file yang diupload user)
 /uploads/
+/public/uploads/
 /storage/
 /tmp/
 

@@ -299,6 +299,92 @@ select.form-input {
   padding-right: 32px;
 }
 
+.product-image-input {
+  padding: 8px;
+  border-style: dashed;
+  cursor: pointer;
+}
+
+.product-image-input::file-selector-button {
+  margin-right: 12px;
+  padding: 8px 12px;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  background: var(--color-primary);
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.product-image-input::file-selector-button:hover {
+  filter: brightness(0.94);
+}
+
+.product-image-preview {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 120px;
+  margin-top: 10px;
+  padding: 12px;
+  background: #f1f2f4;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: var(--radius-sm);
+}
+
+.product-image-preview[hidden] {
+  display: none;
+}
+
+.product-image-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+}
+
+.product-image-cropper {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  background: #f1f2f4;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: var(--radius-sm);
+}
+
+.product-image-cropper[hidden] {
+  display: none;
+}
+
+.product-image-cropper canvas {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  cursor: grab;
+  touch-action: none;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.product-image-cropper canvas:active {
+  cursor: grabbing;
+}
+
+.product-image-cropper input[type="range"] {
+  width: 100%;
+  max-width: 320px;
+}
+
+.product-image-cropper__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .page-dark .product-form-modal .form-input {
   color: var(--color-dark);
   background: #fff;

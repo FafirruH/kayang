@@ -17,7 +17,8 @@ use App\Transactions;
 final class ProductController
 {
     private const LIST_COLS = 'product_id, kode_barang, nama_barang, jenis_barang, merk, harga_beli, harga_jual,
-        stok, tertahan, tersedia, stok_minimal, status_stok, aktif';
+        stok, tertahan, tersedia, stok_minimal, status_stok, aktif,
+        (SELECT p.gambar FROM products p WHERE p.id = v_stok_barang.product_id) AS gambar';
 
     /** GET /api/admin/products?q=&jenis=&status=&aktif=true|false|all */
     public static function index(array $params, ?array $user): void
@@ -38,7 +39,7 @@ final class ProductController
     public static function show(array $params, ?array $user): void
     {
         $row = Db::one(
-            'SELECT v.*, p.diperbarui_pada AS updated_at
+            'SELECT v.*, p.diperbarui_pada AS updated_at, p.gambar
                FROM v_stok_barang v JOIN products p ON p.id = v.product_id
               WHERE v.product_id = :id',
             ['id' => $params['id']]
@@ -143,6 +144,131 @@ final class ProductController
             throw new HttpException('Barang tidak ditemukan', 404);
         }
         Http::ok(['product_id' => $params['id'], 'aktif' => false]);
+    }
+
+    /** POST /api/admin/products/{id}/image - unggah gambar JPG, PNG, atau WebP. */
+    public static function uploadImage(array $params, ?array $user): void
+    {
+        $product = Db::one('SELECT id, gambar FROM products WHERE id = :id', ['id' => $params['id']]);
+        if ($product === null) {
+            throw new HttpException('Barang tidak ditemukan', 404);
+        }
+
+        $file = $_FILES['gambar'] ?? null;
+        if (!is_array($file)) {
+            throw new HttpException('Pilih gambar barang terlebih dahulu', 422);
+        }
+
+        $uploadError = $file['error'] ?? UPLOAD_ERR_NO_FILE;
+        if ($uploadError !== UPLOAD_ERR_OK) {
+            if ($uploadError === UPLOAD_ERR_INI_SIZE || $uploadError === UPLOAD_ERR_FORM_SIZE) {
+                throw new HttpException('Ukuran gambar melebihi batas upload server', 413);
+            }
+            if ($uploadError === UPLOAD_ERR_NO_FILE) {
+                throw new HttpException('Pilih gambar barang terlebih dahulu', 422);
+            }
+            throw new HttpException('Gagal menerima file gambar', 400);
+        }
+
+        $tmpPath = $file['tmp_name'] ?? '';
+        $size = is_string($tmpPath) && is_file($tmpPath) ? filesize($tmpPath) : false;
+        if (!is_string($tmpPath) || !is_uploaded_file($tmpPath) || $size === false || $size < 1) {
+            throw new HttpException('File gambar tidak valid', 422);
+        }
+        if ($size > 2 * 1024 * 1024) {
+            throw new HttpException('Ukuran gambar maksimal 2 MB', 413);
+        }
+
+        $image = @getimagesize($tmpPath);
+        $mime = is_array($image) ? ($image['mime'] ?? '') : '';
+        $extensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+        if (!isset($extensions[$mime])) {
+            throw new HttpException('Format gambar harus JPG, PNG, atau WebP', 422);
+        }
+        $width = (int) ($image[0] ?? 0);
+        $height = (int) ($image[1] ?? 0);
+        if ($width < 1 || $height < 1 || $width * $height > 24000000) {
+            throw new HttpException('Dimensi gambar terlalu besar', 422);
+        }
+
+        $directory = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'public'
+            . DIRECTORY_SEPARATOR . 'uploads'
+            . DIRECTORY_SEPARATOR . 'products';
+        if (!is_dir($directory) && !@mkdir($directory, 0755, true) && !is_dir($directory)) {
+            throw new HttpException('Folder penyimpanan gambar tidak dapat dibuat', 500);
+        }
+
+        $filename = bin2hex(random_bytes(16)) . '.' . $extensions[$mime];
+        $destination = $directory . DIRECTORY_SEPARATOR . $filename;
+        if (!@move_uploaded_file($tmpPath, $destination)) {
+            throw new HttpException('Gambar gagal disimpan', 500);
+        }
+
+        try {
+            $updated = Db::exec(
+                'UPDATE products SET gambar = :gambar, diperbarui_pada = now() WHERE id = :id',
+                ['gambar' => $filename, 'id' => $params['id']]
+            );
+        } catch (\PDOException $e) {
+            if (is_file($destination) && !@unlink($destination)) {
+                error_log('[product-image] Gagal membersihkan file setelah update database gagal: ' . $destination);
+            }
+            throw $e;
+        }
+
+        if ($updated === 0) {
+            if (is_file($destination) && !@unlink($destination)) {
+                error_log('[product-image] Gagal membersihkan file produk yang tidak ditemukan: ' . $destination);
+            }
+            throw new HttpException('Barang tidak ditemukan', 404);
+        }
+
+        $oldImage = $product['gambar'] ?? null;
+        if (is_string($oldImage)
+            && preg_match('/^[a-f0-9]{32}\.(?:jpg|png|webp)$/', $oldImage)
+            && $oldImage !== $filename) {
+            $oldPath = $directory . DIRECTORY_SEPARATOR . $oldImage;
+            if (is_file($oldPath) && !@unlink($oldPath)) {
+                error_log('[product-image] Gagal menghapus gambar lama: ' . $oldPath);
+            }
+        }
+
+        Http::ok(['product_id' => $params['id'], 'gambar' => $filename]);
+    }
+
+    /** DELETE /api/admin/products/{id}/image - hapus gambar barang. */
+    public static function deleteImage(array $params, ?array $user): void
+    {
+        $product = Db::one('SELECT id, gambar FROM products WHERE id = :id', ['id' => $params['id']]);
+        if ($product === null) {
+            throw new HttpException('Barang tidak ditemukan', 404);
+        }
+
+        $filename = $product['gambar'] ?? null;
+        if (!is_string($filename)) {
+            Http::ok(['product_id' => $params['id'], 'gambar' => null]);
+        }
+
+        $updated = Db::exec(
+            'UPDATE products SET gambar = NULL, diperbarui_pada = now()
+              WHERE id = :id AND gambar = :gambar',
+            ['id' => $params['id'], 'gambar' => $filename]
+        );
+        if ($updated === 0) {
+            throw new HttpException('Gambar barang berubah. Muat ulang data lalu coba lagi.', 409);
+        }
+
+        if (preg_match('/^[a-f0-9]{32}\.(?:jpg|png|webp)$/', $filename)) {
+            $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'public'
+                . DIRECTORY_SEPARATOR . 'uploads'
+                . DIRECTORY_SEPARATOR . 'products'
+                . DIRECTORY_SEPARATOR . $filename;
+            if (is_file($path) && !@unlink($path)) {
+                error_log('[product-image] Gagal menghapus gambar: ' . $path);
+            }
+        }
+
+        Http::ok(['product_id' => $params['id'], 'gambar' => null]);
     }
 
     /**

@@ -28,6 +28,10 @@
     fetch:      function (p) { return SLApi.get("/api/admin/products", p); },
     renderRow:  function (p) {
       var nonaktif = p.aktif ? "" : ' <span class="badge badge--off">Nonaktif</span>';
+      var imageUrl = SLApi.productImageUrl(p.gambar);
+      var thumbnail = imageUrl
+        ? '<img class="item-name__photo" src="' + esc(imageUrl) + '" alt="" loading="lazy" />'
+        : '<img src="assets/icons/package-gray.svg" alt="" />';
       return (
         "<tr data-id=\"" + p.product_id + "\">" +
           '<td data-label="ID" class="data-table__muted">' + esc(p.product_id) + "</td>" +
@@ -35,7 +39,7 @@
           '<td data-label="Nama Barang">' +
             '<span class="item-name">' +
               '<span class="item-name__thumb" aria-hidden="true">' +
-                '<img src="assets/icons/package-gray.svg" alt="" /></span>' +
+                thumbnail + "</span>" +
               '<span class="item-name__text">' + esc(p.nama_barang) + nonaktif + "</span>" +
             "</span>" +
           "</td>" +

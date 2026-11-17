@@ -41,6 +41,11 @@
 
   function cardHTML(p) {
     var habis = p.status_stok === "Habis";
+    var imageUrl = SLApi.productImageUrl(p.gambar);
+    var productImage = imageUrl
+      ? '<img class="product-card__photo" src="' + escHtml(imageUrl) +
+          '" alt="' + escHtml(p.nama_barang) + '" loading="lazy" decoding="async" />'
+      : '<img src="assets/icons/package-gray.svg" alt="" width="48" height="48" />';
     var waBtn = habis
       ? '<button class="btn-wa btn-wa--disabled" disabled>' +
           '<img src="assets/icons/chat-sm.svg" alt="" width="16" height="16" />' +
@@ -73,7 +78,7 @@
         '<a class="product-card__media" href="produk.html?id=' + p.product_id + '"' +
           ' aria-label="Lihat detail ' + escHtml(p.nama_barang) + '">' +
           '<span class="product-card__tag">' + escHtml(p.jenis_barang) + "</span>" +
-          '<img src="assets/icons/package-gray.svg" alt="" width="48" height="48" />' +
+          productImage +
         "</a>" +
         '<div class="product-card__body">' +
           '<h3 class="product-card__name"><a href="produk.html?id=' + p.product_id + '">' + escHtml(p.nama_barang) + "</a></h3>" +
@@ -93,6 +98,13 @@
     }
 
     grid.innerHTML = products.map(cardHTML).join("");
+    grid.querySelectorAll(".product-card__photo").forEach(function (image) {
+      image.addEventListener("error", function () {
+        image.classList.remove("product-card__photo");
+        image.src = "assets/icons/package-gray.svg";
+        image.alt = "";
+      }, { once: true });
+    });
     grid.querySelectorAll("[data-requires-login]").forEach(function (el) {
       el.addEventListener("click", function (event) {
         var user = window.SLAuth && SLAuth.getCurrentUser();

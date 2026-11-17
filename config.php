@@ -14,7 +14,7 @@ $config = [
         'port' => $env('DB_PORT', '5432'),
         'name' => $env('DB_NAME', 'bengkel2'),
         'user' => $env('DB_USER', 'postgres'),
-        'pass' => $env('DB_PASS', ''),
+        'pass' => $env('DB_PASS', 'postgres'),
     ],
     'app' => [
         'debug'           => $env('APP_DEBUG', '0') === '1',

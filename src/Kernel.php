@@ -10,24 +10,33 @@ final class Kernel
         try {
             Http::cors();
             $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+            $path = self::path();
 
             if ($method === 'OPTIONS') {
                 http_response_code(204);
                 exit;
             }
 
-            // Perlindungan CSRF: permintaan yang mengubah data wajib bertipe JSON.
-            // Dari situs lain, ini memicu preflight CORS yang ditolak (kecuali origin diizinkan).
+            // JSON requests and the custom header on image uploads prevent simple cross-site form posts.
             if (in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
                 $ct = strtolower($_SERVER['CONTENT_TYPE'] ?? '');
-                if (!str_starts_with($ct, 'application/json')) {
+                $imageUpload = $method === 'POST'
+                    && preg_match('#^/api/admin/products/[0-9]+/image$#D', $path) === 1;
+                if ($imageUpload) {
+                    if (!str_starts_with($ct, 'multipart/form-data;')) {
+                        throw new HttpException('Content-Type harus multipart/form-data', 415);
+                    }
+                    if (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') !== 'XMLHttpRequest') {
+                        throw new HttpException('Header permintaan tidak valid', 403);
+                    }
+                } elseif (!str_starts_with($ct, 'application/json')) {
                     throw new HttpException('Content-Type harus application/json', 415);
                 }
             }
 
             $router = new Router();
             (require __DIR__ . '/routes.php')($router);
-            $router->dispatch($method, self::path());
+            $router->dispatch($method, $path);
         } catch (HttpException $e) {
             Http::error($e->getMessage(), $e->status, $e->details);
         } catch (\PDOException $e) {
