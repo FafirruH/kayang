@@ -38,18 +38,10 @@
         <!-- Diisi oleh keranjang.js -->
       </div>
 
-      <aside class="cart2__side" aria-label="Voucher dan ringkasan">
-        <h2 class="cart2__side-title" id="voucher-title">Voucher</h2>
-        <form class="cart2-voucher" onsubmit="return false">
-          <input class="cart2-voucher__input" id="voucher-code" type="text" name="voucher" placeholder="Masukkan kode" aria-label="Kode voucher" autocomplete="off" />
-          <button class="cart2-voucher__btn" id="voucher-apply" type="button">Tukar</button>
-        </form>
-        <p class="cart2-voucher__hint" id="voucher-msg" role="status"></p>
-
+      <aside class="cart2__side" aria-label="Ringkasan">
         <h2 class="cart2__side-title">Ringkasan</h2>
         <dl class="cart2-sum">
           <div class="cart2-sum__row"><dt>Subtotal</dt><dd id="cart-subtotal">Rp 0</dd></div>
-          <div class="cart2-sum__row"><dt>Diskon</dt><dd id="cart-discount">&ndash;</dd></div>
           <div class="cart2-sum__row cart2-sum__row--total"><dt>Total</dt><dd id="cart-total">Rp 0</dd></div>
         </dl>
 

@@ -32,7 +32,7 @@
     tableId:     "akun-table",
     searchId:    "akun-search",
     countId:     "akun-count",
-    colspan:     7,
+    colspan:     8,
     per:         50,
     allRows:     true,
     defaultSort: "nama_lengkap",
@@ -54,6 +54,7 @@
             (mainAdmin ? '<br><span class="badge badge--done">Admin Utama</span>' : "") +
           "</td>" +
           '<td data-label="No. WhatsApp" class="data-table__muted">' + esc(u.no_telepon || "-") + "</td>" +
+          '<td data-label="Alamat" class="data-table__muted">' + esc(u.alamat || "-") + "</td>" +
           '<td data-label="Role">' + roleBadge(u.role) + "</td>" +
           '<td data-label="Status">' + aktifBadge + "</td>" +
           '<td data-label="Transaksi" class="data-table__muted">' + (u.jumlah_transaksi || 0) + "</td>" +
@@ -67,6 +68,7 @@
                 ' data-username="' + esc(u.username) + '"' +
                 ' data-nama="' + esc(u.nama_lengkap || "") + '"' +
                 ' data-telp="' + esc(u.no_telepon || "") + '"' +
+                ' data-alamat="' + esc(u.alamat || "") + '"' +
                 ' data-role="' + esc(u.role) + '"' +
                 ' aria-label="Edit ' + esc(u.username) + '">Edit</button>' +
               '<button class="btn btn--sm ' + toggleClass + ' btn-toggle" type="button"' +
@@ -97,7 +99,7 @@
   if (tbody) {
     tbody.addEventListener("click", function (e) {
       var editBtn = e.target.closest(".btn-edit");
-      if (editBtn) { openModal({ id: editBtn.dataset.id, username: editBtn.dataset.username, nama_lengkap: editBtn.dataset.nama, no_telepon: editBtn.dataset.telp, role: editBtn.dataset.role }); return; }
+      if (editBtn) { openModal({ id: editBtn.dataset.id, username: editBtn.dataset.username, nama_lengkap: editBtn.dataset.nama, no_telepon: editBtn.dataset.telp, alamat: editBtn.dataset.alamat, role: editBtn.dataset.role }); return; }
 
       var toggleBtn = e.target.closest(".btn-toggle");
       if (toggleBtn) {
@@ -154,6 +156,7 @@
       form.elements.username.value     = data.username     || "";
       form.elements.nama_lengkap.value = data.nama_lengkap || "";
       form.elements.no_telepon.value   = data.no_telepon   || "";
+      form.elements.alamat.value       = data.alamat       || "";
       form.elements.role.value         = data.role         || "CUSTOMER";
       form.elements.username.disabled  = true;
       form.elements.password.required  = false;
@@ -189,7 +192,7 @@
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       if (formStatus) { formStatus.hidden = true; }
-      var body = { nama_lengkap: form.elements.nama_lengkap.value.trim(), no_telepon: form.elements.no_telepon.value.trim() };
+      var body = { nama_lengkap: form.elements.nama_lengkap.value.trim(), no_telepon: form.elements.no_telepon.value.trim(), alamat: form.elements.alamat.value.trim() };
       if (canManageRoles) body.role = form.elements.role.value;
       var pw = form.elements.password.value;
       if (pw) body.password = pw;

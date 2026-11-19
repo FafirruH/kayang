@@ -83,7 +83,7 @@ final class TransactionController
     /**
      * POST /api/admin/transactions/sales
      * {"customer_id":4 | "nama_pelanggan":"Pak Darmo", "items":[{"product_id":1,"jumlah":2,"harga":50000}],
-     *  "diskon":0, "jam_tahan":24}
+     *  "jam_tahan":24}
      * Membuat penjualan PENDING yang menahan stok. "harga" = harga kesepakatan (opsional).
      */
     public static function createSale(array $params, ?array $user): void
@@ -91,7 +91,6 @@ final class TransactionController
         $in   = new Input(Http::body());
         $cust = $in->int('customer_id', 1, 2000000000, false);
         $nama = $in->str('nama_pelanggan', 2, 100, false);
-        $disk = $in->int('diskon', 0, 2000000000, false) ?? 0;
         $jam  = $in->int('jam_tahan', 1, 168, false) ?? (int) Config::get('app.hold_hours', 24);
         if (($cust === null) === ($nama === null)) {
             $in->error('customer_id', 'Isi salah satu: customer_id (pelanggan terdaftar) atau nama_pelanggan (pembeli umum)');
@@ -117,8 +116,8 @@ final class TransactionController
         $id = (int) Db::tx(static fn() => Db::val(
             'SELECT o_id FROM buat_penjualan(
                  CAST(:staff AS integer), CAST(:items AS jsonb), CAST(:cust AS integer),
-                 CAST(:nama AS text), CAST(:disk AS integer), CAST(:jam AS integer))',
-            ['staff' => $user['id'], 'items' => $json, 'cust' => $cust, 'nama' => $nama, 'disk' => $disk, 'jam' => $jam]
+                 CAST(:nama AS text), CAST(:jam AS integer))',
+            ['staff' => $user['id'], 'items' => $json, 'cust' => $cust, 'nama' => $nama, 'jam' => $jam]
         ));
         Http::ok(Transactions::find($id), null, 201);
     }
@@ -171,7 +170,7 @@ final class TransactionController
 
     /**
      * PATCH /api/admin/transactions/{id}/status
-     * {"status":"COMPLETED","metode_bayar":"TUNAI","diskon":5000}  atau  {"status":"CANCELLED","catatan":"..."}
+     * {"status":"COMPLETED","metode_bayar":"TUNAI"} atau {"status":"CANCELLED","catatan":"..."}
      * COMPLETED = dibayar & barang diserahkan/diterima -> stok fisik berubah (trigger di database).
      */
     public static function updateStatus(array $params, ?array $user): void
@@ -179,7 +178,6 @@ final class TransactionController
         $in      = new Input(Http::body());
         $status  = $in->enum('status', ['COMPLETED', 'CANCELLED']);
         $metode  = $in->enum('metode_bayar', ['TUNAI', 'TRANSFER', 'QRIS'], false);
-        $diskon  = $in->int('diskon', 0, 2000000000, false);
         $catatan = $in->str('catatan', 1, 500, false);
         $in->check();
 
@@ -198,11 +196,10 @@ final class TransactionController
             "UPDATE transactions
                 SET status       = :s,
                     metode_bayar = COALESCE(CAST(:m AS varchar), metode_bayar),
-                    diskon       = COALESCE(CAST(:d AS integer), diskon),
                     catatan      = COALESCE(CAST(:c AS text), catatan),
                     diselesaikan_oleh = CAST(:actor AS integer)
               WHERE id = :id AND status = 'PENDING'",
-            ['s' => $status, 'm' => $metode, 'd' => $diskon, 'c' => $catatan,
+            ['s' => $status, 'm' => $metode, 'c' => $catatan,
              'actor' => $status === 'COMPLETED' ? $user['id'] : null, 'id' => $params['id']]
         );
         if ($n === 0) {

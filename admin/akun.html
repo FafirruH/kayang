@@ -112,6 +112,7 @@
             <tr>
               <th scope="col" data-sort="nama_lengkap">Nama</th>
               <th scope="col">No. WhatsApp</th>
+              <th scope="col">Alamat</th>
               <th scope="col" data-sort="role">Role</th>
               <th scope="col" data-sort="aktif">Status</th>
               <th scope="col" data-sort="jumlah_transaksi">Transaksi</th>
@@ -121,7 +122,7 @@
           </thead>
           <tbody>
             <tr class="data-table__empty">
-              <td colspan="7">Memuat data...</td>
+              <td colspan="8">Memuat data...</td>
             </tr>
           </tbody>
         </table>
@@ -156,6 +157,12 @@
           <input class="form-input" id="akun-telp" name="no_telepon" type="tel"
                  placeholder="08xxxxxxxxxx" />
           <p class="form-field__error" id="akun-telp-error" hidden></p>
+        </div>
+        <div class="form-field">
+          <label class="form-field__label" for="akun-alamat">Alamat</label>
+          <textarea class="form-input" id="akun-alamat" name="alamat" maxlength="500" rows="3"
+                    placeholder="Masukkan alamat lengkap"></textarea>
+          <p class="form-field__error" id="akun-alamat-error" hidden></p>
         </div>
         <div class="form-field">
           <label class="form-field__label" for="akun-role">Role</label>

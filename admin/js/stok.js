@@ -55,7 +55,8 @@
                 ? '<button class="icon-btn icon-btn--danger" type="button" data-delete' +
                     ' aria-label="Nonaktifkan ' + esc(p.nama_barang) + '">' +
                     '<img src="assets/icons/trash.svg" alt="" /></button>'
-                : "") +
+                : '<button class="btn btn--sm btn--ghost" type="button" data-activate' +
+                    ' aria-label="Aktifkan ' + esc(p.nama_barang) + '">Aktifkan</button>') +
             "</span>" +
           "</td>" +
         "</tr>"
@@ -67,6 +68,34 @@
   var tbody = document.querySelector("#stok-table tbody");
   if (tbody) {
     tbody.addEventListener("click", function (e) {
+      var activateBtn = e.target.closest("[data-activate]");
+      if (activateBtn) {
+        var activateRow = activateBtn.closest("tr");
+        var activateName = activateRow.querySelector(".item-name__text").textContent.trim();
+        window.SLDialog.confirm({
+          title: "Aktifkan Barang?",
+          message: 'Barang "' + activateName.replace(/\s+Nonaktif$/, "") + '" akan aktif kembali dan muncul di daftar pelanggan.',
+          danger: false,
+          confirmLabel: "Ya, Aktifkan"
+        }).then(function (confirmed) {
+          if (!confirmed) return;
+          activateBtn.disabled = true;
+          SLApi.put("/api/admin/products/" + activateRow.dataset.id, { aktif: true })
+            .then(function () {
+              if (SLApi.notifyStockChanged) SLApi.notifyStockChanged();
+              dt.load();
+            })
+            .catch(function (err) {
+              activateBtn.disabled = false;
+              window.SLDialog.alert({
+                title: "Gagal Mengaktifkan Barang",
+                message: err && err.message ? err.message : "Terjadi kesalahan."
+              });
+            });
+        });
+        return;
+      }
+
       var btn = e.target.closest("[data-delete]");
       if (!btn) return;
       var row  = btn.closest("tr");
@@ -80,7 +109,10 @@
         if (!confirmed) return;
         btn.disabled = true;
         SLApi.del("/api/admin/products/" + row.dataset.id)
-          .then(function () { dt.load(); })
+          .then(function () {
+            if (SLApi.notifyStockChanged) SLApi.notifyStockChanged();
+            dt.load();
+          })
           .catch(function (err) {
             btn.disabled = false;
             window.SLDialog.alert({

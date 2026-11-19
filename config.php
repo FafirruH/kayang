@@ -24,7 +24,7 @@ $config = [
             ',',
             $env('ALLOWED_ORIGINS', 'http://localhost:5500,http://127.0.0.1:5500')
         )))),
-        'wa_number'       => $env('WA_NUMBER', '6281234567890'),  // nomor WhatsApp admin
+        'wa_number'       => $env('WA_NUMBER', '62895326202002'),  // nomor WhatsApp admin
         'hold_hours'      => 24,   // lama stok ditahan untuk pesanan pelanggan
         'per_page'        => 12,   // ringan untuk perangkat low end
         'max_per_page'    => 50,

@@ -29,7 +29,8 @@
     id: 1,
     username: "admin",
     name: "Admin Utama",
-    no_whatsapp: "6281234567890",
+    no_whatsapp: "62895326202002",
+    alamat: "Jl. Brantas No.26, Ngaglik, Kec. Batu, Kota Batu, Jawa Timur 65311",
     password: "admin123",
     role: "admin",
     joined: "2024-01-01",
@@ -112,6 +113,15 @@
     var hasDemo = list.some(function (a) { return a && a.id === DEMO_ADMIN.id && a.protected; });
     if (!hasDemo) {
       list.unshift(clone(DEMO_ADMIN));
+      writeJSON(ACCOUNTS_KEY, list);
+    } else {
+      list.forEach(function (account) {
+        if (account && account.id === DEMO_ADMIN.id && account.protected) {
+          account.name = DEMO_ADMIN.name;
+          account.no_whatsapp = DEMO_ADMIN.no_whatsapp;
+          account.alamat = DEMO_ADMIN.alamat;
+        }
+      });
       writeJSON(ACCOUNTS_KEY, list);
     }
     return list;
@@ -296,6 +306,7 @@
       username: user.username,
       nama_lengkap: (acc && acc.name) || user.name,
       no_telepon: (acc && acc.no_whatsapp) || "",
+      alamat: (acc && acc.alamat) || "",
       role: user.role
     };
   }
@@ -318,6 +329,7 @@
     }
     if (changes.nama_lengkap) acc.name = String(changes.nama_lengkap).trim();
     if (changes.no_telepon) acc.no_whatsapp = String(changes.no_telepon).trim();
+    if (Object.prototype.hasOwnProperty.call(changes, "alamat")) acc.alamat = String(changes.alamat).trim();
     if (changes.password) acc.password = String(changes.password);
     if (!saveAccounts(list)) return { ok: false, error: "Penyimpanan browser tidak tersedia." };
     writeJSON(SESSION_KEY, { username: acc.username, role: acc.role });

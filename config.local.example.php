@@ -11,6 +11,6 @@ return [
     ],
     'app' => [
         'debug' => false,
-        'wa_number' => '6281234567890',
+        'wa_number' => '62895326202002',
     ],
 ];

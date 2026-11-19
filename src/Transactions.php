@@ -7,7 +7,7 @@ namespace App;
 final class Transactions
 {
     public const COLS = 'transaction_id, no_faktur, tipe_transaksi, status, tgl_transaksi, expired_at, completed_at,
-        customer_id, nama_pelanggan, nama_supplier, dicatat_oleh, jumlah_jenis, jumlah_item, subtotal, diskon, total_bayar';
+        customer_id, nama_pelanggan, nama_supplier, dicatat_oleh, jumlah_jenis, jumlah_item, subtotal, total_bayar';
 
     /** Rapikan status pesanan yang lewat batas penahanan (idempotent). */
     public static function refreshExpired(): void

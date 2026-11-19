@@ -277,7 +277,7 @@ final class ReportController
     private static function profit(int $months): array
     {
         return Db::all(
-            "SELECT to_char(bulan, 'YYYY-MM') AS bulan, total_transaksi, penjualan_kotor, total_diskon,
+            "SELECT to_char(bulan, 'YYYY-MM') AS bulan, total_transaksi, penjualan_kotor,
                     pendapatan_bersih, total_modal, laba_kotor
                FROM v_laporan_laba_rugi
               ORDER BY v_laporan_laba_rugi.bulan DESC

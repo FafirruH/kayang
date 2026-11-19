@@ -12,8 +12,8 @@
   if (!form) return;
 
   var message = document.getElementById("auth-msg");
-  var FIELDS = ["username", "nama_lengkap", "no_telepon", "password"];
-  var original = { username: "", nama_lengkap: "", no_telepon: "" };
+  var FIELDS = ["username", "nama_lengkap", "no_telepon", "alamat", "password"];
+  var original = { username: "", nama_lengkap: "", no_telepon: "", alamat: "" };
 
   var modal = document.getElementById("verify-modal");
   var verifyForm = document.getElementById("verify-form");
@@ -56,11 +56,13 @@
     original = {
       username: data.username || "",
       nama_lengkap: data.nama_lengkap || "",
-      no_telepon: data.no_telepon || ""
+      no_telepon: data.no_telepon || "",
+      alamat: data.alamat || ""
     };
     form.elements.username.value = original.username;
     form.elements.nama_lengkap.value = original.nama_lengkap;
     form.elements.no_telepon.value = original.no_telepon;
+    form.elements.alamat.value = original.alamat;
     form.elements.password.value = "";
   }
 
@@ -79,6 +81,7 @@
       username: form.elements.username.value.trim(),
       nama_lengkap: form.elements.nama_lengkap.value.trim(),
       no_telepon: form.elements.no_telepon.value.trim(),
+      alamat: form.elements.alamat.value.trim(),
       password: form.elements.password.value
     };
     var ok = true;
@@ -88,6 +91,7 @@
     else if (!/^[A-Za-z0-9_.]+$/.test(values.username)) fail("username", "Username hanya boleh huruf, angka, titik, atau garis bawah.");
     if (values.nama_lengkap.length < 2 || values.nama_lengkap.length > 100) fail("nama_lengkap", "Nama lengkap 2-100 karakter.");
     if (!/^(08|62)\d{8,13}$/.test(values.no_telepon.replace(/[\s\-().+]/g, ""))) fail("no_telepon", "Masukkan nomor WhatsApp yang valid, contoh: 081234567890.");
+    if (values.alamat.length > 500) fail("alamat", "Alamat maksimal 500 karakter.");
     if (values.password !== "" && (values.password.length < 6 || values.password.length > 72)) fail("password", "Password baru 6-72 karakter.");
     if (!ok) return null;
 
@@ -95,6 +99,7 @@
     if (values.username.toLowerCase() !== original.username.toLowerCase()) changes.username = values.username;
     if (values.nama_lengkap !== original.nama_lengkap) changes.nama_lengkap = values.nama_lengkap;
     if (values.no_telepon !== original.no_telepon) changes.no_telepon = values.no_telepon;
+    if (values.alamat !== original.alamat) changes.alamat = values.alamat;
     if (values.password !== "") changes.password = values.password;
     return changes;
   }
@@ -155,7 +160,8 @@
     fill({
       username: data.username || original.username,
       nama_lengkap: data.nama_lengkap || original.nama_lengkap,
-      no_telepon: data.no_telepon || original.no_telepon
+      no_telepon: data.no_telepon || original.no_telepon,
+      alamat: data.alamat || original.alamat
     });
     showMessage("Perubahan akun berhasil disimpan.", "ok");
     window.scrollTo({ top: 0, behavior: "smooth" });

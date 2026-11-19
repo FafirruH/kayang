@@ -7,6 +7,7 @@ DROP VIEW     IF EXISTS v_laporan_laba_rugi, v_laporan_adj_out, v_kartu_stok, v_
 DROP TABLE    IF EXISTS transaction_detail_costs, inventory_batches, transaction_details, transactions, products, suppliers, users CASCADE;
 DROP SEQUENCE IF EXISTS seq_faktur_out, seq_faktur_in, seq_faktur_adj;
 DROP FUNCTION IF EXISTS buat_penjualan(integer, jsonb, integer, text, integer, integer);
+DROP FUNCTION IF EXISTS buat_penjualan(integer, jsonb, integer, text, integer);
 DROP FUNCTION IF EXISTS expire_pending();
 DROP FUNCTION IF EXISTS fn_transaksi_awal();
 DROP FUNCTION IF EXISTS fn_transaksi_pencatat_valid();
@@ -75,7 +76,6 @@ CREATE TABLE transactions (
   id_supplier               INTEGER      REFERENCES suppliers (id) ON DELETE RESTRICT,
   dicatat_oleh              INTEGER      NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
   diselesaikan_oleh         INTEGER      REFERENCES users (id) ON DELETE RESTRICT,
-  diskon                    INTEGER      NOT NULL DEFAULT 0 CHECK (diskon >= 0),
   metode_bayar              VARCHAR(10)  CHECK (metode_bayar IN ('TUNAI', 'TRANSFER', 'QRIS')),
   no_referensi              VARCHAR(50),
   catatan                   TEXT,
@@ -205,16 +205,6 @@ BEGIN
     RAISE EXCEPTION 'Pencatat harus staf aktif atau pelanggan aktif yang membuat pesanan sendiri'
       USING ERRCODE = 'check_violation';
   END IF;
-  IF v_peran = 'CUSTOMER' AND NEW.diskon <> 0 THEN
-    IF TG_OP = 'INSERT' THEN
-      RAISE EXCEPTION 'Diskon pesanan pelanggan hanya dapat ditetapkan saat diselesaikan staf'
-        USING ERRCODE = 'check_violation';
-    ELSIF OLD.status <> 'PENDING' OR NEW.status <> 'COMPLETED'
-          OR NEW.diselesaikan_oleh IS NULL THEN
-      RAISE EXCEPTION 'Diskon pesanan pelanggan hanya dapat ditetapkan saat diselesaikan staf'
-        USING ERRCODE = 'check_violation';
-    END IF;
-  END IF;
   RETURN NEW;
 END $$;
 
@@ -223,7 +213,7 @@ CREATE TRIGGER trg_transaksi_pencatat_valid
   FOR EACH ROW EXECUTE FUNCTION fn_transaksi_pencatat_valid();
 
 CREATE TRIGGER trg_transaksi_pencatat_update_valid
-  BEFORE UPDATE OF dicatat_oleh, tipe_transaksi, id_pelanggan, diskon, diselesaikan_oleh ON transactions
+  BEFORE UPDATE OF dicatat_oleh, tipe_transaksi, id_pelanggan, diselesaikan_oleh ON transactions
   FOR EACH ROW EXECUTE FUNCTION fn_transaksi_pencatat_valid();
 
 CREATE FUNCTION fn_transaksi_immutable() RETURNS trigger
@@ -378,11 +368,6 @@ BEGIN
       RAISE EXCEPTION 'Transaksi % belum memiliki barang', NEW.no_faktur
         USING ERRCODE = 'check_violation';
     END IF;
-    IF NEW.diskon > v_subtotal THEN
-      RAISE EXCEPTION 'Diskon (%) melebihi subtotal (%)', NEW.diskon, v_subtotal
-        USING ERRCODE = 'check_violation';
-    END IF;
-
     FOR r IN
       SELECT id_barang, jumlah, harga_satuan_real
         FROM transaction_details
@@ -511,8 +496,7 @@ SELECT t.id                                           AS transaction_id,
        COUNT(td.id_barang)                            AS jumlah_jenis,
        COALESCE(SUM(td.jumlah), 0)                    AS jumlah_item,
        COALESCE(SUM(td.subtotal), 0)                  AS subtotal,
-       t.diskon,
-       COALESCE(SUM(td.subtotal), 0) - t.diskon       AS total_bayar
+       COALESCE(SUM(td.subtotal), 0)                  AS total_bayar
 FROM transactions t
 JOIN users a                    ON a.id = t.dicatat_oleh
 LEFT JOIN users c               ON c.id = t.id_pelanggan
@@ -545,7 +529,6 @@ CREATE VIEW v_laporan_laba_rugi AS
 WITH per_transaksi AS (
   SELECT t.id,
          date_trunc('month', t.selesai_pada) AS bulan,
-         t.diskon,
          SUM(td.subtotal)                    AS penjualan,
          SUM(COALESCE(c.modal, td.jumlah * td.harga_modal)) AS modal
   FROM transactions t
@@ -562,10 +545,9 @@ WITH per_transaksi AS (
 SELECT bulan,
        COUNT(*)                                  AS total_transaksi,
        SUM(penjualan)                            AS penjualan_kotor,
-       SUM(diskon)                               AS total_diskon,
-       SUM(penjualan) - SUM(diskon)              AS pendapatan_bersih,
+       SUM(penjualan)                            AS pendapatan_bersih,
        SUM(modal)                                AS total_modal,
-       SUM(penjualan) - SUM(diskon) - SUM(modal) AS laba_kotor
+       SUM(penjualan) - SUM(modal)               AS laba_kotor
 FROM per_transaksi
 GROUP BY bulan;
 
@@ -616,7 +598,6 @@ CREATE FUNCTION buat_penjualan(
   p_items          JSONB,
   p_id_pelanggan   INTEGER DEFAULT NULL,
   p_nama_pelanggan TEXT    DEFAULT NULL,
-  p_diskon         INTEGER DEFAULT 0,
   p_jam_tahan      INTEGER DEFAULT 24
 ) RETURNS TABLE (o_id INTEGER, o_no_faktur TEXT, o_kedaluwarsa_pada TIMESTAMPTZ, o_total BIGINT)
 LANGUAGE plpgsql AS $$
@@ -630,8 +611,8 @@ BEGIN
     RAISE EXCEPTION 'Keranjang kosong' USING ERRCODE = 'invalid_parameter_value';
   END IF;
 
-  INSERT INTO transactions (tipe_transaksi, id_pelanggan, nama_pelanggan, dicatat_oleh, diskon, kedaluwarsa_pada)
-  VALUES ('OUT', p_id_pelanggan, p_nama_pelanggan, p_dicatat_oleh, p_diskon,
+  INSERT INTO transactions (tipe_transaksi, id_pelanggan, nama_pelanggan, dicatat_oleh, kedaluwarsa_pada)
+  VALUES ('OUT', p_id_pelanggan, p_nama_pelanggan, p_dicatat_oleh,
           now() + make_interval(hours => p_jam_tahan))
   RETURNING id, no_faktur, kedaluwarsa_pada INTO v_id, v_no, v_exp;
 
@@ -647,12 +628,7 @@ BEGIN
   SELECT SUM(subtotal) INTO v_subtotal
     FROM transaction_details WHERE id_transaksi = v_id;
 
-  IF p_diskon > v_subtotal THEN
-    RAISE EXCEPTION 'Diskon (%) melebihi subtotal (%)', p_diskon, v_subtotal
-      USING ERRCODE = 'check_violation';
-  END IF;
-
-  RETURN QUERY SELECT v_id, v_no, v_exp, v_subtotal - p_diskon;
+  RETURN QUERY SELECT v_id, v_no, v_exp, v_subtotal;
 END $$;
 
 -- =============================================================================
@@ -669,8 +645,8 @@ BEGIN
     'admin',
     crypt(v_admin_password, gen_salt('bf', 12)),
     'Admin Utama',
-    '081234567890',
-    'Jl. Raya Contoh No. 1',
+    '62895326202002',
+    'Jl. Brantas No.26, Ngaglik, Kec. Batu, Kota Batu, Jawa Timur 65311',
     'ADMIN'
   );
   RAISE NOTICE 'Initial admin password (save it now): %', v_admin_password;

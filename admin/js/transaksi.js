@@ -480,7 +480,6 @@
       e.preventDefault();
       var custId   = saleCustomerSelect;
       var custNama = saleCustomerName;
-      var diskon   = saleForm.querySelector("#sale-diskon");
       var items = Array.prototype.map.call(saleItems.querySelectorAll(".sale-item-row"), function(row){
         var pid   = parseInt(row.querySelector(".sale-item-product").value,10);
         var qty   = parseInt(row.querySelector(".sale-item-qty").value,10);
@@ -494,7 +493,7 @@
         if (saleStatus) { saleStatus.textContent="Tambahkan minimal satu barang."; saleStatus.hidden=false; }
         return;
       }
-      var body = { items:items, diskon: diskon?parseInt(diskon.value,10)||0:0 };
+      var body = { items:items };
       if (custId   && custId.value)   body.customer_id    = parseInt(custId.value,10);
       if (custNama && custNama.value) body.nama_pelanggan = custNama.value.trim();
       if (!body.customer_id && !body.nama_pelanggan) {

@@ -17,7 +17,6 @@ final class Wa
         return implode("\n", $lines);
     }
 
-    /** "0812-3456-789" -> "628123456789" */
     public static function normalizePhone(string $phone): ?string
     {
         $d = preg_replace('/\D+/', '', $phone) ?? '';

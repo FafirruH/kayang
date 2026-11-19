@@ -7,26 +7,20 @@
 (function () {
   "use strict";
 
-  var WA_NUMBER = (window.SL_CONFIG && window.SL_CONFIG.WA_NUMBER) || "6281234567890";
+  var WA_NUMBER = (window.SL_CONFIG && window.SL_CONFIG.WA_NUMBER) || "62895326202002";
   var ORDER_KEY = "sl_last_order_v1";   // ringkasan pesanan terakhir untuk pesanan.html
 
   var itemsContainer = document.getElementById("cart-items");
   var subtotalEl     = document.getElementById("cart-subtotal");
-  var discountEl     = document.getElementById("cart-discount");
   var totalEl        = document.getElementById("cart-total");
   var countLabel     = document.getElementById("cart-count-label");
   var checkoutBtn    = document.getElementById("btn-checkout");
   var checkoutError  = document.getElementById("checkout-error");
   var emptyState     = document.getElementById("cart-empty");
   var cartWrap       = document.getElementById("cart-wrap");
-  var voucherInput   = document.getElementById("voucher-code");
-  var voucherBtn     = document.getElementById("voucher-apply");
-  var voucherMsg     = document.getElementById("voucher-msg");
-
   if (!itemsContainer) return;
   if (!window.SLCart) { console.error("[keranjang.js] cart.js belum dimuat"); return; }
 
-  var discount = 0;
   var stockInfo = {};   // product_id -> { status, tersedia } (dari /api/products)
 
   /* ---------- Format ---------- */
@@ -57,8 +51,7 @@
   function render() {
     var items = SLCart.getItems();
     var sub   = SLCart.total();
-    var disc  = Math.min(discount, sub);
-    var tot   = Math.max(sub - disc, 0);
+    var tot   = sub;
 
     if (countLabel) countLabel.textContent = SLCart.count() + " barang";
 
@@ -98,7 +91,6 @@
     }).join("");
 
     if (subtotalEl) subtotalEl.textContent = money(sub);
-    if (discountEl) discountEl.innerHTML   = disc > 0 ? "&minus; " + money(disc) : "&ndash;";
     if (totalEl)    totalEl.textContent    = money(tot);
   }
 
@@ -131,29 +123,6 @@
     }
   });
 
-  /* ---------- Voucher (placeholder; kirim ke backend jika ada) ---------- */
-  function setVoucherMsg(text, type) {
-    if (!voucherMsg) return;
-    voucherMsg.textContent = text;
-    voucherMsg.className = "cart2-voucher__hint" + (type ? " cart2-voucher__hint--" + type : "");
-  }
-
-  if (voucherBtn && voucherInput) {
-    voucherBtn.addEventListener("click", function () {
-      var code = voucherInput.value.trim().toUpperCase();
-      if (!code) return;
-      // Contoh: kode DISKON5000 = potongan Rp 5.000 (ganti dengan logika backend)
-      if (code === "DISKON5000") {
-        discount = 5000;
-        setVoucherMsg("Voucher dipakai: potongan Rp 5.000", "ok");
-      } else {
-        discount = 0;
-        setVoucherMsg("Kode voucher tidak dikenal.", "err");
-      }
-      render();
-    });
-  }
-
   /* ---------- Checkout: simpan ke backend, lalu buka halaman konfirmasi ---------- */
   function showCheckoutError(text) {
     if (!checkoutError) return;
@@ -166,8 +135,7 @@
     if (items.length === 0) return;
 
     var sub  = SLCart.total();
-    var disc = Math.min(discount, sub);
-    var tot  = Math.max(sub - disc, 0);
+    var tot  = sub;
     var btnSpan = checkoutBtn.querySelector("span");
 
     showCheckoutError("");
@@ -201,7 +169,6 @@
         invoice:  invoice,
         items:    items.map(function (i) { return { nama: i.nama_barang, qty: i.qty, harga: i.harga_jual }; }),
         subtotal: sub,
-        discount: disc,
         total:    tot,
         wa_url:   "https://wa.me/" + waNum + "?text=" + encodeURIComponent(msg)
       };
@@ -214,8 +181,7 @@
     var orderBody = {
       items: items.map(function (i) {
         return { product_id: i.product_id, jumlah: i.qty };
-      }),
-      diskon: disc
+      })
     };
 
     SLApi.post("/api/orders", orderBody)

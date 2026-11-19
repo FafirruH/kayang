@@ -43,7 +43,7 @@ final class UserController
 
         $total = (int) Db::val("SELECT COUNT(*) FROM users u WHERE $w", $args);
         $rows  = Db::all(
-            "SELECT u.id, u.nama_pengguna AS username, u.nama_lengkap, u.no_telepon,
+            "SELECT u.id, u.nama_pengguna AS username, u.nama_lengkap, u.no_telepon, u.alamat,
                     u.peran AS role, u.aktif, u.dibuat_pada AS created_at,
                     CASE WHEN LOWER(u.nama_pengguna) = 'admin' THEN 1 ELSE 0 END AS admin_utama,
                     COUNT(t.id) AS jumlah_transaksi
@@ -77,7 +77,7 @@ final class UserController
         $row = Db::one(
             'INSERT INTO users (nama_pengguna, kata_sandi_hash, nama_lengkap, no_telepon, alamat, peran)
              VALUES (:u, :h, :n, :t, :a, :r)
-             RETURNING id, nama_pengguna AS username, nama_lengkap, no_telepon, peran AS role, aktif',
+             RETURNING id, nama_pengguna AS username, nama_lengkap, no_telepon, alamat, peran AS role, aktif',
             [
                 'u' => strtolower((string) $username),
                 'h' => password_hash((string) $password, PASSWORD_BCRYPT),
@@ -95,7 +95,7 @@ final class UserController
             throw new HttpException('Akun tidak ditemukan', 404);
         }
         if (strtolower((string) $target['username']) === 'admin') {
-            throw new HttpException('Akun Admin Utama tidak dapat diubah dari menu Akun. Gunakan Pengaturan WA untuk mengubah nomor WhatsApp.', 422);
+            throw new HttpException('Akun Admin Utama tidak dapat diedit atau dinonaktifkan', 403);
         }
 
         $in = new Input(Http::body());
@@ -112,8 +112,12 @@ final class UserController
         if ($v !== null) { $f['nama_lengkap'] = $v; }
         $v = $in->str('no_telepon', 8, 20, false, '/^[0-9+\- ]+$/');
         if ($v !== null) { $f['no_telepon'] = $v; }
-        $v = $in->str('alamat', 1, 500, false);
-        if ($v !== null) { $f['alamat'] = $v; }
+        if ($in->has('alamat')) {
+            $rawAddress = $in->raw('alamat');
+            $f['alamat'] = $rawAddress === null || (is_string($rawAddress) && trim($rawAddress) === '')
+                ? null
+                : $in->str('alamat', 1, 500, false);
+        }
         if ($in->has('password')) {
             $pw = $in->password('password', 6, 72);
             if ($pw !== null) { $f['kata_sandi_hash'] = password_hash($pw, PASSWORD_BCRYPT); }
@@ -132,7 +136,7 @@ final class UserController
         $set = implode(', ', array_map(static fn(string $k): string => "$k = :$k", array_keys($f)));
         $row = Db::one(
             "UPDATE users SET $set WHERE id = :id
-             RETURNING id, nama_pengguna AS username, nama_lengkap, no_telepon, peran AS role, aktif",
+             RETURNING id, nama_pengguna AS username, nama_lengkap, no_telepon, alamat, peran AS role, aktif",
             $f + ['id' => $params['id']]
         );
         if ($row === null) {

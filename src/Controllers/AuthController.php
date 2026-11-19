@@ -54,7 +54,7 @@ final class AuthController
 
         $row = Db::one(
             'SELECT id, nama_pengguna AS username, kata_sandi_hash AS password_hash,
-                    nama_lengkap, no_telepon, peran AS role
+                    nama_lengkap, no_telepon, alamat, peran AS role
                FROM users WHERE nama_pengguna = :u AND aktif',
             ['u' => $username]
         );
@@ -86,7 +86,7 @@ final class AuthController
 
     /**
      * PATCH /api/auth/me - pelanggan mengubah akunnya sendiri.
-     * {current_password (wajib), username?, nama_lengkap?, no_telepon?, password? (password baru)}
+     * {current_password (wajib), username?, nama_lengkap?, no_telepon?, alamat?, password? (password baru)}
      * Password saat ini selalu diverifikasi ulang sebelum perubahan disimpan.
      */
     public static function updateMe(array $params, ?array $user): void
@@ -101,6 +101,12 @@ final class AuthController
         if ($v !== null) { $f['nama_lengkap'] = $v; }
         $v = $in->str('no_telepon', 8, 20, false, '/^[0-9+\\- ]+$/');
         if ($v !== null) { $f['no_telepon'] = $v; }
+        if ($in->has('alamat')) {
+            $rawAddress = $in->raw('alamat');
+            $f['alamat'] = $rawAddress === null || (is_string($rawAddress) && trim($rawAddress) === '')
+                ? null
+                : $in->str('alamat', 1, 500, false);
+        }
         if ($in->has('password') && $in->raw('password') !== '' && $in->raw('password') !== null) {
             $pw = $in->password('password', 6, 72);
             if ($pw !== null) { $f['kata_sandi_hash'] = password_hash($pw, PASSWORD_BCRYPT); }
@@ -127,7 +133,7 @@ final class AuthController
         $set = implode(', ', array_map(static fn(string $k): string => "$k = :$k", array_keys($f)));
         $row = Db::one(
             "UPDATE users SET $set WHERE id = :id
-             RETURNING id, nama_pengguna AS username, nama_lengkap, no_telepon, peran AS role",
+             RETURNING id, nama_pengguna AS username, nama_lengkap, no_telepon, alamat, peran AS role",
             $f + ['id' => $user['id']]
         );
         Http::ok($row);

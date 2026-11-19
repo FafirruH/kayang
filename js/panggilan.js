@@ -8,7 +8,7 @@
 (function () {
   "use strict";
 
-  var WA_NUMBER  = (window.SL_CONFIG && window.SL_CONFIG.WA_NUMBER) || "6281234567890";
+  var WA_NUMBER  = (window.SL_CONFIG && window.SL_CONFIG.WA_NUMBER) || "62895326202002";
 
   var form    = document.querySelector(".call-form");
   var btnSend = form ? form.querySelector(".btn-send") : null;

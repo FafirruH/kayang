@@ -9,7 +9,7 @@ window.SL_CONFIG = {
   // Ambil folder proyek dari lokasi config.js; API dilayani Apache pada host yang sama.
   API_BASE: apiBase,
 
-  WA_NUMBER: "6281234567890",   // nomor WhatsApp admin (format internasional, tanpa +)
+  WA_NUMBER: "62895326202002",   // nomor WhatsApp admin (format internasional, tanpa +)
   CATALOG_PAGE_SIZE: 12,        // jumlah kartu per "Muat lebih banyak" (ringan untuk HP)
   ADMIN_PAGE_SIZE: 15,          // baris tabel stok per halaman
   REFRESH_MS: 30000             // segarkan otomatis tiap 30 detik saat tab terlihat

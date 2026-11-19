@@ -39,10 +39,6 @@
     list.appendChild(li);
   });
 
-  if (order.discount > 0) {
-    document.getElementById("order-discount-row").hidden = false;
-    document.getElementById("order-discount").textContent = "\u2212 " + money(order.discount);
-  }
   document.getElementById("order-total").textContent = money(order.total);
 
   var wa = document.getElementById("order-wa");

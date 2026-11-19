@@ -32,7 +32,7 @@ final class OrderController
         $id = (int) Db::tx(static fn() => Db::val(
             'SELECT o_id FROM buat_penjualan(
                  CAST(:staff AS integer), CAST(:items AS jsonb), CAST(:cust AS integer),
-                 NULL, 0, CAST(:hours AS integer))',
+                 NULL, CAST(:hours AS integer))',
             [
                 'staff' => $user['id'],      // pelanggan mencatat pesanannya sendiri
                 'items' => $json,

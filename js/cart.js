@@ -168,7 +168,6 @@
     return getItems().reduce(function (s, i) { return s + i.qty; }, 0);
   }
 
-  /** Total harga sebelum diskon. */
   function total() {
     return getItems().reduce(function (s, i) { return s + i.qty * i.harga_jual; }, 0);
   }

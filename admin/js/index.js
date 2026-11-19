@@ -131,7 +131,6 @@
         "<tr>" +
           "<td>" + escHtml(r.bulan) + "</td>" +
           '<td class="data-table__soft">' + money(r.penjualan_kotor) + "</td>" +
-          '<td class="data-table__soft">' + money(r.total_diskon) + "</td>" +
           '<td class="' + cls + '">' + money(laba) + "</td>" +
         "</tr>"
       );
