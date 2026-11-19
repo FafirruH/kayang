@@ -349,7 +349,7 @@ Buka `index.html` via Live Server (port 5500). Backend tetap jalan di Apache. Pa
 
 | Halaman | URL | Keterangan |
 |---------|-----|-----------|
-| Dashboard | `/admin/index.html` | Statistik, transaksi terbaru, produk terlaris |
+| Dashboard | `/admin/index.html` | Statistik, transaksi terbaru, peringatan stok menipis dan habis |
 | Stok | `/admin/stok.html` | Tabel stok + search/sort/pagination |
 | Tambah/Edit Barang | `/admin/stok.html` | Modal tambah/edit barang |
 | Transaksi | `/admin/transaksi.html` | Penjualan, Barang Masuk, dan kartu stok |

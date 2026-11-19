@@ -3,7 +3,7 @@
    Mengambil data dari GET /api/admin/dashboard lalu mengisi:
      - Kartu statistik (pendapatan, pesanan pending, stok kritis, pelanggan)
      - Tabel transaksi terbaru
-     - Daftar produk terlaris
+     - Daftar barang yang stoknya menipis atau habis
      - Ringkasan laba per bulan
    ========================================================================== */
 
@@ -86,24 +86,29 @@
     }).join("");
   }
 
-  /* ---------- Top produk ---------- */
-  function fillTopProducts(rows) {
-    var ul = document.getElementById("top-products-list");
+  /* ---------- Peringatan stok ---------- */
+  function fillStockAlerts(rows) {
+    var ul = document.getElementById("stock-alert-list");
     if (!ul) return;
 
     if (!rows || rows.length === 0) {
-      ul.innerHTML = '<li class="top-item top-item--empty">Belum ada data penjualan.</li>';
+      ul.innerHTML = '<li class="stock-alert-item stock-alert-item--empty">Tidak ada barang yang stoknya menipis atau habis.</li>';
       return;
     }
 
-    ul.innerHTML = rows.map(function (p, idx) {
+    ul.innerHTML = rows.map(function (p) {
+      var isEmpty = p.status_stok === "Habis";
+      var statusClass = isEmpty ? "badge--off" : "badge--pending";
+      var stockText = isEmpty
+        ? "Tidak ada stok tersedia"
+        : "Tersedia " + (Number(p.tersedia) || 0) + " unit · Minimal " + (Number(p.stok_minimal) || 0) + " unit";
       return (
-        '<li class="top-item">' +
-          '<span class="top-item__rank">' + (idx + 1) + "</span>" +
-          '<span class="top-item__name">' + escHtml(p.nama_barang) + "</span>" +
-          '<span class="top-item__meta">' +
-            escHtml(String(p.terjual)) + " unit &bull; " + money(p.omzet) +
-          "</span>" +
+        '<li class="stock-alert-item">' +
+          '<div class="stock-alert-item__details">' +
+            '<span class="stock-alert-item__name">' + escHtml(p.nama_barang) + "</span>" +
+            '<span class="stock-alert-item__meta">' + escHtml(p.kode_barang) + " · " + escHtml(stockText) + "</span>" +
+          "</div>" +
+          '<span class="badge ' + statusClass + '">' + (isEmpty ? "Habis" : "Hampir habis") + "</span>" +
         "</li>"
       );
     }).join("");
@@ -193,7 +198,7 @@
         var d = res.data || res;
         if (d.stats)        fillStats(d.stats);
         if (d.recent)       fillRecent(d.recent);
-        if (d.top_products) fillTopProducts(d.top_products);
+        if (d.stock_alerts) fillStockAlerts(d.stock_alerts);
         if (d.profit)       fillProfit(d.profit);
         if (d.by_category)  fillByCategory(d.by_category);
       })

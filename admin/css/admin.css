@@ -1340,10 +1340,10 @@ body:not(.page-dark) .page-subtitle,
 }
 
 /* ==========================================================================
-   Dashboard: kolom ganda, produk terlaris, kategori bar, tombol tambahan
+   Dashboard: kolom ganda, peringatan stok, kategori bar, tombol tambahan
    ========================================================================== */
 
-/* Dua kolom di dashboard (transaksi terbaru + produk terlaris) */
+/* Dua kolom di dashboard (transaksi terbaru + peringatan stok) */
 .dashboard__cols {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1360,53 +1360,50 @@ body:not(.page-dark) .page-subtitle,
   margin-bottom: 16px;
 }
 
-/* Produk terlaris */
-.top-products-list {
+/* Peringatan stok */
+.stock-alert-list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.top-item {
+.stock-alert-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   padding: 10px 16px;
   border-bottom: 1px solid var(--color-border);
   font-size: 14px;
 }
 
-.top-item:last-child { border-bottom: 0; }
+.stock-alert-item:last-child { border-bottom: 0; }
 
-.top-item--empty {
+.stock-alert-item--empty {
   color: var(--color-text-muted);
   justify-content: center;
   padding: 24px;
 }
 
-.top-item__rank {
-  flex: none;
-  width: 22px;
-  height: 22px;
-  display: grid;
-  place-items: center;
-  font-weight: 700;
-  font-size: 11px;
-  color: var(--color-primary);
-  background: rgba(252, 93, 0, 0.12);
-  border-radius: 50%;
+.stock-alert-item__details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 
-.top-item__name {
-  flex: 1;
+.stock-alert-item__name {
   font-weight: 600;
   color: var(--color-text);
 }
 
-.top-item__meta {
+.stock-alert-item__meta {
   font-size: 12px;
   color: var(--color-text-muted);
-  white-space: nowrap;
+}
+
+.stock-alert-item .badge {
+  flex: none;
 }
 
 /* Kategori bar */

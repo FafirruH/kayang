@@ -11,7 +11,7 @@ use App\Transactions;
 /** Dashboard dan laporan: memakai view serta query join/group by/having/subquery/CTE dari skema. */
 final class ReportController
 {
-    /** GET /api/admin/dashboard - kartu statistik, transaksi terbaru, terlaris, per jenis, laba rugi. */
+    /** GET /api/admin/dashboard - kartu statistik, transaksi terbaru, peringatan stok, per jenis, laba rugi. */
     public static function dashboard(array $params, ?array $user): void
     {
         Transactions::refreshExpired();
@@ -43,10 +43,22 @@ final class ReportController
         Http::ok([
             'stats'        => $stats,
             'recent'       => $recent,
-            'top_products' => self::topProducts(30, 3, 5),
+            'stock_alerts' => self::stockAlerts(),
             'by_category'  => self::byCategory(),
             'profit'       => self::profit(6),
         ]);
+    }
+
+    /** Barang aktif yang stok tersedia-nya menipis atau habis. */
+    private static function stockAlerts(): array
+    {
+        return Db::all(<<<'SQL'
+            SELECT kode_barang, nama_barang, tersedia, stok_minimal, status_stok
+              FROM v_stok_barang
+             WHERE aktif AND status_stok <> 'Tersedia'
+             ORDER BY (status_stok = 'Habis') DESC, tersedia, nama_barang
+             LIMIT 8
+            SQL);
     }
 
     /** GET /api/admin/reports/holds - pesanan yang sedang MENAHAN stok (belum bayar). */
