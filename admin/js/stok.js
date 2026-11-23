@@ -46,17 +46,21 @@
           '<td data-label="Kategori" class="data-table__muted">' + esc(p.jenis_barang) + "</td>" +
           '<td data-label="Harga">' + money(p.harga_jual) + "</td>" +
           '<td data-label="Stok">' + (p.tersedia !== undefined ? p.tersedia : p.stok) + "</td>" +
-          '<td data-label="Aksi">' +
+          '<td data-label="Aksi" class="data-table__actions">' +
             '<span class="row-actions">' +
-              '<a class="icon-btn" href="stok-form.html?id=' + p.product_id + '"' +
-                ' aria-label="Edit ' + esc(p.nama_barang) + '">' +
-                '<img src="assets/icons/pencil.svg" alt="" /></a>' +
+              window.SLActions.button("edit", {
+                tag: "a", href: "stok-form.html?id=" + p.product_id,
+                tip: "Edit data barang", label: "Edit " + p.nama_barang
+              }) +
               (p.aktif
-                ? '<button class="icon-btn icon-btn--danger" type="button" data-delete' +
-                    ' aria-label="Nonaktifkan ' + esc(p.nama_barang) + '">' +
-                    '<img src="assets/icons/trash.svg" alt="" /></button>'
-                : '<button class="btn btn--sm btn--ghost" type="button" data-activate' +
-                    ' aria-label="Aktifkan ' + esc(p.nama_barang) + '">Aktifkan</button>') +
+                ? window.SLActions.button("deactivate", {
+                    tip: "Nonaktifkan barang ini", label: "Nonaktifkan " + p.nama_barang,
+                    attrs: { "data-delete": "" }
+                  })
+                : window.SLActions.button("activate", {
+                    tip: "Aktifkan barang ini", label: "Aktifkan " + p.nama_barang,
+                    attrs: { "data-activate": "" }
+                  })) +
             "</span>" +
           "</td>" +
         "</tr>"

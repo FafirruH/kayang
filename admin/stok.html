@@ -15,6 +15,7 @@
   <script src="../js/include.js" defer></script>
   <script src="js/datatable.js" defer></script>
   <script src="js/dialog.js" defer></script>
+  <script src="js/actions.js" defer></script>
   <script src="js/stok.js" defer></script>
   <script src="js/stok-form.js" defer></script>
 </head>
@@ -116,12 +117,15 @@
     </div>
   </main>
 
-  <div class="product-form-backdrop" id="product-form-modal" role="dialog" aria-modal="true"
+  <div class="product-form-backdrop form-backdrop" id="product-form-modal" role="dialog" aria-modal="true"
        aria-labelledby="form-title" hidden>
-    <div class="product-form-modal">
+    <div class="product-form-modal form-modal">
       <button class="product-form-close" id="product-form-close" type="button" aria-label="Tutup">&times;</button>
       <form class="form-card" id="stok-form" novalidate>
-        <h2 class="form-card__title" id="form-title">Tambah Barang</h2>
+        <header class="form-card__head">
+          <h2 class="form-card__title" id="form-title">Tambah Barang</h2>
+          <p class="form-card__subtitle">Lengkapi data barang di bawah ini.</p>
+        </header>
 
         <div class="form-field" id="kode-wrap">
           <label class="form-field__label" for="kode_barang">Kode Barang <span class="form-optional">(opsional)</span></label>
@@ -138,24 +142,28 @@
           <p class="form-field__error" id="nama_barang-error" hidden></p>
         </div>
 
-        <div class="form-field">
-          <label class="form-field__label" for="kategori-select">Kategori</label>
-          <input class="form-input" id="kategori-select" type="text" maxlength="30"
-                 placeholder="Contoh: Oli atau Aksesoris" autocomplete="off" />
-          <p class="form-field__error" id="jenis_barang-error" hidden></p>
-        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-field__label" for="kategori-select">Kategori</label>
+            <input class="form-input" id="kategori-select" type="text" maxlength="30"
+                   placeholder="Contoh: Oli atau Aksesoris" autocomplete="off" />
+            <p class="form-field__error" id="jenis_barang-error" hidden></p>
+          </div>
 
-        <div class="form-field">
-          <label class="form-field__label" for="merk">Merk <span class="form-optional">(opsional)</span></label>
-          <input class="form-input" id="merk" name="merk" type="text"
-                 placeholder="Contoh: Yamalube" autocomplete="off" />
+          <div class="form-field">
+            <label class="form-field__label" for="merk">Merk <span class="form-optional">(opsional)</span></label>
+            <input class="form-input" id="merk" name="merk" type="text"
+                   placeholder="Contoh: Yamalube" autocomplete="off" />
+          </div>
         </div>
 
         <div class="form-field">
           <label class="form-field__label" for="gambar">Gambar Barang <span class="form-optional">(opsional)</span></label>
-          <input class="form-input product-image-input" id="gambar" name="gambar" type="file"
-                 accept="image/jpeg,image/png,image/webp" />
-          <button class="btn btn--ghost btn--sm" id="gambar-camera-button" type="button">Ambil Foto dengan Kamera</button>
+          <div class="product-image-picker">
+            <input class="form-input product-image-input" id="gambar" name="gambar" type="file"
+                   accept="image/jpeg,image/png,image/webp" />
+            <button class="btn btn--ghost btn--sm" id="gambar-camera-button" type="button">Ambil Foto dengan Kamera</button>
+          </div>
           <input id="gambar-kamera" type="file" accept="image/*" capture="environment" hidden />
           <p class="form-field__hint">Pilih JPG, PNG, atau WebP. Hasil crop disimpan sebagai JPG, maksimal 2 MB.</p>
           <div class="product-image-cropper" id="gambar-cropper" hidden>
@@ -177,30 +185,32 @@
           <p class="form-field__error" id="gambar-error" hidden></p>
         </div>
 
-        <div class="form-field">
-          <label class="form-field__label" for="harga_jual_default">Harga Jual (Rp)</label>
-          <input class="form-input" id="harga_jual_default" name="harga_jual_default"
-                 type="number" min="0" step="1" inputmode="numeric" placeholder="Contoh: 55000" />
-          <p class="form-field__error" id="harga_jual_default-error" hidden></p>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-field__label" for="harga_jual_default">Harga Jual (Rp)</label>
+            <input class="form-input" id="harga_jual_default" name="harga_jual_default"
+                   type="number" min="0" step="1" inputmode="numeric" placeholder="Contoh: 55000" />
+            <p class="form-field__error" id="harga_jual_default-error" hidden></p>
+          </div>
+
+          <div class="form-field">
+            <label class="form-field__label" for="stok_minimal">Stok Minimal</label>
+            <input class="form-input" id="stok_minimal" name="stok_minimal"
+                   type="number" min="0" step="1" inputmode="numeric" value="5" />
+            <p class="form-field__hint">Ditandai perlu perhatian jika stok di bawah angka ini.</p>
+          </div>
         </div>
 
-        <div class="form-field">
-          <label class="form-field__label" for="stok_minimal">Stok Minimal</label>
-          <input class="form-input" id="stok_minimal" name="stok_minimal"
-                 type="number" min="0" step="1" inputmode="numeric" value="5" />
-          <p class="form-field__hint">Barang akan ditandai perlu perhatian jika stok di bawah angka ini.</p>
-        </div>
-
-        <p class="form-field__hint">Form ini hanya mendaftarkan data barang. Catat jumlah stok dan harga beli aktual melalui menu Transaksi &gt; Barang Masuk.</p>
+        <p class="form-note">Form ini hanya mendaftarkan data barang. Catat jumlah stok dan harga beli aktual melalui menu Transaksi &gt; Barang Masuk.</p>
 
         <p id="stok-info" class="stock-info" hidden></p>
 
-        <div class="form-actions">
-          <button class="btn btn--primary" type="submit" id="form-submit">Simpan Barang</button>
-          <button class="btn btn--ghost" type="button" id="product-form-cancel">Batal</button>
-        </div>
-
         <p class="form-status" id="form-status" role="status" hidden></p>
+
+        <div class="form-actions form-actions--sticky">
+          <button class="btn btn--ghost" type="button" id="product-form-cancel">Batal</button>
+          <button class="btn btn--primary" type="submit" id="form-submit">Simpan Barang</button>
+        </div>
       </form>
     </div>
   </div>

@@ -57,10 +57,14 @@
     fetch:       function (p) { return SLApi.get("/api/admin/transactions", p); },
     renderRow:   function (r) {
       var pihak   = r.nama_pelanggan || r.nama_supplier || "-";
-      var actions = r.status === "PENDING"
-        ? '<button class="btn btn--sm btn--primary btn-complete" data-id="'+r.transaction_id+'" data-tipe="'+esc(r.tipe_transaksi)+'" title="Selesaikan">&#10003; Selesai</button> ' +
-          '<button class="btn btn--sm btn--danger btn-cancel" data-id="'+r.transaction_id+'" title="Batalkan">&times; Batal</button>'
-        : '<button class="btn btn--sm btn--ghost btn-detail" data-id="'+r.transaction_id+'" title="Detail">Detail</button>';
+      var A = window.SLActions;
+      var actions = '<span class="row-actions">' + (r.status === "PENDING"
+        ? A.button("complete", { cls: "btn-complete", label: "Selesaikan " + r.no_faktur,
+            attrs: { "data-id": r.transaction_id, "data-tipe": r.tipe_transaksi } }) +
+          A.button("cancel", { cls: "btn-cancel", label: "Batalkan " + r.no_faktur,
+            attrs: { "data-id": r.transaction_id } })
+        : A.button("detail", { cls: "btn-detail", label: "Detail " + r.no_faktur,
+            attrs: { "data-id": r.transaction_id } })) + "</span>";
       return (
         "<tr>" +
           '<td data-label="Invoice" class="data-table__id"><a class="btn-link btn-detail" data-id="'+r.transaction_id+'">'+esc(r.no_faktur)+"</a></td>"+

@@ -849,3 +849,21 @@ main,
     transition: none;
   }
 }
+
+/* Tombol aksi ikon di tampilan kartu (<= 768px): ikon rata tengah, mudah disentuh */
+@media (max-width: 768px) {
+  .data-table--stack tbody td[data-label="Aksi"],
+  .data-table--stack tbody td.data-table__actions {
+    justify-content: center;
+  }
+
+  .data-table--stack td[data-label="Aksi"] .row-actions {
+    justify-content: center;
+  }
+
+  .data-table--stack td[data-label="Aksi"] .act-btn,
+  .data-table--stack td.data-table__actions .act-btn {
+    width: 44px;
+    height: 44px;
+  }
+}

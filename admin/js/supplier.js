@@ -47,14 +47,17 @@
           (active ? "Aktif" : "Nonaktif") + "</span></td>" +
         '<td data-label="Aksi" class="data-table__actions">' +
           '<span class="row-actions">' +
-            '<button class="btn btn--sm btn--ghost btn-edit" type="button" data-id="' + supplier.id + '"' +
-              ' data-name="' + esc(supplier.nama_supplier) + '"' +
-              ' data-phone="' + esc(supplier.no_telepon || "") + '"' +
-              ' data-address="' + esc(supplier.alamat || "") + '">Edit</button>' +
-            '<button class="btn btn--sm ' + (active ? "btn--danger" : "btn--ghost") +
-              ' btn-toggle" type="button" data-id="' + supplier.id + '"' +
-              ' data-aktif="' + (active ? "true" : "false") + '">' +
-              (active ? "Nonaktifkan" : "Aktifkan") + "</button>" +
+            window.SLActions.button("edit", {
+              cls: "btn-edit", tip: "Edit data supplier", label: "Edit " + supplier.nama_supplier,
+              attrs: { "data-id": supplier.id, "data-name": supplier.nama_supplier,
+                       "data-phone": supplier.no_telepon || "", "data-address": supplier.alamat || "" }
+            }) +
+            window.SLActions.button(active ? "deactivate" : "activate", {
+              cls: "btn-toggle",
+              tip: active ? "Nonaktifkan supplier ini" : "Aktifkan supplier ini",
+              label: (active ? "Nonaktifkan " : "Aktifkan ") + supplier.nama_supplier,
+              attrs: { "data-id": supplier.id, "data-aktif": active ? "true" : "false" }
+            }) +
           "</span>" +
         "</td>" +
       "</tr>";

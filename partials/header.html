@@ -29,7 +29,7 @@
         <span class="header-divider" aria-hidden="true"></span>
 
         <!-- Keranjang butuh login: diarahkan ke halaman login oleh js/include.js -->
-        <a href="keranjang.html" class="icon-btn cart-btn" data-nav="keranjang" data-requires-login data-client-only aria-label="Keranjang">
+        <a href="keranjang.html" class="nav-icon-btn cart-btn" data-nav="keranjang" data-requires-login data-client-only aria-label="Keranjang">
           <img src="assets/icons/cart-white.svg" alt="" width="28" height="28" />
           <span class="cart-badge" data-cart-count hidden>0</span>
         </a>
@@ -37,8 +37,9 @@
         <a href="login.html" class="btn-login" data-auth-login>Login</a>
 
         <div class="profile" data-profile hidden>
-          <button type="button" class="icon-btn profile__toggle" data-profile-toggle aria-haspopup="true" aria-expanded="false" aria-controls="profile-panel" aria-label="Profil akun">
+          <button type="button" class="nav-icon-btn profile__toggle" data-profile-toggle aria-haspopup="true" aria-expanded="false" aria-controls="profile-panel" aria-label="Profil akun">
             <img src="assets/icons/profile-white.svg" alt="" width="28" height="28" />
+            <span class="admin-tag" data-admin-tag hidden>Admin</span>
           </button>
 
           <div class="profile-panel" id="profile-panel" role="menu" aria-label="Informasi akun" hidden>

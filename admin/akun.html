@@ -72,6 +72,7 @@
   <script src="../js/include.js" defer></script>
   <script src="js/datatable.js" defer></script>
   <script src="js/dialog.js" defer></script>
+  <script src="js/actions.js" defer></script>
   <script src="js/akun.js" defer></script>
 </head>
 <body data-auth="admin" class="page-dark" data-page="akun">
@@ -134,44 +135,51 @@
   </main>
 
   <!-- ══ Modal Tambah / Edit Akun ═══════════════════════════════════════════ -->
-  <div class="modal-backdrop" id="akun-modal" role="dialog" aria-modal="true"
+  <div class="modal-backdrop form-backdrop" id="akun-modal" role="dialog" aria-modal="true"
        aria-labelledby="akun-modal-title" hidden>
-    <div class="modal modal--account">
+    <div class="modal modal--account form-modal">
       <button class="modal-close-btn" id="akun-modal-close" aria-label="Tutup">&times;</button>
 
       <form id="akun-form" class="form-card" novalidate>
-        <h2 class="form-card__title" id="akun-modal-title">Tambah Akun</h2>
-        <div class="form-field">
-          <label class="form-field__label" for="akun-username">Username</label>
-          <input class="form-input" id="akun-username" name="username" type="text"
-                 autocomplete="off" autocapitalize="none" spellcheck="false" />
-          <p class="form-field__error" id="akun-username-error" hidden></p>
+        <header class="form-card__head">
+          <h2 class="form-card__title" id="akun-modal-title">Tambah Akun</h2>
+          <p class="form-card__subtitle">Lengkapi data akun di bawah ini.</p>
+        </header>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-field__label" for="akun-username">Username</label>
+            <input class="form-input" id="akun-username" name="username" type="text"
+                   autocomplete="off" autocapitalize="none" spellcheck="false" />
+            <p class="form-field__error" id="akun-username-error" hidden></p>
+          </div>
+          <div class="form-field">
+            <label class="form-field__label" for="akun-nama">Nama Lengkap</label>
+            <input class="form-input" id="akun-nama" name="nama_lengkap" type="text" />
+            <p class="form-field__error" id="akun-nama-error" hidden></p>
+          </div>
         </div>
-        <div class="form-field">
-          <label class="form-field__label" for="akun-nama">Nama Lengkap</label>
-          <input class="form-input" id="akun-nama" name="nama_lengkap" type="text" />
-          <p class="form-field__error" id="akun-nama-error" hidden></p>
-        </div>
-        <div class="form-field">
-          <label class="form-field__label" for="akun-telp">No. WhatsApp</label>
-          <input class="form-input" id="akun-telp" name="no_telepon" type="tel"
-                 placeholder="08xxxxxxxxxx" />
-          <p class="form-field__error" id="akun-telp-error" hidden></p>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-field__label" for="akun-telp">No. WhatsApp</label>
+            <input class="form-input" id="akun-telp" name="no_telepon" type="tel"
+                   placeholder="08xxxxxxxxxx" />
+            <p class="form-field__error" id="akun-telp-error" hidden></p>
+          </div>
+          <div class="form-field">
+            <label class="form-field__label" for="akun-role">Role</label>
+            <select class="form-input" id="akun-role" name="role">
+              <option value="CUSTOMER">Pelanggan</option>
+              <option value="MECHANIC">Montir</option>
+              <option value="ADMIN">Admin</option>
+            </select>
+            <p class="form-field__hint" id="akun-role-hint" hidden></p>
+          </div>
         </div>
         <div class="form-field">
           <label class="form-field__label" for="akun-alamat">Alamat</label>
           <textarea class="form-input" id="akun-alamat" name="alamat" maxlength="500" rows="3"
                     placeholder="Masukkan alamat lengkap"></textarea>
           <p class="form-field__error" id="akun-alamat-error" hidden></p>
-        </div>
-        <div class="form-field">
-          <label class="form-field__label" for="akun-role">Role</label>
-          <select class="form-input" id="akun-role" name="role">
-            <option value="CUSTOMER">Pelanggan</option>
-            <option value="MECHANIC">Montir</option>
-            <option value="ADMIN">Admin</option>
-          </select>
-          <p class="form-field__hint" id="akun-role-hint" hidden></p>
         </div>
         <div class="form-field" id="akun-password-wrap">
           <label class="form-field__label" for="akun-password">Password</label>
@@ -183,9 +191,9 @@
 
         <p id="akun-form-status" class="form-status form-status--error" role="status" hidden></p>
 
-        <div class="form-actions">
-          <button class="btn btn--primary" type="submit" id="akun-form-submit">Simpan</button>
+        <div class="form-actions form-actions--sticky">
           <button class="btn btn--ghost" type="button" id="akun-form-cancel">Batal</button>
+          <button class="btn btn--primary" type="submit" id="akun-form-submit">Simpan</button>
         </div>
       </form>
     </div>

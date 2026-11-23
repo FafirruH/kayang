@@ -69,6 +69,7 @@
   <script src="../js/include.js" defer></script>
   <script src="js/datatable.js" defer></script>
   <script src="js/dialog.js" defer></script>
+  <script src="js/actions.js" defer></script>
   <script src="js/supplier.js" defer></script>
 </head>
 <body data-auth="admin" class="page-dark" data-page="supplier">
@@ -121,30 +122,34 @@
     </div>
   </main>
 
-  <div class="supplier-modal-backdrop" id="supplier-modal" role="dialog" aria-modal="true"
+  <div class="supplier-modal-backdrop form-backdrop" id="supplier-modal" role="dialog" aria-modal="true"
        aria-labelledby="supplier-modal-title" hidden>
-    <div class="supplier-modal">
+    <div class="supplier-modal form-modal">
       <button class="supplier-modal__close" id="supplier-modal-close" type="button" aria-label="Tutup">&times;</button>
       <form id="supplier-form" class="form-card" novalidate>
-        <h2 class="form-card__title" id="supplier-modal-title">Tambah Supplier</h2>
-        <div class="form-field">
-          <label class="form-field__label" for="supplier-name">Nama Supplier</label>
-          <input class="form-input" id="supplier-name" name="nama_supplier" type="text" maxlength="100" required />
-        </div>
-        <div class="form-field">
-          <label class="form-field__label" for="supplier-phone">No. Telepon / WhatsApp</label>
-          <input class="form-input" id="supplier-phone" name="no_telepon" type="tel" maxlength="20"
-                 placeholder="Contoh: 081234567890" required />
+        <header class="form-card__head">
+          <h2 class="form-card__title" id="supplier-modal-title">Tambah Supplier</h2>
+          <p class="form-card__subtitle">Lengkapi data supplier di bawah ini.</p>
+        </header>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-field__label" for="supplier-name">Nama Supplier</label>
+            <input class="form-input" id="supplier-name" name="nama_supplier" type="text" maxlength="100" required />
+          </div>
+          <div class="form-field">
+            <label class="form-field__label" for="supplier-phone">No. Telepon / WhatsApp</label>
+            <input class="form-input" id="supplier-phone" name="no_telepon" type="tel" maxlength="20"
+                   placeholder="Contoh: 081234567890" required />
+          </div>
         </div>
         <div class="form-field">
           <label class="form-field__label" for="supplier-address">Alamat <span class="form-optional">(opsional)</span></label>
-          <textarea class="form-input" id="supplier-address" name="alamat" maxlength="500" rows="3"
-                    style="height:auto;min-height:80px;padding-top:8px;padding-bottom:8px;resize:vertical"></textarea>
+          <textarea class="form-input" id="supplier-address" name="alamat" maxlength="500" rows="3"></textarea>
         </div>
         <p id="supplier-form-status" class="form-status form-status--error" role="status" hidden></p>
-        <div class="form-actions">
-          <button class="btn btn--primary" type="submit" id="supplier-form-submit">Simpan Supplier</button>
+        <div class="form-actions form-actions--sticky">
           <button class="btn btn--ghost" type="button" id="supplier-form-cancel">Batal</button>
+          <button class="btn btn--primary" type="submit" id="supplier-form-submit">Simpan Supplier</button>
         </div>
       </form>
     </div>

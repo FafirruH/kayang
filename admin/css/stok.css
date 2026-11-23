@@ -448,3 +448,75 @@ select.form-input {
     max-height: calc(100vh - 16px);
   }
 }
+
+/* ==========================================================================
+   Panel Tambah / Edit Barang - bagian khusus Stok (gambar & kode)
+   Gaya umum panel ada di admin.css (.form-backdrop / .form-modal)
+   ========================================================================== */
+.product-form-modal #kode_barang::placeholder {
+  text-transform: none;
+}
+
+/* Gambar: kolom pilih file + tombol kamera dalam satu area */
+.product-image-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: #f6f7f9;
+  border: 1.5px dashed #bfc4ca;
+  border-radius: 12px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.product-image-picker:hover,
+.product-image-picker:focus-within {
+  background: #fff6f0;
+  border-color: var(--color-primary);
+}
+
+.page-dark .form-backdrop .product-form-modal .product-image-input {
+  flex: 1 1 220px;
+  min-width: 0;
+  height: auto;
+  padding: 6px;
+  font-size: 13px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.page-dark .form-backdrop .product-form-modal .product-image-input:focus,
+.page-dark .form-backdrop .product-form-modal .product-image-input:hover {
+  border: 0;
+  box-shadow: none;
+}
+
+.product-form-modal .product-image-input::file-selector-button {
+  padding: 8px 14px;
+  border-radius: 8px;
+}
+
+.product-image-picker .btn {
+  flex: none;
+}
+
+.product-form-modal .product-image-preview,
+.product-form-modal .product-image-cropper {
+  background: #f6f7f9;
+  border: 1px solid #e0e3e7;
+  border-radius: 12px;
+}
+
+.product-form-modal #gambar-remove-button {
+  margin-top: 10px;
+}
+
+.product-form-modal .stock-info {
+  margin-top: 12px;
+  background: #f6f7f9;
+  border-color: #e0e3e7;
+  border-radius: 8px;
+}

@@ -13,6 +13,7 @@
   <script src="../js/auth.js" defer></script>
   <script src="../js/include.js" defer></script>
   <script src="js/dialog.js" defer></script>
+  <script src="js/actions.js" defer></script>
   <script src="js/datatable.js" defer></script>
   <script src="js/transaksi.js" defer></script>
   <style>
@@ -252,13 +253,16 @@
   </div>
 
   <!-- ══ Modal Penjualan Baru ═════════════════════════════════════════════════ -->
-  <div class="modal-backdrop" id="sale-modal" role="dialog" aria-modal="true"
+  <div class="modal-backdrop form-backdrop" id="sale-modal" role="dialog" aria-modal="true"
        aria-labelledby="sale-modal-title" hidden>
-    <div class="modal modal--sale">
+    <div class="modal modal--sale form-modal">
       <button class="modal-close-btn" id="sale-modal-close" aria-label="Tutup">&times;</button>
 
       <form id="sale-form" class="form-card" novalidate>
-        <h2 class="form-card__title" id="sale-modal-title">Penjualan Baru</h2>
+        <header class="form-card__head">
+          <h2 class="form-card__title" id="sale-modal-title">Penjualan Baru</h2>
+          <p class="form-card__subtitle">Catat penjualan langsung kepada pembeli.</p>
+        </header>
 
         <!-- Pilih pelanggan terdaftar atau isi nama pembeli umum -->
         <div class="form-field">
@@ -274,7 +278,7 @@
           </p>
         </div>
         <div class="form-field">
-          <label class="form-field__label" for="sale-customer-nama">Nama Pembeli <span style="font-weight:400">(opsional)</span></label>
+          <label class="form-field__label" for="sale-customer-nama">Nama Pembeli <span class="form-optional">(opsional)</span></label>
           <input class="form-input" id="sale-customer-nama" type="text"
                  placeholder="Contoh: Pak Budi (kosongkan jika pelanggan terdaftar)" />
         </div>
@@ -290,39 +294,43 @@
 
         <p id="sale-status" hidden></p>
 
-        <div class="form-actions">
-          <button class="btn btn--primary" type="submit">Buat Penjualan</button>
+        <div class="form-actions form-actions--sticky">
           <button class="btn btn--ghost" type="button" id="sale-modal-close-footer">Batal</button>
+          <button class="btn btn--primary" type="submit">Buat Penjualan</button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- ══ Modal Barang Masuk ═══════════════════════════════════════════════════ -->
-  <div class="modal-backdrop" id="purchase-modal" role="dialog" aria-modal="true"
+  <div class="modal-backdrop form-backdrop" id="purchase-modal" role="dialog" aria-modal="true"
        aria-labelledby="purchase-modal-title" hidden>
-    <div class="modal modal--purchase">
+    <div class="modal modal--purchase form-modal">
       <button class="modal-close-btn" id="purchase-modal-close" aria-label="Tutup">&times;</button>
       <form id="purchase-form" class="form-card" novalidate>
-        <h2 class="form-card__title" id="purchase-modal-title">Barang Masuk</h2>
-        <div class="form-field">
-          <label class="form-field__label" for="purchase-supplier">Supplier</label>
-          <select class="form-input" id="purchase-supplier" required>
-            <option value="">Memuat supplier...</option>
-          </select>
-        </div>
-        <div class="form-field">
-          <label class="form-field__label" for="purchase-reference">No. Referensi <span style="font-weight:400">(opsional)</span></label>
-          <input class="form-input" id="purchase-reference" type="text" maxlength="50" placeholder="Contoh: SJ-001" />
+        <header class="form-card__head">
+          <h2 class="form-card__title" id="purchase-modal-title">Barang Masuk</h2>
+          <p class="form-card__subtitle">Catat penerimaan barang dari supplier.</p>
+        </header>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-field__label" for="purchase-supplier">Supplier</label>
+            <select class="form-input" id="purchase-supplier" required>
+              <option value="">Memuat supplier...</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-field__label" for="purchase-reference">No. Referensi <span class="form-optional">(opsional)</span></label>
+            <input class="form-input" id="purchase-reference" type="text" maxlength="50" placeholder="Contoh: SJ-001" />
+          </div>
         </div>
         <p class="form-field__label sale-items-title">Barang</p>
         <p class="modal-note">Isi harga beli aktual untuk penerimaan ini. Harga boleh berbeda dari pembelian sebelumnya; penjualan memakai biaya stok dengan metode FIFO.</p>
         <div id="purchase-items"></div>
         <button type="button" id="purchase-add-item" class="btn btn--ghost btn--sm">+ Tambah Barang</button>
         <div class="form-field">
-          <label class="form-field__label" for="purchase-note">Catatan <span style="font-weight:400">(opsional)</span></label>
-          <textarea class="form-input" id="purchase-note" maxlength="500" rows="2"
-                    style="height:auto;min-height:64px;padding-top:8px;padding-bottom:8px;resize:vertical"></textarea>
+          <label class="form-field__label" for="purchase-note">Catatan <span class="form-optional">(opsional)</span></label>
+          <textarea class="form-input" id="purchase-note" maxlength="500" rows="2"></textarea>
         </div>
         <div class="form-field">
           <label class="form-field__label">
@@ -332,9 +340,9 @@
           <p class="modal-note">Tidak dicentang berarti harga acuan tidak berubah. Harga aktual tetap dicatat untuk batch FIFO.</p>
         </div>
         <p id="purchase-status" class="form-status" role="status" hidden></p>
-        <div class="form-actions">
-          <button class="btn btn--primary" type="submit" id="purchase-submit">Buat Transaksi Barang Masuk</button>
+        <div class="form-actions form-actions--sticky">
           <button class="btn btn--ghost" type="button" id="purchase-modal-close-footer">Batal</button>
+          <button class="btn btn--primary" type="submit" id="purchase-submit">Buat Transaksi Barang Masuk</button>
         </div>
       </form>
     </div>

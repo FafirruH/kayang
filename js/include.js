@@ -66,6 +66,12 @@
     setHidden("[data-profile-config]", isAdmin);
     setHidden("[data-profile-switch]", !isAdmin);
 
+    // Lencana ADMIN di ikon profil: hanya tampil pada sesi akun admin
+    setHidden("[data-admin-tag]", !isAdmin);
+    document.querySelectorAll("[data-profile-toggle]").forEach(function (btn) {
+      btn.setAttribute("aria-label", isAdmin ? "Profil akun (admin)" : "Profil akun");
+    });
+
     var roleEl = document.querySelector("[data-profile-role]");
     if (roleEl && user) roleEl.textContent = isAdmin ? "Akun Admin" : "Akun User";
 

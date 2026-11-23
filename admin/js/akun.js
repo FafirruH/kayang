@@ -45,7 +45,6 @@
         ? '<span class="badge badge--done">Aktif</span>'
         : '<span class="badge badge--off">Nonaktif</span>';
       var toggleLabel  = u.aktif ? "Nonaktifkan" : "Aktifkan";
-      var toggleClass  = u.aktif ? "btn--danger"  : "btn--ghost";
       return (
         "<tr>" +
           '<td data-label="Nama">' +
@@ -63,17 +62,17 @@
             (mainAdmin
               ? '<span class="data-table__muted">Tidak Bisa Diubah</span>'
               : '<span class="row-actions">' +
-              '<button class="btn btn--sm btn--ghost btn-edit" type="button"' +
-                ' data-id="' + u.id + '"' +
-                ' data-username="' + esc(u.username) + '"' +
-                ' data-nama="' + esc(u.nama_lengkap || "") + '"' +
-                ' data-telp="' + esc(u.no_telepon || "") + '"' +
-                ' data-alamat="' + esc(u.alamat || "") + '"' +
-                ' data-role="' + esc(u.role) + '"' +
-                ' aria-label="Edit ' + esc(u.username) + '">Edit</button>' +
-              '<button class="btn btn--sm ' + toggleClass + ' btn-toggle" type="button"' +
-                ' data-id="' + u.id + '" data-aktif="' + (u.aktif ? "true" : "false") + '"' +
-                ' aria-label="' + toggleLabel + " " + esc(u.username) + '">' + toggleLabel + "</button>" +
+              window.SLActions.button("edit", {
+                cls: "btn-edit", tip: "Edit data akun", label: "Edit " + u.username,
+                attrs: { "data-id": u.id, "data-username": u.username, "data-nama": u.nama_lengkap || "",
+                         "data-telp": u.no_telepon || "", "data-alamat": u.alamat || "", "data-role": u.role }
+              }) +
+              window.SLActions.button(u.aktif ? "deactivate" : "activate", {
+                cls: "btn-toggle",
+                tip: u.aktif ? "Nonaktifkan akun ini" : "Aktifkan akun ini",
+                label: toggleLabel + " " + u.username,
+                attrs: { "data-id": u.id, "data-aktif": u.aktif ? "true" : "false" }
+              }) +
             "</span>") +
           "</td>" +
         "</tr>"

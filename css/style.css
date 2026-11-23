@@ -1830,7 +1830,7 @@ button.btn-login {
   background: var(--color-border-light);
 }
 
-.icon-btn {
+.nav-icon-btn {
   position: relative;
   display: inline-grid;
   place-items: center;
@@ -1845,18 +1845,18 @@ button.btn-login {
   transition: background 0.15s ease;
 }
 
-.icon-btn:hover,
-.icon-btn[aria-expanded="true"],
-.icon-btn.is-active {
+.nav-icon-btn:hover,
+.nav-icon-btn[aria-expanded="true"],
+.nav-icon-btn.is-active {
   background: rgba(240, 242, 244, 0.1);
 }
 
-.icon-btn:focus-visible {
+.nav-icon-btn:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
-.icon-btn img {
+.nav-icon-btn img {
   width: 26px;
   height: 26px;
 }
@@ -2762,4 +2762,25 @@ a.product-card__media { cursor: pointer; }
   .pdp__buy { flex-direction: column; }
   .pdp-qty { align-self: flex-start; }
   .modal__actions .btn { flex: 1; }
+}
+
+
+.info-list__item strong { font-weight: 700; }
+
+/* Lencana "ADMIN" menempel di bawah ikon profil (hanya sesi admin) */
+.admin-tag {
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  padding: 1px 5px;
+  font: 800 9px/12px var(--font-body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #ffffff;
+  background: #e5262b;
+  border-radius: 3px;
+  box-shadow: 0 0 0 2px var(--color-dark), 0 2px 5px rgba(0, 0, 0, 0.45);
+  transform: translateX(-50%) rotate(-8deg);
+  pointer-events: none;
 }
