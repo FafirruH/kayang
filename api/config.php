@@ -94,6 +94,7 @@ if ($method === 'POST') {
     if (!is_array($data)) json_err('Request body harus JSON.');
 
     $config  = load_config($CONFIG_FILE, $DEFAULTS);
+    $previousNumber = preg_replace('/[\s\-().+]/', '', (string) $config['wa_number']);
     $isMainAdmin = isset($user['username']) && strtolower((string) $user['username']) === 'admin';
     if (!$isMainAdmin && array_key_exists('wa_number', $data)) {
         $requestedNumber = preg_replace('/[\s\-().+]/', '', (string) $data['wa_number']);
@@ -118,10 +119,32 @@ if ($method === 'POST') {
     }
     $config['wa_number'] = $num;
 
+    if ($isMainAdmin && $num !== $previousNumber) {
+        try {
+            $updated = App\Db::exec(
+                'UPDATE users SET no_telepon = :number
+                  WHERE LOWER(nama_pengguna) = \'admin\'',
+                ['number' => $num]
+            );
+            if ($updated === 0) {
+                json_err('Akun Admin Utama tidak ditemukan.', 500);
+            }
+        } catch (\Throwable $e) {
+            json_err('Gagal memperbarui nomor WhatsApp Admin Utama.', 500);
+        }
+    }
+
     if (@file_put_contents(
         $CONFIG_FILE,
         json_encode($config, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
     ) === false) {
+        if ($isMainAdmin && $num !== $previousNumber) {
+            App\Db::exec(
+                'UPDATE users SET no_telepon = :number
+                  WHERE LOWER(nama_pengguna) = \'admin\'',
+                ['number' => $previousNumber]
+            );
+        }
         json_err('Gagal menyimpan konfigurasi. Periksa izin tulis folder api/.', 500);
     }
 

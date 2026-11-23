@@ -17,10 +17,15 @@
     if (!ts) return "-";
     return new Date(ts).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
   }
-  function roleLabel(r) { return { ADMIN: "Admin", MECHANIC: "Montir", CUSTOMER: "Pelanggan" }[r] || r; }
-  function roleBadge(r) {
-    var cls = { ADMIN: "badge--done", MECHANIC: "badge--process", CUSTOMER: "badge--pending" }[r] || "badge--pending";
-    return '<span class="badge ' + cls + '">' + roleLabel(r) + "</span>";
+  function roleLabel(r, mainAdmin) {
+    if (mainAdmin) return "Admin Utama";
+    return { ADMIN: "Admin", MECHANIC: "Montir", CUSTOMER: "Pelanggan" }[r] || r;
+  }
+  function roleBadge(r, mainAdmin) {
+    var cls = mainAdmin
+      ? "badge--done"
+      : { ADMIN: "badge--done", MECHANIC: "badge--process", CUSTOMER: "badge--pending" }[r] || "badge--pending";
+    return '<span class="badge ' + cls + '">' + roleLabel(r, mainAdmin) + "</span>";
   }
   function isMainAdmin(u) { return Number(u.admin_utama) === 1; }
   function announce(t) { var e = document.getElementById("akun-live"); if (e) e.textContent = t; }
@@ -50,11 +55,10 @@
           '<td data-label="Nama">' +
             '<span style="font-weight:500">' + esc(u.nama_lengkap || u.username) + "</span>" +
             '<br><span style="font-size:.75rem;color:var(--text-muted,#94a3b8)">@' + esc(u.username) + "</span>" +
-            (mainAdmin ? '<br><span class="badge badge--done">Admin Utama</span>' : "") +
           "</td>" +
           '<td data-label="No. WhatsApp" class="data-table__muted">' + esc(u.no_telepon || "-") + "</td>" +
           '<td data-label="Alamat" class="data-table__muted">' + esc(u.alamat || "-") + "</td>" +
-          '<td data-label="Role">' + roleBadge(u.role) + "</td>" +
+          '<td data-label="Role">' + roleBadge(u.role, mainAdmin) + "</td>" +
           '<td data-label="Status">' + aktifBadge + "</td>" +
           '<td data-label="Transaksi" class="data-table__muted">' + (u.jumlah_transaksi || 0) + "</td>" +
           '<td data-label="Bergabung" class="data-table__muted">' + fmt(u.created_at) + "</td>" +
